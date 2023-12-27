@@ -1,0 +1,14 @@
+{
+    "prompts": {
+        "name": {
+            "type": "string",
+            "required": true,
+            "message": "Project name"
+        },
+        "description": {
+            "type": "input",
+            "required": true,
+            "message": "Project description"
+        }
+    }
+}

@@ -1,0 +1,37 @@
+{
+    "parser": "@typescript-eslint/parser",
+    "overrides": [
+        {
+            "files": ["*.ts", "*.tsx"],
+            "extends": [
+                "plugin:@typescript-eslint/recommended"
+            ],
+            "parserOptions": {
+                "ecmaVersion": 2020,
+                "sourceType": "module",
+                "ecmaFeatures": {
+                    "jsx": true,
+                    "impliedStrict": true
+                },
+                "project": ["./tsconfig.json", "./__tests__/tsconfig.json", "./examples/tsconfig.json"]
+
+            }
+        },
+        {
+            "files": ["*.mjs", "*.js", "*.jsx"]
+        }
+    ],
+    "plugins": ["@typescript-eslint", "prettier"],
+    "rules": {
+        "prettier/prettier": "error",
+        "no-var-require": "off",
+        "no-console": "off",
+        "no-bitwise": "off",
+        "quotes": ["error", "single"],
+        "max-len": ["error", 120],
+        "@typescript-eslint/no-inferrable-types": "off",
+        "@typescript-eslint/explicit-module-boundary-types": "off",
+        "@typescript-eslint/ban-types": "off",
+        "arrow-parens": "off"
+    }
+}
