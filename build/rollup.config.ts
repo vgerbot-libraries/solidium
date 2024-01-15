@@ -30,10 +30,13 @@ const extensions = ['.ts', '.tsx', '.js', '.jsx'];
 const rollupConfig: RollupOptions = {
     output: outputConfig,
     input: inputFile,
-    watch: process.env.NODE_ENV === 'development' && {
-        include: /src/,
-        exclude: /node_modules/
-    },
+    watch: isServingExamples
+        ? {
+              chokidar: {
+                  ignored: '*/node_moduless/**'
+              }
+          }
+        : false,
     plugins: [
         nodeResolve({
             mainFields: ['module', 'browser', 'main'],
@@ -53,7 +56,15 @@ const rollupConfig: RollupOptions = {
             extensions,
             babelHelpers: 'bundled',
             presets: ['solid', '@babel/preset-typescript'],
-            exclude: /node_modules\//
+            exclude: /node_modules\//,
+            plugins: [
+                [
+                    '@babel/plugin-proposal-decorators',
+                    {
+                        legacy: true
+                    }
+                ]
+            ]
         }),
         isServingExamples && html(),
         isServingExamples &&
@@ -61,11 +72,18 @@ const rollupConfig: RollupOptions = {
                 port: Number(process.env.SERVE_PORT),
                 dirs: 'dist'
             }),
-        isServingExamples && alias({
-            entries: [{
-                find: '@vgerbot/solidium', replacement: path.resolve(process.cwd(), '../../solidium/src/index.ts')
-            }]
-        })
+        isServingExamples &&
+            alias({
+                entries: [
+                    {
+                        find: '@vgerbot/solidium',
+                        replacement: path.resolve(
+                            process.cwd(),
+                            '../../solidium/src/index.ts'
+                        )
+                    }
+                ]
+            })
     ].filter(Boolean),
     external: isServingExamples ? [] : new RegExp('node_modules|' + pkg.name)
 };
