@@ -1,12 +1,13 @@
-import { Observe, Signal, Interceptor } from '@vgerbot/solidium';
+import { Observe, Auto } from '@vgerbot/solidium';
 
 export interface TodoItem {
     title: string;
     createTime: Date;
 }
 
+@Auto
 export class TodoService {
-    @Signal
+    // @Signal
     public tasks: TodoItem[] = [];
 
     constructor() {
@@ -27,9 +28,5 @@ export class TodoService {
     @Observe()
     storeOnTaskChange() {
         localStorage.setItem('todo', JSON.stringify(this.tasks));
-    }
-    @Interceptor('tasks')
-    validateNewTask(newTasks: TodoItem[]) {
-        return newTasks;
     }
 }

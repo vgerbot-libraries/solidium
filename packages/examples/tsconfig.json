@@ -4,5 +4,7 @@
         "jsx": "preserve",
         "jsxImportSource": "solid-js",
         "noImplicitThis": false,
+        "experimentalDecorators": true,
+        "emitDecoratorMetadata": true
     }
 }
