@@ -1,8 +1,6 @@
-# Solidium 
+# Solidium
 
-[![Work in Progress](https://img.shields.io/badge/Status-WIP-yellow?style=for-the-badge)](https://github.com/vgerbot-libraries/solidium) [![Code Style: Prettier](https://img.shields.io/badge/Code%20Style-Prettier-ff69b4?style=for-the-badge)](https://prettier.io/) [![Code Linting: ESLint](https://img.shields.io/badge/Code%20Linting-ESLint-4B32C3?style=for-the-badge)](https://eslint.org/) [![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](https://opensource.org/licenses/MIT) [![PRs Welcome](https://img.shields.io/badge/PRs-Welcome-brightgreen?style=for-the-badge)](https://github.com/vgerbot-libraries/solidium) [![GitHub Issues](https://img.shields.io/github/issues/vgerbot-libraries/solidium?style=for-the-badge)](https://github.com/vgerbot-libraries/solidium/issues)
-
-
+[![Work in Progress][badge-wip]][link-home-page] [![Code Style: Prettier][badge-prettier]][link-prettier] [![Code Linting: ESLint][badge-eslint]][link-eslint] [![License][badge-license]][link-license] [![PRs Welcome][badge-prs]][link-home-page] [![GitHub Issues][badge-issues]][link-issues]
 
 Solidium is a powerful state management library for SolidJS, designed to provide a robust and seamless integration of data and UI components. The name "Solidium" combines "Solid" from SolidJS and the suffix "ium" often associated with chemical elements, symbolizing the organic fusion between data and UI.
 
@@ -74,12 +72,27 @@ Explanation:
 - **Shared CounterService Instance:**
     Both `ShowCount` and `IncrementCount` components share the same instance of `CounterService`, obtained from the Inversion of Control (IoC) container using the `useService` hook. This ensures they operate on the same reactive state.
 
-For detailed usage instructions, check out our [Documentation](#TODO)
+For detailed usage instructions, check out our [Documentation][link-docs]
 
 ## Contributing
 
-We welcome contributions! If you find a bug or have a feature request, please open an issue. For pull requests, please follow our [contribution guidelines](#TODO).
+We welcome contributions! If you find a bug or have a feature request, please open an issue. For pull requests, please follow our [contribution guidelines][link-guidelines].
 
 ## License
 
-This project is licensed under the [MIT License](./LICENSE).
+This project is licensed under the [MIT License][link-license].
+
+[badge-wip]:https://img.shields.io/badge/Status-WIP-yellow?style=for-the-badge
+[badge-prettier]:https://img.shields.io/badge/Code%20Style-Prettier-ff69b4?style=for-the-badge
+[badge-eslint]:https://img.shields.io/badge/Code%20Linting-ESLint-4B32C3?style=for-the-badge
+[badge-license]:https://img.shields.io/badge/License-MIT-green?style=for-the-badge
+[badge-prs]:https://img.shields.io/badge/PRs-Welcome-brightgreen?style=for-the-badge
+[badge-issues]:https://img.shields.io/github/issues/vgerbot-libraries/solidium?style=for-the-badge
+
+[link-home-page]:https://github.com/vgerbot-libraries/solidium
+[link-issues]:https://github.com/vgerbot-libraries/solidium/issues
+[link-license]:./LICENSE
+[link-eslint]:https://eslint.org/
+[link-prettier]:https://prettier.io/
+[link-docs]:TODO
+[link-guidelines]:TODO
