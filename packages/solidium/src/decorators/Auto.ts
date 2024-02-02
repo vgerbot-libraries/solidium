@@ -1,14 +1,14 @@
 import { Mark } from '@vgerbot/ioc';
 import {
-    ClassDecoratorHandler,
-    IS_CLASS_DECORATOR_HANDLER
-} from '../core/DecoratorHandler';
+    ClassDecoratorProcessor,
+    IS_CLASS_DECORATOR_PROCESSOR
+} from '../core/DecoratorProcessor';
 
-export const STORE_CLASS_MARK_KEY = Symbol('solidium-store-class');
+export const SOLIDIUM_MARK_CLASS_AUTO = Symbol('solidium-mark-class-auto');
 
-export const Auto = Mark(STORE_CLASS_MARK_KEY, {
-    [IS_CLASS_DECORATOR_HANDLER]: true,
+export const Auto = Mark(SOLIDIUM_MARK_CLASS_AUTO, {
+    [IS_CLASS_DECORATOR_PROCESSOR]: true,
     beforeInstantiation(constructor, metadata) {
         console.log(metadata.getPropertyTypeMap());
     }
-} as ClassDecoratorHandler) as ClassDecorator;
+} as ClassDecoratorProcessor) as ClassDecorator;

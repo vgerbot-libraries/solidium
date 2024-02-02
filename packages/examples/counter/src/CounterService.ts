@@ -1,4 +1,4 @@
-import { Computed, Observe, Signal, resultOf } from '@vgerbot/solidium';
+import { Auto, Computed, Observe, Signal, resultOf } from '@vgerbot/solidium';
 
 function fib(num: number, cache: Record<number, number> = {}): number {
     if (num < 2) {
@@ -10,6 +10,7 @@ function fib(num: number, cache: Record<number, number> = {}): number {
     return (cache[num] = fib(num - 1, cache) + fib(num - 2, cache));
 }
 
+@Auto
 export class CounterService {
     @Signal
     count: number = 1;

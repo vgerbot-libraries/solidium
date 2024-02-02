@@ -1,14 +1,14 @@
 import { ClassMetadataReader, MemberKey, Newable } from '@vgerbot/ioc';
 
-export const IS_MEMBER_DECORATOR_HANDLER = Symbol(
-    'solidium-is-member-decorator-handler'
+export const IS_MEMBER_DECORATOR_PROCESSOR = Symbol(
+    'solidium-is-member-decorator-processor'
 );
-export const IS_CLASS_DECORATOR_HANDLER = Symbol(
-    'solidium-is-class-decorator-handler'
+export const IS_CLASS_DECORATOR_PROCESSOR = Symbol(
+    'solidium-is-class-decorator-processor'
 );
 
-export interface MemberDecoratorHandler {
-    [IS_MEMBER_DECORATOR_HANDLER]: true;
+export interface MemberDecoratorProcessor {
+    [IS_MEMBER_DECORATOR_PROCESSOR]: true;
     beforeInstantiation?: <T>(
         constructor: Newable<T>,
         member: MemberKey,
@@ -21,8 +21,8 @@ export interface MemberDecoratorHandler {
     ) => void;
 }
 
-export interface ClassDecoratorHandler {
-    [IS_CLASS_DECORATOR_HANDLER]: true;
+export interface ClassDecoratorProcessor {
+    [IS_CLASS_DECORATOR_PROCESSOR]: true;
     beforeInstantiation?: <T>(
         constructor: Newable<T>,
         metadata: ClassMetadataReader<T>

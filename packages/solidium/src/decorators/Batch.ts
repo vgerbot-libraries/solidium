@@ -1,9 +1,9 @@
 import { Mark, MemberKey } from '@vgerbot/ioc';
 import { batch } from 'solid-js';
 import {
-    IS_MEMBER_DECORATOR_HANDLER,
-    MemberDecoratorHandler
-} from '../core/DecoratorHandler';
+    IS_MEMBER_DECORATOR_PROCESSOR,
+    MemberDecoratorProcessor
+} from '../core/DecoratorProcessor';
 
 export const BATCH_METHOD_MARK_KEY = Symbol('solidium-batch-method-mark-key');
 
@@ -12,7 +12,7 @@ type HasMethod = {
 };
 
 export const Batch = Mark(BATCH_METHOD_MARK_KEY, {
-    [IS_MEMBER_DECORATOR_HANDLER]: true,
+    [IS_MEMBER_DECORATOR_PROCESSOR]: true,
     afterInstantiation(instance, member, metadata) {
         const origin = (instance as HasMethod)[member];
         if (typeof origin !== 'function') {
@@ -27,4 +27,4 @@ export const Batch = Mark(BATCH_METHOD_MARK_KEY, {
             value: batchFn
         });
     }
-} as MemberDecoratorHandler) as MethodDecorator;
+} as MemberDecoratorProcessor) as MethodDecorator;

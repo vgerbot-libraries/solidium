@@ -1,14 +1,14 @@
 import { Mark, MemberKey } from '@vgerbot/ioc';
 import {
-    MemberDecoratorHandler,
-    IS_MEMBER_DECORATOR_HANDLER
-} from '../core/DecoratorHandler';
+    MemberDecoratorProcessor,
+    IS_MEMBER_DECORATOR_PROCESSOR
+} from '../core/DecoratorProcessor';
 import { useComputed } from '../hooks/useComputed';
 
 export const COMPUTED_GETTER_MARK_KEY = Symbol('solidium_computed_getter');
 
 export const Computed = Mark(COMPUTED_GETTER_MARK_KEY, {
-    [IS_MEMBER_DECORATOR_HANDLER]: true,
+    [IS_MEMBER_DECORATOR_PROCESSOR]: true,
     afterInstantiation: <T>(instance: T, member: MemberKey): T => {
         const prototype = Object.getPrototypeOf(instance);
         const descriptor = Object.getOwnPropertyDescriptor(prototype, member);
@@ -32,4 +32,4 @@ export const Computed = Mark(COMPUTED_GETTER_MARK_KEY, {
         });
         return instance;
     }
-} as MemberDecoratorHandler) as PropertyDecorator;
+} as MemberDecoratorProcessor) as PropertyDecorator;

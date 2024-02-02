@@ -1,8 +1,8 @@
 import { Mark, MemberKey, Newable } from '@vgerbot/ioc';
 import {
-    MemberDecoratorHandler,
-    IS_MEMBER_DECORATOR_HANDLER
-} from '../core/DecoratorHandler';
+    MemberDecoratorProcessor,
+    IS_MEMBER_DECORATOR_PROCESSOR
+} from '../core/DecoratorProcessor';
 import {
     SetterInterceptorOptions,
     appendSetterInterceptor
@@ -25,7 +25,7 @@ export const SetterInterceptor = (
         default:
     }
     return Mark(SETTER_INTERCEPTOR_METHOD_MARK_KEY, {
-        [IS_MEMBER_DECORATOR_HANDLER]: true,
+        [IS_MEMBER_DECORATOR_PROCESSOR]: true,
         beforeInstantiation: <T>(
             constructor: Newable<T>,
             member: MemberKey
@@ -36,5 +36,5 @@ export const SetterInterceptor = (
                 member
             );
         }
-    } as MemberDecoratorHandler) as MethodDecorator;
+    } as MemberDecoratorProcessor) as MethodDecorator;
 };

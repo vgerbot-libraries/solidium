@@ -1,20 +1,48 @@
 import { ClassMetadata, MemberKey, Newable } from '@vgerbot/ioc';
 import {
-    MemberDecoratorHandler,
-    IS_MEMBER_DECORATOR_HANDLER
-} from './DecoratorHandler';
+    MemberDecoratorProcessor,
+    IS_MEMBER_DECORATOR_POROCESSOR,
+    IS_CLASS_DECORATOR_PROCESSOR,
+    ClassDecoratorProcessor
+} from './DecoratorProcessor';
 
-const SOLIDIUM_ANNOTATION_PROCESSOR_KEY = Symbol(
-    'solidium-annotation-processors'
+const SOLIDIUM_MEMBER_DECORATOR_PROCESSOR_KEY = Symbol(
+    'solidium-member-decorator-processors'
+);
+const SOLIDIUM_CLASS_DECORATOR_PROCESSOR_KEY = Symbol(
+    'solidium-class-decorator-processors'
 );
 
-type AllProcessorsMap = Map<MemberKey, Set<MemberDecoratorHandler>>;
+type AllProcessorsMap = Map<MemberKey, Set<MemberDecoratorProcessor>>;
 
 export function beforeInstantiation<T>(constructor: Newable<T>) {
     const metadata = ClassMetadata.getInstance(constructor).reader();
-    const members = metadata.getAllMarkedMembers();
-    const allProcessors = new Map<MemberKey, Set<MemberDecoratorHandler>>();
-    members.forEach(member => {
+    const classMarkInfo = metadata.getCtorMarkInfo();
+    const allClassDecoratorProcessor = new Set<ClassDecoratorProcessor>();
+    if (classMarkInfo) {
+        const classMarkInfoMembers = [
+            ...Object.getOwnPropertyNames(classMarkInfo),
+            ...Object.getOwnPropertySymbols(classMarkInfo)
+        ];
+        classMarkInfoMembers.forEach(markInfoKey => {
+            const processor = classMarkInfo[
+                markInfoKey
+            ] as ClassDecoratorProcessor;
+            if (
+                typeof processor !== 'object' ||
+                !processor[IS_CLASS_DECORATOR_PROCESSOR]
+            ) {
+                return;
+            }
+            allClassDecoratorProcessor.add(processor);
+        });
+    }
+    const instanceMembers = metadata.getAllMarkedMembers();
+    const allMemberDecoratorProcessors = new Map<
+        MemberKey,
+        Set<MemberDecoratorProcessor>
+    >();
+    instanceMembers.forEach(member => {
         const markInfo = metadata.getMembersMarkInfo(member);
         if (!markInfo) {
             return;
@@ -25,29 +53,50 @@ export function beforeInstantiation<T>(constructor: Newable<T>) {
         ];
         markInfoMembers.forEach(key => {
             const markData = markInfo[key] as
-                | MemberDecoratorHandler
+                | MemberDecoratorProcessor
                 | undefined;
             if (
                 markData == null ||
                 markData == undefined ||
                 typeof markData !== 'object' ||
-                !markData[IS_MEMBER_DECORATOR_HANDLER]
+                !markData[IS_MEMBER_DECORATOR_POROCESSOR]
             ) {
                 return;
             }
-            const processors = allProcessors.get(member) || new Set();
-            allProcessors.set(member, processors);
+            const processors =
+                allMemberDecoratorProcessors.get(member) || new Set();
+            allMemberDecoratorProcessors.set(member, processors);
             processors.add(markData);
         });
     });
-    if (allProcessors.size > 0) {
-        Object.defineProperty(constructor, SOLIDIUM_ANNOTATION_PROCESSOR_KEY, {
-            enumerable: false,
-            configurable: false,
-            writable: false,
-            value: allProcessors
+    if (allClassDecoratorProcessor.size > 0) {
+        Object.defineProperty(
+            constructor,
+            SOLIDIUM_CLASS_DECORATOR_PROCESSOR_KEY,
+            {
+                enumerable: false,
+                configurable: false,
+                writable: false,
+                value: allClassDecoratorProcessor
+            }
+        );
+        allClassDecoratorProcessor.forEach(processor => {
+            processor.beforeInstantiation &&
+                processor.beforeInstantiation(constructor, metadata);
         });
-        allProcessors.forEach((processors, member) => {
+    }
+    if (allMemberDecoratorProcessors.size > 0) {
+        Object.defineProperty(
+            constructor,
+            SOLIDIUM_MEMBER_DECORATOR_PROCESSOR_KEY,
+            {
+                enumerable: false,
+                configurable: false,
+                writable: false,
+                value: allMemberDecoratorProcessors
+            }
+        );
+        allMemberDecoratorProcessors.forEach((processors, member) => {
             processors.forEach(processor => {
                 if (processor.beforeInstantiation) {
                     processor.beforeInstantiation<T>(
@@ -65,20 +114,28 @@ export function afterInstantiation<T extends object>(instance: T): T {
     const constructor = instance.constructor as Newable<T>;
     const metadata = ClassMetadata.getInstance(constructor).reader();
 
-    if (!(SOLIDIUM_ANNOTATION_PROCESSOR_KEY in constructor)) {
-        return instance;
+    if (SOLIDIUM_MEMBER_DECORATOR_PROCESSOR_KEY in constructor) {
+        const allMemberProcessors = constructor[
+            SOLIDIUM_MEMBER_DECORATOR_PROCESSOR_KEY
+        ] as AllProcessorsMap;
+
+        allMemberProcessors.forEach((processors, member) => {
+            processors.forEach(processor => {
+                if (processor.afterInstantiation) {
+                    processor.afterInstantiation(instance, member, metadata);
+                }
+            });
+        });
+    }
+    if (SOLIDIUM_CLASS_DECORATOR_PROCESSOR_KEY in constructor) {
+        const allClassProcessors = constructor[
+            SOLIDIUM_CLASS_DECORATOR_PROCESSOR_KEY
+        ] as Set<ClassDecoratorProcessor>;
+        allClassProcessors.forEach(processor => {
+            processor.afterInstantiation &&
+                processor.afterInstantiation(instance, metadata);
+        });
     }
 
-    const allProcessors = constructor[
-        SOLIDIUM_ANNOTATION_PROCESSOR_KEY
-    ] as AllProcessorsMap;
-
-    allProcessors.forEach((processors, member) => {
-        processors.forEach(processor => {
-            if (processor.afterInstantiation) {
-                processor.afterInstantiation(instance, member, metadata);
-            }
-        });
-    });
     return instance;
 }

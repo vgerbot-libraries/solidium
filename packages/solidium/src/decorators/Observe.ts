@@ -1,14 +1,29 @@
 import { Mark, MemberKey } from '@vgerbot/ioc';
 import {
-    MemberDecoratorHandler,
-    IS_MEMBER_DECORATOR_HANDLER
-} from '../core/DecoratorHandler';
+    MemberDecoratorProcessor,
+    IS_MEMBER_DECORATOR_PROCESSOR
+} from '../core/DecoratorProcessor';
 import { createEffect, onCleanup } from 'solid-js';
 import { clean, store } from '../common/store-result';
 
 export const OBSERVE_PROPERTY_MARK_KEY = Symbol('solidium_observed_property');
 export type ObserveOptions = {
     collectOnce?: boolean;
+    schedule?:
+        | undefined
+        | {
+              mode: 'throttle';
+              trailing?: boolean;
+              leading?: boolean;
+              wait?: number;
+          }
+        | {
+              mode: 'debounce';
+              trailing?: boolean;
+              leading?: boolean;
+              wait?: number;
+              maxWait?: number;
+          };
 };
 interface ObserverableObject {
     [key: MemberKey]: () => unknown;
@@ -16,8 +31,9 @@ interface ObserverableObject {
 
 export const Observe = (options: ObserveOptions = { collectOnce: false }) =>
     Mark(OBSERVE_PROPERTY_MARK_KEY, {
-        [IS_MEMBER_DECORATOR_HANDLER]: true,
+        [IS_MEMBER_DECORATOR_PROCESSOR]: true,
         afterInstantiation(instance, methodName) {
+            // TODO: supports scheduling
             createEffect(() => {
                 const ret = (instance as ObserverableObject)[methodName].call(
                     instance
@@ -29,4 +45,4 @@ export const Observe = (options: ObserveOptions = { collectOnce: false }) =>
             });
             return instance;
         }
-    } as MemberDecoratorHandler) as MethodDecorator;
+    } as MemberDecoratorProcessor) as MethodDecorator;
