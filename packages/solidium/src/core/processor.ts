@@ -1,7 +1,7 @@
 import { ClassMetadata, MemberKey, Newable } from '@vgerbot/ioc';
 import {
     MemberDecoratorProcessor,
-    IS_MEMBER_DECORATOR_POROCESSOR,
+    IS_MEMBER_DECORATOR_PROCESSOR,
     IS_CLASS_DECORATOR_PROCESSOR,
     ClassDecoratorProcessor
 } from './DecoratorProcessor';
@@ -59,7 +59,7 @@ export function beforeInstantiation<T>(constructor: Newable<T>) {
                 markData == null ||
                 markData == undefined ||
                 typeof markData !== 'object' ||
-                !markData[IS_MEMBER_DECORATOR_POROCESSOR]
+                !markData[IS_MEMBER_DECORATOR_PROCESSOR]
             ) {
                 return;
             }
@@ -114,6 +114,19 @@ export function afterInstantiation<T extends object>(instance: T): T {
     const constructor = instance.constructor as Newable<T>;
     const metadata = ClassMetadata.getInstance(constructor).reader();
 
+    if (SOLIDIUM_CLASS_DECORATOR_PROCESSOR_KEY in constructor) {
+        const allClassProcessors = constructor[
+            SOLIDIUM_CLASS_DECORATOR_PROCESSOR_KEY
+        ] as Set<ClassDecoratorProcessor>;
+        allClassProcessors.forEach(processor => {
+            const newInstance =
+                processor.afterInstantiation &&
+                processor.afterInstantiation(instance, metadata);
+            if (newInstance instanceof constructor) {
+                instance = newInstance;
+            }
+        });
+    }
     if (SOLIDIUM_MEMBER_DECORATOR_PROCESSOR_KEY in constructor) {
         const allMemberProcessors = constructor[
             SOLIDIUM_MEMBER_DECORATOR_PROCESSOR_KEY
@@ -127,15 +140,5 @@ export function afterInstantiation<T extends object>(instance: T): T {
             });
         });
     }
-    if (SOLIDIUM_CLASS_DECORATOR_PROCESSOR_KEY in constructor) {
-        const allClassProcessors = constructor[
-            SOLIDIUM_CLASS_DECORATOR_PROCESSOR_KEY
-        ] as Set<ClassDecoratorProcessor>;
-        allClassProcessors.forEach(processor => {
-            processor.afterInstantiation &&
-                processor.afterInstantiation(instance, metadata);
-        });
-    }
-
     return instance;
 }

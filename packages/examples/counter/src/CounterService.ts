@@ -13,6 +13,7 @@ function fib(num: number, cache: Record<number, number> = {}): number {
 @Auto
 export class CounterService {
     @Signal
+    xxx: number = 0;
     count: number = 1;
 
     @Computed
