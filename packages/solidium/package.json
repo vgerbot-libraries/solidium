@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "A state management library for SolidJS, Solidium leverages the power of Inversion of Control (IoC) to provide a robust and flexible solution. With a primary focus on promoting the separation of UI and logic, Solidium empowers SolidJS developers to achieve cleaner, more maintainable code.",
   "author": "y1j2x34 <y1j2x34@qq.com>",
-  "homepage": "https://github.com/vgerbot-libraries/solidium/tree/main/packages/core#readme",
+  "homepage": "https://github.com/vgerbot-libraries/solidium/tree/main/packages/solidium#readme",
   "license": "MIT",
   "main": "lib/index.cjs.js",
   "browser": "lib/index.umd.js",
@@ -44,7 +44,8 @@
     "solid-js": "^1.8.7"
   },
   "peerDependencies": {
-    "solid-js": ">=1.0.0"
+    "solid-js": ">=1.0.0",
+    "@vgerbot/ioc": ">=1.0.1"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.1.5"
