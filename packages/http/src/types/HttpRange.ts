@@ -1,10 +1,10 @@
-export class HttpRange {
-    unit: string;
-    ranges: RangeSpecifier[] = [];
+import { Cloneable } from './Cloneable';
 
-    constructor(unit: string) {
-        this.unit = unit;
-    }
+export class HttpRange implements Cloneable<HttpRange> {
+    constructor(
+        public unit: string = 'bytes',
+        public ranges: RangeSpecifier[] = []
+    ) {}
 
     static parse(httpRange: string): HttpRange {
         const parts = httpRange.split('=');
@@ -29,13 +29,17 @@ export class HttpRange {
             this.ranges.map(range => range.toString()).join(',')
         );
     }
+    clone(): HttpRange {
+        const instance = new HttpRange(
+            this.unit,
+            this.ranges.map(it => it.clone())
+        );
+        return instance;
+    }
 }
 
-class RangeSpecifier {
-    first: number;
-    last: number | null;
-
-    constructor(first: number, last: number | null = null) {
+class RangeSpecifier implements Cloneable<RangeSpecifier> {
+    constructor(public first: number, public last?: number) {
         this.first = first;
         this.last = last;
     }
@@ -43,14 +47,17 @@ class RangeSpecifier {
     static parse(spec: string): RangeSpecifier {
         const parts = spec.split('-');
         const first = parseInt(parts[0]);
-        const last = parts[1] ? parseInt(parts[1]) : null;
+        const last = parts[1] ? parseInt(parts[1]) : undefined;
         return new RangeSpecifier(first, last);
     }
 
     toString(): string {
         return (
             this.first.toString() +
-            (this.last !== null ? '-' + this.last.toString() : '')
+            (this.last ? '-' + this.last.toString() : '')
         );
+    }
+    clone(): RangeSpecifier {
+        return new RangeSpecifier(this.first, this.last);
     }
 }
