@@ -10,7 +10,7 @@ export interface HttpHeaders extends Cloneable<HttpHeaders> {
     remove(name: string): HttpHeaders;
     get(name: string): string[];
     getAll(): Map<string, string[]>;
-    mergeWith(...other: HttpHeaders[]): HttpHeaders;
+    mergeAll(...other: HttpHeaders[]): HttpHeaders;
 
     getContentDisposition(): ContentDisposition | undefined;
     getContentType(): ContentType;

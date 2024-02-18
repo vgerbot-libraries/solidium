@@ -38,14 +38,19 @@ export class HttpHeadersImpl implements HttpHeaders {
     getAll(): Map<string, string[]> {
         return this.headers;
     }
-    mergeWith(...other: HttpHeaders[]): HttpHeaders {
-        const headers = new Map(this.headers);
+    mergeAll(...other: HttpHeaders[]): HttpHeaders {
         other.forEach(other => {
             other.getAll().forEach((value, key) => {
-                headers.set(key, value);
+                const values = this.get(key);
+                value.forEach(valueItem => {
+                    if (!values.includes(valueItem)) {
+                        values.push(valueItem);
+                    }
+                });
+                this.set(key, values);
             });
         });
-        return new HttpHeadersImpl(headers);
+        return this;
     }
     getContentDisposition(): ContentDisposition | undefined {
         const contentDisposition = this.get('Content-Disposition')[0];

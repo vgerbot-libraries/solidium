@@ -9,11 +9,9 @@ import { HttpHeaders } from '../types/HttpHeaders';
 import { Fetcher } from '../types/Fetcher';
 import { HttpConfiguration } from '../types/HttpConfiguration';
 import { internalFetcher } from './internanFetcher';
+import { keep } from '../common/keep';
+import { HttpHeadersImpl } from './HttpHeadersImpl';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function keep(..._: unknown[]) {
-    // PASS
-}
 export class HttpClient {
     static configure(configuration: HttpConfiguration) {
         class HttpConfigurationFactory {
@@ -36,7 +34,7 @@ export class HttpClient {
     private baseUrl?: URL = globalThis.location
         ? new URL(globalThis.location.origin)
         : undefined;
-    private headers!: HttpHeaders; // TODO:
+    private readonly headers: HttpHeaders = HttpHeadersImpl.empty();
     private search: Record<string, string> = {};
     private fetcher: Fetcher = internalFetcher;
 
