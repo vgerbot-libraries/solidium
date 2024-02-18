@@ -1,11 +1,13 @@
 import { ApplicationContext, Newable } from '@vgerbot/ioc';
-import { ParentProps, createContext, createRoot } from 'solid-js';
+import { ParentProps, createContext, createEffect, createRoot } from 'solid-js';
 import { afterInstantiation, beforeInstantiation } from './processor';
+import { SolidiumPlugin } from './SolidiumPlugin';
 
 export const IoCContext = createContext<ApplicationContext>();
 
 export type SolidiumProps = ParentProps<{
     init?: (appCtx: ApplicationContext) => void;
+    plugins?: Array<Newable<SolidiumPlugin>>;
 }>;
 
 class ServiceInstanceStatusManager {
@@ -43,6 +45,19 @@ export function Solidium(props: SolidiumProps) {
     if (typeof props.init === 'function') {
         props.init(appCtx);
     }
+    const plugins: SolidiumPlugin[] = [];
+    if (Array.isArray(props.plugins)) {
+        props.plugins.forEach(pluginClass => {
+            const pluginInstance = appCtx.getInstance(pluginClass);
+            plugins.push(pluginInstance);
+            pluginInstance.init(appCtx);
+        });
+    }
+    createEffect(
+        appCtx.onPreDestroy(() => {
+            plugins.forEach(pluginInstance => pluginInstance.destroy());
+        })
+    );
     return (
         <IoCContext.Provider value={appCtx}>
             {props.children}

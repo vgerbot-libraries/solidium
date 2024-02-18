@@ -1,9 +1,33 @@
-import { Charset } from './Charset';
+import { Charset, CharsetEnum } from './Charset';
 import { Cloneable } from './Cloneable';
 import { MediaType } from './MediaType';
 
-export interface ContentType extends Cloneable<ContentType> {
-    toString(): string;
-    mediaType(): MediaType | string;
-    charset(): Charset | string | undefined;
+export class ContentType implements Cloneable<ContentType> {
+    public static from(
+        mediaType: MediaType | string,
+        charset: Charset = CharsetEnum.UTF_8
+    ) {
+        return new ContentType(mediaType, charset);
+    }
+    public static none() {
+        return ContentType.from('');
+    }
+
+    constructor(
+        private readonly _mediaType: MediaType | string,
+        private readonly _charset?: Charset | string
+    ) {}
+    clone(): ContentType {
+        return new ContentType(this._mediaType, this._charset);
+    }
+
+    toString(): string {
+        return this._mediaType + (this._charset ? ';' + this._charset : '');
+    }
+    mediaType(): MediaType | string {
+        return this._mediaType;
+    }
+    charset(): Charset | string | undefined {
+        return this._charset;
+    }
 }

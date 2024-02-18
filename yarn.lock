@@ -2502,10 +2502,10 @@
   resolved "https://registry.npmmirror.com/@ungap/structured-clone/-/structured-clone-1.2.0.tgz#756641adb587851b5ccb3e095daf27ae581c8406"
   integrity sha512-zuVdFrMJiuCDQUMCzQaD6KL28MjnqqN8XnAqiEq9PNm/hCPTSGfrXCOfwj1ow4LFb/tNymJPwsNbVePc1xFqrQ==
 
-"@vgerbot/ioc@^1.0.1":
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/@vgerbot/ioc/-/ioc-1.0.1.tgz#73518fd124534bea06d2d6debd43e25185203fe4"
-  integrity sha512-W0Mi7di1ayctfQMONNLgl4ruqSQwxlQuO+ujxZ/8m5C9xiWb2yG0x7p2ZXBKg0niLLPrLp3uPbHwVKX0Xjhu/A==
+"@vgerbot/ioc@^1.1.1":
+  version "1.1.1"
+  resolved "https://registry.yarnpkg.com/@vgerbot/ioc/-/ioc-1.1.1.tgz#a0fd86504eb744efbd9e2b492a2f4dd2c50ccddc"
+  integrity sha512-rNgdYMoiPUUkhnyAgO+7WmICJOXryamCeG6wX7Wq9HZPSKbYXKBwu6LMhdmxPZzvQwWKIBmFBdw9um980vj+Ng==
   dependencies:
     "@vgerbot/lazy" "^1.0.6"
     reflect-metadata "^0.1.13"
@@ -2514,7 +2514,7 @@
 
 "@vgerbot/lazy@^1.0.6":
   version "1.0.6"
-  resolved "https://registry.npmmirror.com/@vgerbot/lazy/-/lazy-1.0.6.tgz#bb3e4077e01fdad60dc9d0a4ab73383f06e22fc7"
+  resolved "https://registry.yarnpkg.com/@vgerbot/lazy/-/lazy-1.0.6.tgz#bb3e4077e01fdad60dc9d0a4ab73383f06e22fc7"
   integrity sha512-ASutOBXyCPh1FGWLb3LvAElqAplgCIK4lIJ1QG30kGaY2CYTR79vlDmRDzkub8PZ0XsW39m1kIpbO9p0u9H6RQ==
 
 "@yarnpkg/lockfile@^1.1.0":
