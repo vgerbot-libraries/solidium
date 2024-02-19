@@ -29,7 +29,7 @@ export class HttpClient {
         baseUrl: globalThis.location ? globalThis.location.origin : undefined
     };
     @Inject(HTTP_CONFIGURER)
-    private configurers!: HttpConfigurer[];
+    private configurers?: HttpConfigurer[];
     private interceptorRegistry = new HttpInterceptorRegistryImpl();
     private baseUrl?: URL = globalThis.location
         ? new URL(globalThis.location.origin)
@@ -60,7 +60,7 @@ export class HttpClient {
         }
         this.fetcher = fetcher || this.fetcher;
 
-        this.configurers.forEach(configurer => {
+        this.configurers?.forEach(configurer => {
             configurer.configHeaders && configurer.configHeaders(this.headers);
             configurer.addInterceptors &&
                 configurer.addInterceptors(this.interceptorRegistry);

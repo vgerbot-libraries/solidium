@@ -9,5 +9,5 @@ export interface HttpRequestOptions {
     body?: HttpEntity;
     headers?: HttpHeaders;
     queries?: Record<string, string | string[]>;
-    requestTrigger?: HttpRequestTrigger;
+    requestTriggers?: HttpRequestTrigger[];
 }

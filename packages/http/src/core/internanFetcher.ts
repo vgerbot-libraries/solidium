@@ -1,7 +1,4 @@
-import { isEventStream, isJson } from '../common/content-type';
-import { JSONEntity } from '../entity/JSONEntity';
 import { Fetcher } from '../types/Fetcher';
-import { HttpEntity } from '../types/HttpEntity';
 import { HttpRequest } from '../types/HttpRequest';
 import { HttpResponse } from '../types/HttpResponse';
 import { HttpHeadersImpl } from './HttpHeadersImpl';
@@ -23,21 +20,10 @@ export const internalFetcher: Fetcher = async (
         headers: requestNativeHeaders,
         body: data
     });
-    const contentType = response.headers.get('Content-Type')?.toLowerCase();
-    let entity!: HttpEntity;
-    if (isJson(contentType)) {
-        entity = new JSONEntity(() => {
-            return response.text();
-        });
-    } else if (isEventStream(contentType)) {
-        //
-    } else {
-        // TODO: response entity
-    }
     const responseHeaders = HttpHeadersImpl.fromNativeHeaders(response.headers);
 
     return {
-        body: entity,
+        body: () => response.blob(),
         headers: responseHeaders,
         status: response.status,
         statusText: response.statusText,

@@ -1,3 +1,4 @@
+import { CacheProvider } from './CacheProvider';
 import { Fetcher } from './Fetcher';
 import { HttpInterceptor } from './HttpInterceptor';
 
@@ -8,4 +9,5 @@ export interface HttpConfiguration {
     headers?: Record<string, string | string[]>;
     fetcher?: Fetcher;
     validateStatus?(status: number): boolean;
+    cacheProvider?: CacheProvider;
 }
