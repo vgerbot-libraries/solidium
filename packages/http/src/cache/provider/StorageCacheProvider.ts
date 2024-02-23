@@ -1,4 +1,4 @@
-import { CacheProvider } from '../types/CacheProvider';
+import { CacheProvider } from '../../types/CacheProvider';
 
 class StorageCacheProvider implements CacheProvider {
     constructor(protected storage: Storage) {}

@@ -2,7 +2,7 @@ import { Factory, Inject, PostInject } from '@vgerbot/ioc';
 import { HTTP_CONFIGURER, HTTP_CONFIGURATION } from './constants';
 
 import { HttpRequestOptions } from '../types/HttpRequestOptions';
-import { Resource } from './Resource';
+import { Resource } from '../types/Resource';
 import { HttpConfigurer } from '../types/HttpConfigurer';
 import { HttpInterceptorRegistryImpl } from './HttpInterceptorRegistryImpl';
 import { HttpHeaders } from '../types/HttpHeaders';

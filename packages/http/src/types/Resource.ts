@@ -1,8 +1,7 @@
-import { HttpEntity } from '../types/HttpEntity';
-import { HttpRequest } from '../types/HttpRequest';
-import { HttpResponse } from '../types/HttpResponse';
+import { HttpRequest } from './HttpRequest';
+import { HttpResponse } from './HttpResponse';
 
-export type Resource = {
+export interface Resource {
     readonly idle: boolean;
     readonly pending: boolean;
     readonly success: boolean;
@@ -10,4 +9,4 @@ export type Resource = {
     readonly completed: boolean;
     readonly response: HttpResponse | undefined;
     readonly request: HttpRequest;
-};
+}
