@@ -2502,10 +2502,10 @@
   resolved "https://registry.npmmirror.com/@ungap/structured-clone/-/structured-clone-1.2.0.tgz#756641adb587851b5ccb3e095daf27ae581c8406"
   integrity sha512-zuVdFrMJiuCDQUMCzQaD6KL28MjnqqN8XnAqiEq9PNm/hCPTSGfrXCOfwj1ow4LFb/tNymJPwsNbVePc1xFqrQ==
 
-"@vgerbot/ioc@^1.1.1":
-  version "1.1.1"
-  resolved "https://registry.yarnpkg.com/@vgerbot/ioc/-/ioc-1.1.1.tgz#a0fd86504eb744efbd9e2b492a2f4dd2c50ccddc"
-  integrity sha512-rNgdYMoiPUUkhnyAgO+7WmICJOXryamCeG6wX7Wq9HZPSKbYXKBwu6LMhdmxPZzvQwWKIBmFBdw9um980vj+Ng==
+"@vgerbot/ioc@^1.1.2":
+  version "1.1.2"
+  resolved "https://registry.yarnpkg.com/@vgerbot/ioc/-/ioc-1.1.2.tgz#54dc55513ee49250d48c06e3831f607376cfba6c"
+  integrity sha512-HfGrp/g60q+PmYc8K8mZdKXvGdH30lqzklxOaee+26E9NaamdVU9A5PPcKroVxjXGrBHZUBC80Grs4+TAhHlyA==
   dependencies:
     "@vgerbot/lazy" "^1.0.6"
     reflect-metadata "^0.1.13"

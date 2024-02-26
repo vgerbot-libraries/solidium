@@ -1,6 +1,12 @@
-import { ApplicationContext, Newable } from '@vgerbot/ioc';
+import {
+    ApplicationContext,
+    ClassMetadata,
+    InstanceScope,
+    Newable
+} from '@vgerbot/ioc';
 import { ParentProps, createContext, createRoot } from 'solid-js';
 import { afterInstantiation, beforeInstantiation } from './processor';
+import { Identifier } from '@vgerbot/ioc/dist/types/Identifier';
 
 export const IoCContext = createContext<ApplicationContext>();
 
@@ -23,21 +29,27 @@ export function Solidium(props: SolidiumProps) {
     const appCtx = new ApplicationContext();
     const manager = appCtx.getInstance(ServiceInstanceStatusManager);
     const originGetInstance = appCtx.getInstance;
-    appCtx.getInstance = function <T>(
+    appCtx.getInstance = function <T, O>(
         this: ApplicationContext,
-        cls: Newable<T>
+        id: Identifier,
+        owner?: O
     ): T {
-        if (manager.isInstantiated(cls)) {
-            return originGetInstance.call(this, cls) as T;
-        } else {
-            const [dispose, instance] = createRoot(dispose => {
-                return [dispose, originGetInstance.call(this, cls)];
-            });
-            this.onPreDestroy(() => {
-                queueMicrotask(dispose);
-            });
-            return instance as T;
+        if (typeof id === 'function') {
+            const metadata = ClassMetadata.getInstance(id).reader();
+            if (metadata.getScope() === InstanceScope.TRANSIENT) {
+                return originGetInstance.call(this, id, owner) as T;
+            }
+            if (manager.isInstantiated(id)) {
+                return originGetInstance.call(this, id, owner) as T;
+            }
         }
+        const [dispose, instance] = createRoot(dispose => {
+            return [dispose, originGetInstance.call(this, id, owner)];
+        });
+        this.onPreDestroy(() => {
+            queueMicrotask(dispose);
+        });
+        return instance as T;
     };
     appCtx.registerBeforeInstantiationProcessor(beforeInstantiation);
     appCtx.registerAfterInstantiationProcessor(afterInstantiation);
