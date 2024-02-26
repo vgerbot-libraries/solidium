@@ -1,5 +1,5 @@
 import { Cloneable } from './Cloneable';
-import { HttpConfiguration } from './HttpConfiguration';
+import { HttpConfigurationOptions } from './HttpConfiguration';
 import { HttpHeaders } from './HttpHeaders';
 import { HttpRequest } from './HttpRequest';
 

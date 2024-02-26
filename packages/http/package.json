@@ -39,13 +39,13 @@
     "url": "https://github.com/vgerbot-libraries/solidium/issues"
   },
   "dependencies": {
-    "@vgerbot/ioc": "^1.1.1",
+    "@vgerbot/ioc": "^1.1.2",
     "@vgerbot/lazy": "^1.0.6",
     "@vgerbot/solidium": "1.0.0",
     "reflect-metadata": "^0.2.1"
   },
   "peerDependencies": {
-    "@vgerbot/ioc": ">=1.1.1",
+    "@vgerbot/ioc": ">=1.1.2",
     "@vgerbot/solidium": ">=1.0.0"
   },
   "devDependencies": {

@@ -1,4 +1,5 @@
 import { Cloneable } from './Cloneable';
+import { HttpConfiguration } from './HttpConfiguration';
 import { HttpEntity } from './HttpEntity';
 import { HttpHeaders } from './HttpHeaders';
 import { HttpMethod } from './HttpMethod';
@@ -9,4 +10,5 @@ export interface HttpRequest extends Cloneable<HttpRequest> {
     body: HttpEntity;
     headers: HttpHeaders;
     method: HttpMethod;
+    configuration: HttpConfiguration;
 }

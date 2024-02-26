@@ -34,4 +34,7 @@ export class HttpInterceptorRegistryImpl implements HttpInterceptorRegistry {
             this.interceptors.push(interceptor);
         }
     }
+    getInterceptors() {
+        return this.interceptors.slice(0);
+    }
 }
