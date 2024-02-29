@@ -1,0 +1,12 @@
+{
+    "name": "@vgerbot/solidium-examples-http",
+    "version": "1.0.0",
+    "private": "true",
+    "browser": "dist/index.js",
+    "dependencies": {
+        "@vgerbot/solidium": "1.0.0",
+        "@vgerbot/solidium-http": "1.0.0",
+        "reflect-metadata": "^0.2.1",
+        "solid-js": "^1.8.7"
+    }
+}
