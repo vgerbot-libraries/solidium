@@ -1,3 +1,6 @@
+export * from './core/HttpClient';
+export * from './hooks/useResource';
+
 /*
 import { HttpPlugin } from '@vgerbot/solidium-http'
 function App() {

@@ -1,4 +1,3 @@
-import { Charset } from './Charset';
 import { Cloneable } from './Cloneable';
 import { ContentDisposition } from './ContentDisposition';
 import { ContentType } from './ContentType';

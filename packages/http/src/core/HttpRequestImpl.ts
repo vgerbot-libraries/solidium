@@ -16,7 +16,7 @@ export class HttpRequestImpl implements HttpRequest {
         public readonly configuration: HttpConfiguration,
         private readonly requestOptions: HttpRequestOptions
     ) {
-        const url = new URL(configuration.baseUrl, requestOptions.url);
+        const url = new URL(requestOptions.url, configuration.baseUrl);
         this.key = url.toString();
         this.url = url;
         this.body = requestOptions.body || new EmptyEntity();

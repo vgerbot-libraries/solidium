@@ -1,4 +1,4 @@
-import { Charset, CharsetEnum } from './Charset';
+import { Charset } from './Charset';
 import { Cloneable } from './Cloneable';
 
 interface IContentDisposition {

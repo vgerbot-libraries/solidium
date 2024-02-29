@@ -85,7 +85,7 @@ const rollupConfig: RollupOptions = {
                 ]
             })
     ].filter(Boolean),
-    external: isServingExamples ? [] : new RegExp('node_modules|' + pkg.name)
+    external: isServingExamples ? [] : new RegExp('node_modules|@vgerbot\\/')
 };
 
 export default rollupConfig;

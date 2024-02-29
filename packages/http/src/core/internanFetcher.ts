@@ -1,4 +1,5 @@
 import { Fetcher } from '../types/Fetcher';
+import { HttpMethod } from '../types/HttpMethod';
 import { HttpRequest } from '../types/HttpRequest';
 import { HttpResponse } from '../types/HttpResponse';
 import { HttpHeadersImpl } from './HttpHeadersImpl';
@@ -6,7 +7,9 @@ import { HttpHeadersImpl } from './HttpHeadersImpl';
 export const internalFetcher: Fetcher = async (
     request: HttpRequest
 ): Promise<HttpResponse> => {
-    const data = await request.body.data();
+    const cannotHaveBody =
+        request.method === HttpMethod.GET || request.method === HttpMethod.HEAD;
+    const data = cannotHaveBody ? undefined : await request.body.data();
     const requestNativeHeaders = new Headers({});
 
     const requestHeadersMap = request.headers.getAll();
