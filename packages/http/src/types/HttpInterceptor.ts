@@ -6,6 +6,6 @@ export interface HttpInterceptor {
     name: CommonInterceptorNameEnum | string;
     intercept(
         request: HttpRequest,
-        next: HttpInterceptor
+        next: (request: HttpRequest) => Promise<HttpResponse>
     ): Promise<HttpResponse>;
 }

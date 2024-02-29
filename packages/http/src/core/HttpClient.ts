@@ -12,12 +12,13 @@ import {
 import { internalFetcher } from './internanFetcher';
 import { keep } from '../common/keep';
 import { HttpHeadersImpl } from './HttpHeadersImpl';
-import { HttpMethod } from '../types/HttpMethod';
-import { DataResource } from '../resource/DataResource';
+import { WorkerResource } from '../resource/WorkerResource';
 import { MemoryCacheProvider } from '../cache/provider/MemoryCacheProvider';
-import { Mutation } from '../resource/Mutation';
 import { NoCacheStrategy } from '../cache/strategy/NoCacheStrategy';
 import { ImmediateTrigger } from '../trigger';
+import { CacheProvider } from '../types/CacheProvider';
+import { CacheStrategy } from '../types/CacheStrategy';
+import { HttpRequestTrigger } from '../types/HttpRequestTrigger';
 
 export class HttpClient {
     static configure(configuration: HttpConfigurationOptions) {
@@ -39,21 +40,49 @@ export class HttpClient {
     private appCtx!: ApplicationContext;
     private readonly interceptorRegistry = new HttpInterceptorRegistryImpl();
 
-    private readonly configuration: HttpConfiguration = {
-        baseUrl: new URL(globalThis.location.origin),
-        interceptors: [],
-        headers: HttpHeadersImpl.empty(),
-        search: {},
-        fetcher: internalFetcher,
-        cacheProvider: new MemoryCacheProvider(),
-        cacheStrategy: new NoCacheStrategy(),
-        trigger: ImmediateTrigger
-    };
+    private configuration!: HttpConfiguration;
 
     @PostInject()
     afterInjected() {
-        const { baseUrl, headers, interceptors, search, fetcher } =
-            this.configurationOptions;
+        const {
+            baseUrl,
+            headers,
+            interceptors,
+            search,
+            fetcher,
+            cacheProvider: cacheProviderClass,
+            cacheStrategy: cacheStrategyClass,
+            trigger: triggerClass
+        } = this.configurationOptions;
+
+        const cacheProvider = this.appCtx.getInstance(
+            cacheProviderClass || MemoryCacheProvider
+        ) as CacheProvider;
+        const cacheStrategy = this.appCtx.getInstance(
+            cacheStrategyClass || NoCacheStrategy
+        ) as CacheStrategy;
+        const trigger = this.appCtx.getInstance(
+            triggerClass || ImmediateTrigger
+        ) as HttpRequestTrigger;
+        this.configuration = {
+            baseUrl: new URL(globalThis.location.origin),
+            interceptors: [],
+            headers: HttpHeadersImpl.empty(),
+            search: {},
+            fetcher: internalFetcher,
+            cacheProvider,
+            cacheStrategy,
+            trigger,
+            clone() {
+                return {
+                    ...this,
+                    interceptors: this.interceptors.slice(0),
+                    search: {
+                        ...this.search
+                    }
+                };
+            }
+        };
         if (baseUrl) {
             this.configuration.baseUrl = new URL(baseUrl);
         }
@@ -88,21 +117,8 @@ export class HttpClient {
     }
 
     createResource(options: HttpRequestOptions): Resource {
-        switch (options.method || HttpMethod.GET) {
-            case HttpMethod.GET:
-            case HttpMethod.HEAD:
-                const resource = this.appCtx.getInstance(DataResource);
-                resource.init(this.configuration, options);
-                return resource;
-            case HttpMethod.PUT:
-            case HttpMethod.DELETE:
-            case HttpMethod.PATCH:
-            case HttpMethod.POST:
-                return new Mutation(this.configuration, options);
-            default:
-                throw new Error(
-                    'Unsupported or invalid method: ' + options.method
-                );
-        }
+        const worker = this.appCtx.getInstance(WorkerResource);
+        worker.init(this.configuration.clone(), options);
+        return worker;
     }
 }
