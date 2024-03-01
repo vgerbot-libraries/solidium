@@ -16,6 +16,7 @@ export class HttpHeadersImpl implements HttpHeaders {
     }
     constructor(private readonly headers = new Map<string, string[]>()) {}
     set(name: string, value: string | string[]): HttpHeaders {
+        name = name.toLowerCase();
         if (Array.isArray(value)) {
             this.headers.set(name, value);
         } else {
@@ -24,6 +25,7 @@ export class HttpHeadersImpl implements HttpHeaders {
         return this;
     }
     append(name: string, value: string | string[]): HttpHeaders {
+        name = name.toLowerCase();
         const values = this.get(name);
         this.headers.set(name, values.concat(value));
         return this;
@@ -33,7 +35,7 @@ export class HttpHeadersImpl implements HttpHeaders {
         return this;
     }
     get(name: string): string[] {
-        return this.headers.get(name) || [];
+        return this.headers.get(name.toLowerCase()) || [];
     }
     getAll(): Map<string, string[]> {
         return this.headers;

@@ -19,6 +19,7 @@ import { ImmediateTrigger } from '../trigger';
 import { CacheProvider } from '../types/CacheProvider';
 import { CacheStrategy } from '../types/CacheStrategy';
 import { HttpRequestTrigger } from '../types/HttpRequestTrigger';
+import { internalValidateStatus } from './internalValidateStatus';
 
 export class HttpClient {
     static configure(configuration: HttpConfigurationOptions) {
@@ -81,7 +82,8 @@ export class HttpClient {
                         ...this.search
                     }
                 };
-            }
+            },
+            validateStatus: internalValidateStatus
         };
         if (baseUrl) {
             this.configuration.baseUrl = new URL(baseUrl);

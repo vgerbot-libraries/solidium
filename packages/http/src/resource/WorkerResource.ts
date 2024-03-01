@@ -37,9 +37,9 @@ export class WorkerResource implements Resource {
         return this.success || this.failure;
     }
     @Signal
-    _response: HttpResponse | undefined;
+    private _response: HttpResponse | undefined;
     get response(): HttpResponse | undefined {
-        return this.pending || this.idle ? undefined : this._response;
+        return this._response;
     }
     request!: HttpRequest;
     private trigger!: HttpRequestTrigger;
@@ -48,7 +48,13 @@ export class WorkerResource implements Resource {
         this.request = new HttpRequestImpl(configuration, requestOptions);
         this.trigger = configuration.trigger;
         this.trigger.start(async () => {
+            this.status = ResourceStatus.PENDING;
             const response = await this.executeRequest();
+            if (await configuration.validateStatus(response)) {
+                this.status = ResourceStatus.SUCCESS;
+            } else {
+                this.status = ResourceStatus.FAILURE;
+            }
             this._response = response;
         });
     }
