@@ -1,5 +1,5 @@
 export * from './core/HttpClient';
-export * from './hooks/useResource';
+export * from './hooks';
 
 /*
 import { HttpPlugin } from '@vgerbot/solidium-http'

@@ -10,7 +10,7 @@ import { HttpResponse } from './HttpResponse';
 
 export interface HttpConfigurationOptions {
     baseUrl?: string | URL;
-    interceptors?: HttpInterceptor[];
+    interceptors?: Array<HttpInterceptor | HttpInterceptor['intercept']>;
     search?: Record<string, string | number | boolean>;
     headers?: Record<string, string | string[]>;
     fetcher?: Fetcher;

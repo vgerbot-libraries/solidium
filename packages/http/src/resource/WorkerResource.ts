@@ -21,7 +21,7 @@ enum ResourceStatus {
 export class WorkerResource implements Resource {
     @Signal
     private status: ResourceStatus = ResourceStatus.IDLE;
-    get idle(): boolean {
+    get idle() {
         return this.status === ResourceStatus.IDLE;
     }
     get pending(): boolean {

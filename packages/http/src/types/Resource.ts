@@ -1,12 +1,12 @@
 import { HttpRequest } from './HttpRequest';
 import { HttpResponse } from './HttpResponse';
 
-export interface Resource {
+export interface Resource<T extends HttpResponse = HttpResponse> {
     readonly idle: boolean;
     readonly pending: boolean;
     readonly success: boolean;
     readonly failure: boolean;
     readonly completed: boolean;
-    readonly response: HttpResponse | undefined;
+    readonly response: T | undefined;
     readonly request: HttpRequest;
 }

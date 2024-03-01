@@ -95,7 +95,14 @@ export class HttpClient {
         }
         if (interceptors) {
             interceptors.forEach(interceptor => {
-                this.interceptorRegistry.addInterceptor(interceptor);
+                if (typeof interceptor === 'function') {
+                    this.interceptorRegistry.addInterceptor({
+                        name: 'functional-interceptor',
+                        intercept: interceptor
+                    });
+                } else {
+                    this.interceptorRegistry.addInterceptor(interceptor);
+                }
             });
         }
         if (search) {
