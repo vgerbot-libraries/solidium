@@ -1,6 +1,6 @@
-import { CacheProvider } from '../../types/CacheProvider';
+import { StorageProvider } from '../../types/StorageProvider';
 
-export class MemoryCacheProvider implements CacheProvider {
+export class MemoryStorageProvider implements StorageProvider {
     private _cache = new Map<string, string>();
     set(key: string, value: string): Promise<void> {
         this._cache.set(key, value);

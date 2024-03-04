@@ -13,10 +13,10 @@ import { internalFetcher } from './internanFetcher';
 import { keep } from '../common/keep';
 import { HttpHeadersImpl } from './HttpHeadersImpl';
 import { WorkerResource } from '../resource/WorkerResource';
-import { MemoryCacheProvider } from '../cache/provider/MemoryCacheProvider';
+import { MemoryStorageProvider } from '../cache/provider/MemoryStorageProvider';
 import { NoCacheStrategy } from '../cache/strategy/NoCacheStrategy';
 import { ImmediateTrigger } from '../trigger';
-import { CacheProvider } from '../types/CacheProvider';
+import { StorageProvider } from '../types/StorageProvider';
 import { CacheStrategy } from '../types/CacheStrategy';
 import { HttpRequestTrigger } from '../types/HttpRequestTrigger';
 import { internalValidateStatus } from './internalValidateStatus';
@@ -51,14 +51,14 @@ export class HttpClient {
             interceptors,
             search,
             fetcher,
-            cacheProvider: cacheProviderClass,
+            storageProvider: storageProviderClass,
             cacheStrategy: cacheStrategyClass,
             trigger: triggerClass
         } = this.configurationOptions;
 
-        const cacheProvider = this.appCtx.getInstance(
-            cacheProviderClass || MemoryCacheProvider
-        ) as CacheProvider;
+        const storageProvider = this.appCtx.getInstance(
+            storageProviderClass || MemoryStorageProvider
+        ) as StorageProvider;
         const cacheStrategy = this.appCtx.getInstance(
             cacheStrategyClass || NoCacheStrategy
         ) as CacheStrategy;
@@ -71,7 +71,7 @@ export class HttpClient {
             headers: HttpHeadersImpl.empty(),
             search: {},
             fetcher: internalFetcher,
-            cacheProvider,
+            storageProvider: storageProvider,
             cacheStrategy,
             trigger,
             clone() {

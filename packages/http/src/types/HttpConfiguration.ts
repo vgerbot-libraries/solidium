@@ -1,5 +1,5 @@
 import type { Newable } from '@vgerbot/ioc';
-import { CacheProvider } from './CacheProvider';
+import { StorageProvider } from './StorageProvider';
 import { CacheStrategy } from './CacheStrategy';
 import { Fetcher } from './Fetcher';
 import { HttpHeaders } from './HttpHeaders';
@@ -15,7 +15,7 @@ export interface HttpConfigurationOptions {
     headers?: Record<string, string | string[]>;
     fetcher?: Fetcher;
     validateStatus?(response: HttpResponse): Promise<boolean>;
-    cacheProvider?: Newable<CacheProvider>;
+    storageProvider?: Newable<StorageProvider>;
     cacheStrategy?: Newable<CacheStrategy>;
     trigger?: Newable<HttpRequestTrigger>;
 }
@@ -26,7 +26,7 @@ export interface HttpConfiguration extends Cloneable<HttpConfiguration> {
     search: Record<string, string>;
     headers: HttpHeaders;
     fetcher: Fetcher;
-    cacheProvider: CacheProvider;
+    storageProvider: StorageProvider;
     cacheStrategy: CacheStrategy;
     trigger: HttpRequestTrigger;
     validateStatus(response: HttpResponse): Promise<void>;

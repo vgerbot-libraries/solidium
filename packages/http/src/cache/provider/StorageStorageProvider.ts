@@ -1,6 +1,6 @@
-import { CacheProvider } from '../../types/CacheProvider';
+import { StorageProvider } from '../../types/StorageProvider';
 
-class StorageCacheProvider implements CacheProvider {
+class BrowserStorageProvider implements StorageProvider {
     constructor(protected storage: Storage) {}
     private readonly PREFIX = 'solidium-http-cache-';
     set(key: string, value: string): Promise<void> {
@@ -17,12 +17,12 @@ class StorageCacheProvider implements CacheProvider {
         return Promise.resolve();
     }
 }
-export class LocalStorageCacheProvider extends StorageCacheProvider {
+export class LocalStorageProvider extends BrowserStorageProvider {
     constructor() {
         super(localStorage);
     }
 }
-export class SessionStorageCacheProvider extends StorageCacheProvider {
+export class SessionStorageProvider extends BrowserStorageProvider {
     constructor() {
         super(sessionStorage);
     }
