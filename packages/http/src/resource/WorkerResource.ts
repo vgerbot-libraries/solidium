@@ -105,7 +105,7 @@ export class WorkerResource implements Resource {
                     return interceptor.intercept(request, next);
                 };
             }, executeRequest);
-        return interceptedRequestExecutor(this.request);
+        return interceptedRequestExecutor(this.request.clone());
     }
     private executeRequestWithoutCache(
         request: HttpRequest
