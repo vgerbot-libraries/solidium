@@ -15,10 +15,8 @@ import { HttpHeadersImpl } from './HttpHeadersImpl';
 import { WorkerResource } from '../resource/WorkerResource';
 import { MemoryStorageProvider } from '../cache/provider/MemoryStorageProvider';
 import { NoCacheStrategy } from '../cache/strategy/NoCacheStrategy';
-import { ImmediateTrigger } from '../trigger';
 import { StorageProvider } from '../types/StorageProvider';
 import { CacheStrategy } from '../types/CacheStrategy';
-import { HttpRequestTrigger } from '../types/HttpRequestTrigger';
 import { internalValidateStatus } from './internalValidateStatus';
 
 export class HttpClient {
@@ -52,8 +50,7 @@ export class HttpClient {
             search,
             fetcher,
             storageProvider: storageProviderClass,
-            cacheStrategy: cacheStrategyClass,
-            trigger: triggerClass
+            cacheStrategy: cacheStrategyClass
         } = this.configurationOptions;
 
         const storageProvider = this.appCtx.getInstance(
@@ -62,9 +59,7 @@ export class HttpClient {
         const cacheStrategy = this.appCtx.getInstance(
             cacheStrategyClass || NoCacheStrategy
         ) as CacheStrategy;
-        const trigger = this.appCtx.getInstance(
-            triggerClass || ImmediateTrigger
-        ) as HttpRequestTrigger;
+
         this.configuration = {
             baseUrl: new URL(globalThis.location.origin),
             interceptors: [],
@@ -73,7 +68,6 @@ export class HttpClient {
             fetcher: internalFetcher,
             storageProvider: storageProvider,
             cacheStrategy,
-            trigger,
             clone() {
                 return {
                     ...this,

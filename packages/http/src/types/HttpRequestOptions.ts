@@ -2,6 +2,7 @@ import { HttpEntity } from './HttpEntity';
 import { HttpHeaders } from './HttpHeaders';
 import { HttpMethod } from './HttpMethod';
 import { HttpRequestTrigger } from './HttpRequestTrigger';
+import { HttpRequestTriggerOptions } from './HttpRequestTriggerOptions';
 
 export interface HttpRequestOptions {
     url: string | URL;
@@ -9,5 +10,8 @@ export interface HttpRequestOptions {
     body?: HttpEntity;
     headers?: HttpHeaders;
     queries?: Record<string, string | string[]>;
-    requestTriggers?: HttpRequestTrigger[];
+    /**
+     * Configuration for triggering automatic requests.
+     */
+    trigger?: HttpRequestTriggerOptions | HttpRequestTrigger;
 }

@@ -1,4 +1,4 @@
 export interface HttpRequestTrigger {
-    start(requestTrigger: () => Promise<void>): void;
+    start(requestTrigger: (revalidate?: boolean) => Promise<void>): void;
     stop(): void;
 }

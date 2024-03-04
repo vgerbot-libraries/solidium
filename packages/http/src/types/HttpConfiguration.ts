@@ -17,7 +17,6 @@ export interface HttpConfigurationOptions {
     validateStatus?(response: HttpResponse): Promise<boolean>;
     storageProvider?: Newable<StorageProvider>;
     cacheStrategy?: Newable<CacheStrategy>;
-    trigger?: Newable<HttpRequestTrigger>;
 }
 
 export interface HttpConfiguration extends Cloneable<HttpConfiguration> {
@@ -28,6 +27,5 @@ export interface HttpConfiguration extends Cloneable<HttpConfiguration> {
     fetcher: Fetcher;
     storageProvider: StorageProvider;
     cacheStrategy: CacheStrategy;
-    trigger: HttpRequestTrigger;
     validateStatus(response: HttpResponse): Promise<void>;
 }

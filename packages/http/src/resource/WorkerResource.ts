@@ -5,10 +5,19 @@ import { HttpRequest } from '../types/HttpRequest';
 import { HttpRequestOptions } from '../types/HttpRequestOptions';
 import { HttpResponse } from '../types/HttpResponse';
 import { Resource } from '../types/Resource';
-import { InstanceScope, PreDestroy, Scope } from '@vgerbot/ioc';
+import {
+    ApplicationContext,
+    Inject,
+    InstanceScope,
+    PreDestroy,
+    Scope
+} from '@vgerbot/ioc';
 import { HttpRequestTrigger } from '../types/HttpRequestTrigger';
 import { Defer } from '../common/Defer';
 import { HttpMethod } from '../types/HttpMethod';
+import { SmartTrigger } from '../trigger/SmartTrigger';
+import { HttpRequestTriggerOptions } from '../types/HttpRequestTriggerOptions';
+import { ImmediateTrigger, PassiveTrigger } from '../trigger';
 
 enum ResourceStatus {
     IDLE = 'idle',
@@ -19,6 +28,8 @@ enum ResourceStatus {
 
 @Scope(InstanceScope.TRANSIENT)
 export class WorkerResource implements Resource {
+    @Inject()
+    private appCtx!: ApplicationContext;
     @Signal
     private status: ResourceStatus = ResourceStatus.IDLE;
     get idle() {
@@ -50,7 +61,23 @@ export class WorkerResource implements Resource {
 
     init(configuration: HttpConfiguration, requestOptions: HttpRequestOptions) {
         this.request = new HttpRequestImpl(configuration, requestOptions);
-        this.trigger = configuration.trigger;
+        let trigger: HttpRequestTrigger;
+        if (typeof requestOptions.trigger === 'function') {
+            trigger = this.appCtx.getInstance(requestOptions.trigger);
+        } else if (
+            !!requestOptions.trigger &&
+            typeof requestOptions.trigger === 'object'
+        ) {
+            trigger = new SmartTrigger(
+                requestOptions.trigger as HttpRequestTriggerOptions
+            );
+        } else if (requestOptions.trigger) {
+            trigger = new ImmediateTrigger();
+        } else {
+            trigger = new PassiveTrigger();
+        }
+        this.trigger = trigger;
+
         this.trigger.start(() => {
             return this.refetch();
         });

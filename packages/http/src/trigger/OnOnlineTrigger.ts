@@ -1,7 +1,7 @@
 import { WindowEventTrigger } from './WindowEventTrigger';
 
-export class WindowFocusTrigger extends WindowEventTrigger {
+export class OnOnlineTrigger extends WindowEventTrigger {
     constructor() {
-        super('focus');
+        super('online');
     }
 }
