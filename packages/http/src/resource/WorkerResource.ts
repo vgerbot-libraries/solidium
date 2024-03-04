@@ -43,30 +43,53 @@ export class WorkerResource implements Resource {
     }
     request!: HttpRequest;
     private trigger!: HttpRequestTrigger;
+    private responseDefer = new Defer<HttpResponse>();
+    public get responsePromise() {
+        return this.responseDefer.promise;
+    }
 
     init(configuration: HttpConfiguration, requestOptions: HttpRequestOptions) {
         this.request = new HttpRequestImpl(configuration, requestOptions);
         this.trigger = configuration.trigger;
-        this.trigger.start(async () => {
-            this.status = ResourceStatus.PENDING;
-            const response = await this.executeRequest();
-            if (await configuration.validateStatus(response)) {
-                this.status = ResourceStatus.SUCCESS;
-            } else {
-                this.status = ResourceStatus.FAILURE;
-            }
-            this._response = response;
+        this.trigger.start(() => {
+            return this.refetch();
         });
     }
     @PreDestroy()
     onCleanup() {
         this.trigger.stop();
     }
-    private async executeRequest() {
+    async refetch(force?: boolean) {
+        if (this.pending) {
+            try {
+                await this.responseDefer.promise;
+            } catch (_) {
+                // IGNORE
+            }
+            this.responseDefer = new Defer();
+        }
+        this.status = ResourceStatus.PENDING;
+        this._response = undefined;
+        try {
+            const configuration = this.request.configuration;
+            const response = await this.executeRequest(force);
+            await configuration.validateStatus(response);
+            this.status = ResourceStatus.SUCCESS;
+            this._response = response;
+            this.responseDefer.resolve(response);
+        } catch (error) {
+            this.status = ResourceStatus.FAILURE;
+            this.responseDefer.reject(error);
+        }
+    }
+    private async executeRequest(force?: boolean) {
         const configuration = this.request.configuration;
         const executeRequest = (
             request: HttpRequest
         ): Promise<HttpResponse> => {
+            if (force) {
+                return this.executeRequestWithoutCache(request);
+            }
             switch (request.method) {
                 case HttpMethod.PUT:
                 case HttpMethod.DELETE:

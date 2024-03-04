@@ -42,7 +42,9 @@ export function TodoList() {
                     </For>
                 </ul>
             </Show>
-            <Show when={resource.failure}>Failed!</Show>
+            <Show when={resource.failure}>
+                Failed: {resource.response?.statusText}
+            </Show>
         </div>
     );
 }

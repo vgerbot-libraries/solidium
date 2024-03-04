@@ -30,27 +30,40 @@ export class DataHttpResponse<T> implements HttpResponse {
         );
     }
     get data(): T | undefined {
-        return this._jsonSignal[0]() as T | undefined;
+        return this._dataSignal[0]() as T | undefined;
     }
-    private readonly _jsonSignal: Signal<unknown>;
+    get parser_error(): Error | undefined {
+        return this._parserErrorSignal[0]();
+    }
+    private readonly _dataSignal: Signal<unknown>;
+    private readonly _parserErrorSignal: Signal<Error | undefined>;
     constructor(
         private readonly origin: HttpResponse,
         private readonly owner: Owner | null,
         private readonly parser: (blob: Blob) => Promise<T>
     ) {
-        this._jsonSignal = runWithOwner(owner, () => {
+        this._dataSignal = runWithOwner(owner, () => {
             return createSignal();
         }) as Signal<unknown>;
+        this._parserErrorSignal = runWithOwner(owner, () => {
+            return createSignal();
+        }) as Signal<Error | undefined>;
         this.origin
             .body()
-            .then(blob => parser(blob))
+            .then(blob =>
+                parser(blob).catch(reason => {
+                    this._parserErrorSignal[1](reason);
+                    return undefined;
+                })
+            )
             .then(data => {
-                this._jsonSignal[1](data as unknown);
+                this._dataSignal[1](data as unknown);
             });
     }
 }
 
 export class DataResource<T> extends DelegateResource<DataHttpResponse<T>> {
+    [Symbol.toStringTag]: string = 'data-resource';
     @lazyMember({
         evaluate: (instance: DataResource<T>) => {
             const origin = instance.target.response;
@@ -67,8 +80,14 @@ export class DataResource<T> extends DelegateResource<DataHttpResponse<T>> {
     public get data(): T | undefined {
         return this.response?.data;
     }
-    public revalidate() {
-        // TODO: REVALIDATE DATA RESOURCE
+    public get parser_error(): Error | undefined {
+        return this.response?.parser_error;
+    }
+    public get responsePromise(): Promise<DataHttpResponse<T>> {
+        return this.target.responsePromise.then(() => {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            return this.response!;
+        });
     }
     constructor(
         target: Resource<HttpResponse>,

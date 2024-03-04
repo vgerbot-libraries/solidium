@@ -29,5 +29,5 @@ export interface HttpConfiguration extends Cloneable<HttpConfiguration> {
     cacheProvider: CacheProvider;
     cacheStrategy: CacheStrategy;
     trigger: HttpRequestTrigger;
-    validateStatus(response: HttpResponse): Promise<boolean>;
+    validateStatus(response: HttpResponse): Promise<void>;
 }

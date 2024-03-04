@@ -24,5 +24,10 @@ export abstract class DelegateResource<T extends HttpResponse>
         return this.target.request;
     }
     abstract get response(): T | undefined;
+    abstract get responsePromise(): Promise<T>;
     constructor(protected readonly target: Resource) {}
+
+    refetch(force?: boolean): Promise<void> {
+        return this.target.refetch(force);
+    }
 }

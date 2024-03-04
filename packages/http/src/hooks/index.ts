@@ -1,4 +1,5 @@
 export * from './useArrayBuffer';
 export * from './useData';
-export * from './useJson';
+export * from './useJSON';
 export * from './usePlainText';
+export * from './useBlob';

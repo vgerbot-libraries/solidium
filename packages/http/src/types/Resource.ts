@@ -9,4 +9,6 @@ export interface Resource<T extends HttpResponse = HttpResponse> {
     readonly completed: boolean;
     readonly response: T | undefined;
     readonly request: HttpRequest;
+    readonly responsePromise: Promise<T>;
+    refetch(force?: boolean): Promise<void>;
 }
