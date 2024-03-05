@@ -9,13 +9,12 @@ export class TimmerTrigger implements HttpRequestTrigger {
         };
     }
     constructor(public interval: number = 1000) {}
-    _timmerId: undefined | ReturnType<typeof setInterval>;
-    start(requestTrigger: () => Promise<void>): void {
-        this._timmerId = setInterval(() => {
+    dispatch(requestTrigger: () => Promise<void>): () => void {
+        const timmerId = setInterval(() => {
             requestTrigger();
         }, this.interval);
-    }
-    stop(): void {
-        clearInterval(this._timmerId);
+        return () => {
+            clearInterval(timmerId);
+        };
     }
 }

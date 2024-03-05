@@ -1,10 +1,9 @@
+import { noop } from '../common/noop';
 import { HttpRequestTrigger } from '../types/HttpRequestTrigger';
 
 export class ImmediateTrigger implements HttpRequestTrigger {
-    start(requestTrigger: () => Promise<void>): void {
+    dispatch(requestTrigger: () => Promise<void>): () => void {
         requestTrigger();
-    }
-    stop(): void {
-        //
+        return noop;
     }
 }

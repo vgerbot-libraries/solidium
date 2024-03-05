@@ -1,10 +1,8 @@
+import { noop } from '../common/noop';
 import { HttpRequestTrigger } from '../types/HttpRequestTrigger';
 
 export class PassiveTrigger implements HttpRequestTrigger {
-    start(): void {
-        // PASS
-    }
-    stop(): void {
-        // PASS
+    dispatch() {
+        return noop;
     }
 }

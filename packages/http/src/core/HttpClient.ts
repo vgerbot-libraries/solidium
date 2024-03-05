@@ -1,23 +1,24 @@
 import { ApplicationContext, Factory, Inject, PostInject } from '@vgerbot/ioc';
-import { HTTP_CONFIGURER, HTTP_CONFIGURATION } from './constants';
+import { HTTP_CONFIGURATION, HTTP_CONFIGURER } from './constants';
 
-import { HttpRequestOptions } from '../types/HttpRequestOptions';
-import { Resource } from '../types/Resource';
-import { HttpConfigurer } from '../types/HttpConfigurer';
-import { HttpInterceptorRegistryImpl } from './HttpInterceptorRegistryImpl';
+import { MemoryStorageProvider } from '../cache/provider/MemoryStorageProvider';
+import { NoCacheStrategy } from '../cache/strategy/NoCacheStrategy';
+import { createTrigger } from '../common/createTrigger';
+import { keep } from '../common/keep';
+import { WorkerResource } from '../resource/WorkerResource';
+import { CacheStrategy } from '../types/CacheStrategy';
 import {
     HttpConfiguration,
     HttpConfigurationOptions
 } from '../types/HttpConfiguration';
-import { internalFetcher } from './internanFetcher';
-import { keep } from '../common/keep';
-import { HttpHeadersImpl } from './HttpHeadersImpl';
-import { WorkerResource } from '../resource/WorkerResource';
-import { MemoryStorageProvider } from '../cache/provider/MemoryStorageProvider';
-import { NoCacheStrategy } from '../cache/strategy/NoCacheStrategy';
+import { HttpConfigurer } from '../types/HttpConfigurer';
+import { HttpRequestOptions } from '../types/HttpRequestOptions';
+import { Resource } from '../types/Resource';
 import { StorageProvider } from '../types/StorageProvider';
-import { CacheStrategy } from '../types/CacheStrategy';
+import { HttpHeadersImpl } from './HttpHeadersImpl';
+import { HttpInterceptorRegistryImpl } from './HttpInterceptorRegistryImpl';
 import { internalValidateStatus } from './internalValidateStatus';
+import { internalFetcher } from './internanFetcher';
 
 export class HttpClient {
     static configure(configuration: HttpConfigurationOptions) {
@@ -50,15 +51,22 @@ export class HttpClient {
             search,
             fetcher,
             storageProvider: storageProviderClass,
-            cacheStrategy: cacheStrategyClass
+            cacheStrategy: cacheStrategyClass,
+            trigger: triggerOption
         } = this.configurationOptions;
+        const appCtx = this.appCtx;
 
-        const storageProvider = this.appCtx.getInstance(
+        const storageProvider = appCtx.getInstance(
             storageProviderClass || MemoryStorageProvider
         ) as StorageProvider;
-        const cacheStrategy = this.appCtx.getInstance(
+        const cacheStrategy = appCtx.getInstance(
             cacheStrategyClass || NoCacheStrategy
         ) as CacheStrategy;
+
+        const defaultTrigger = createTrigger(
+            this.appCtx,
+            triggerOption || { immediate: true }
+        );
 
         this.configuration = {
             baseUrl: new URL(globalThis.location.origin),
@@ -68,13 +76,21 @@ export class HttpClient {
             fetcher: internalFetcher,
             storageProvider: storageProvider,
             cacheStrategy,
+            trigger: defaultTrigger,
             clone() {
                 return {
                     ...this,
                     interceptors: this.interceptors.slice(0),
                     search: {
                         ...this.search
-                    }
+                    },
+                    storageProvider: appCtx.getInstance(
+                        storageProviderClass || MemoryStorageProvider
+                    ) as StorageProvider,
+                    cacheStrategy: appCtx.getInstance(
+                        cacheStrategyClass || NoCacheStrategy
+                    ) as CacheStrategy,
+                    trigger: createTrigger(appCtx, triggerOption)
                 };
             },
             validateStatus: internalValidateStatus

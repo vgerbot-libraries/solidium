@@ -30,7 +30,7 @@ export class SmartTrigger implements HttpRequestTrigger {
             this.triggers.push(new OnOnlineTrigger());
         }
     }
-    start(requestTrigger: () => Promise<void>): void {
+    dispatch(requestTrigger: () => Promise<void>): () => void {
         let promise: undefined | Promise<void>;
         async function ensureSingleTrigger() {
             if (!!promise) {
@@ -40,9 +40,11 @@ export class SmartTrigger implements HttpRequestTrigger {
                 promise = undefined;
             });
         }
-        this.triggers.forEach(trigger => trigger.start(ensureSingleTrigger));
-    }
-    stop(): void {
-        this.triggers.forEach(trigger => trigger.stop());
+        const stops = this.triggers.map(trigger =>
+            trigger.dispatch(ensureSingleTrigger)
+        );
+        return () => {
+            stops.forEach(stop => stop());
+        };
     }
 }

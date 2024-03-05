@@ -1,16 +1,16 @@
 import { HttpRequestTrigger } from '../types/HttpRequestTrigger';
 
 export class IdleTrigger implements HttpRequestTrigger {
-    private isStopped = false;
-    start(
+    dispatch(
         requestTrigger: (revalidate?: boolean | undefined) => Promise<void>
-    ): void {
+    ): () => void {
+        let stopped = false;
         requestIdleCallback(() => {
-            if (this.isStopped) return;
+            if (stopped) return;
             requestTrigger();
         });
-    }
-    stop(): void {
-        this.isStopped = true;
+        return () => {
+            stopped = true;
+        };
     }
 }

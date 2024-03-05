@@ -4,9 +4,10 @@ import { CacheStrategy } from './CacheStrategy';
 import { Fetcher } from './Fetcher';
 import { HttpHeaders } from './HttpHeaders';
 import { HttpInterceptor } from './HttpInterceptor';
-import { HttpRequestTrigger } from './HttpRequestTrigger';
 import { Cloneable } from './Cloneable';
 import { HttpResponse } from './HttpResponse';
+import { HttpRequestTriggerOptions } from './HttpRequestTriggerOptions';
+import { HttpRequestTrigger } from './HttpRequestTrigger';
 
 export interface HttpConfigurationOptions {
     baseUrl?: string | URL;
@@ -15,6 +16,10 @@ export interface HttpConfigurationOptions {
     headers?: Record<string, string | string[]>;
     fetcher?: Fetcher;
     validateStatus?(response: HttpResponse): Promise<boolean>;
+    trigger?:
+        | HttpRequestTriggerOptions
+        | Newable<HttpRequestTrigger>
+        | HttpRequestTrigger;
     storageProvider?: Newable<StorageProvider>;
     cacheStrategy?: Newable<CacheStrategy>;
 }
@@ -27,5 +32,6 @@ export interface HttpConfiguration extends Cloneable<HttpConfiguration> {
     fetcher: Fetcher;
     storageProvider: StorageProvider;
     cacheStrategy: CacheStrategy;
+    trigger?: HttpRequestTrigger;
     validateStatus(response: HttpResponse): Promise<void>;
 }

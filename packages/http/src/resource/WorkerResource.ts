@@ -1,10 +1,3 @@
-import { Signal } from '@vgerbot/solidium';
-import { HttpRequestImpl } from '../core/HttpRequestImpl';
-import { HttpConfiguration } from '../types/HttpConfiguration';
-import { HttpRequest } from '../types/HttpRequest';
-import { HttpRequestOptions } from '../types/HttpRequestOptions';
-import { HttpResponse } from '../types/HttpResponse';
-import { Resource } from '../types/Resource';
 import {
     ApplicationContext,
     Inject,
@@ -12,12 +5,18 @@ import {
     PreDestroy,
     Scope
 } from '@vgerbot/ioc';
-import { HttpRequestTrigger } from '../types/HttpRequestTrigger';
+import { Signal } from '@vgerbot/solidium';
 import { Defer } from '../common/Defer';
+import { createTrigger } from '../common/createTrigger';
+import { noop } from '../common/noop';
+import { HttpRequestImpl } from '../core/HttpRequestImpl';
+import { PassiveTrigger } from '../trigger';
+import { HttpConfiguration } from '../types/HttpConfiguration';
 import { HttpMethod } from '../types/HttpMethod';
-import { SmartTrigger } from '../trigger/SmartTrigger';
-import { HttpRequestTriggerOptions } from '../types/HttpRequestTriggerOptions';
-import { ImmediateTrigger, PassiveTrigger } from '../trigger';
+import { HttpRequest } from '../types/HttpRequest';
+import { HttpRequestOptions } from '../types/HttpRequestOptions';
+import { HttpResponse } from '../types/HttpResponse';
+import { Resource } from '../types/Resource';
 
 enum ResourceStatus {
     IDLE = 'idle',
@@ -53,7 +52,7 @@ export class WorkerResource implements Resource {
         return this._response;
     }
     request!: HttpRequest;
-    private trigger!: HttpRequestTrigger;
+    private stopTrigger = noop;
     private responseDefer = new Defer<HttpResponse>();
     public get responsePromise() {
         return this.responseDefer.promise;
@@ -61,30 +60,18 @@ export class WorkerResource implements Resource {
 
     init(configuration: HttpConfiguration, requestOptions: HttpRequestOptions) {
         this.request = new HttpRequestImpl(configuration, requestOptions);
-        let trigger: HttpRequestTrigger;
-        if (typeof requestOptions.trigger === 'function') {
-            trigger = this.appCtx.getInstance(requestOptions.trigger);
-        } else if (
-            !!requestOptions.trigger &&
-            typeof requestOptions.trigger === 'object'
-        ) {
-            trigger = new SmartTrigger(
-                requestOptions.trigger as HttpRequestTriggerOptions
-            );
-        } else if (requestOptions.trigger) {
-            trigger = new ImmediateTrigger();
-        } else {
-            trigger = new PassiveTrigger();
-        }
-        this.trigger = trigger;
+        const trigger =
+            createTrigger(this.appCtx, requestOptions.trigger) ||
+            configuration.trigger ||
+            new PassiveTrigger();
 
-        this.trigger.start(() => {
+        this.stopTrigger = trigger.dispatch(() => {
             return this.refetch();
         });
     }
     @PreDestroy()
     onCleanup() {
-        this.trigger.stop();
+        this.stopTrigger();
     }
     async refetch(force?: boolean) {
         if (this.pending) {
