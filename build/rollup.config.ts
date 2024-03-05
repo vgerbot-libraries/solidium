@@ -27,67 +27,75 @@ const outputConfig = [
 
 const extensions = ['.ts', '.tsx', '.js', '.jsx'];
 
-const rollupConfig: RollupOptions = {
-    output: outputConfig,
-    input: inputFile,
-    watch: isServingExamples
-        ? {
-              chokidar: {
-                  ignored: '*/node_moduless/**'
+const rollupConfig: RollupOptions[] = outputConfig.map(output => {
+    return {
+        output: output,
+        input: inputFile,
+        watch: isServingExamples
+            ? {
+                  chokidar: {
+                      ignored: '*/node_moduless/**'
+                  }
               }
-          }
-        : false,
-    plugins: [
-        nodeResolve({
-            mainFields: ['module', 'browser', 'main'],
-            extensions
-        }),
-        commonjs({
-            include: 'node_modules/**',
-            ignore: [],
-            sourceMap: false,
-            extensions
-        }),
-        typescript({
-            exclude: 'node_modules/**',
-            tsconfig: path.resolve(process.cwd(), 'tsconfig.json')
-        }),
-        babel({
-            extensions,
-            babelHelpers: 'bundled',
-            presets: ['solid', '@babel/preset-typescript'],
-            exclude: /node_modules\//,
-            plugins: [
-                [
-                    '@babel/plugin-proposal-decorators',
-                    {
-                        legacy: true
-                    }
-                ]
-            ]
-        }),
-        isServingExamples && html(),
-        isServingExamples &&
-            serve({
-                port: Number(process.env.SERVE_PORT),
-                dirs: 'dist'
+            : false,
+        plugins: [
+            nodeResolve({
+                mainFields: ['module', 'browser', 'main'],
+                extensions
             }),
-        isServingExamples &&
-            alias({
-                entries: [
-                    {
-                        find: '@vgerbot/solidium',
-                        replacement: path.resolve(
-                            process.cwd(),
-                            '../../solidium/src/index.ts'
-                        )
+            commonjs({
+                include: 'node_modules/**',
+                ignore: [],
+                sourceMap: false,
+                extensions
+            }),
+            typescript({
+                exclude: 'node_modules/**',
+                tsconfig: path.resolve(process.cwd(), 'tsconfig.json'),
+                tsconfigOverride: {
+                    compilerOptions: {
+                        target: output.format === 'es' ? 'es6' : 'es5'
                     }
+                }
+            }),
+            babel({
+                extensions,
+                babelHelpers: 'bundled',
+                presets: ['solid', '@babel/preset-typescript'],
+                exclude: /node_modules\//,
+                plugins: [
+                    [
+                        '@babel/plugin-proposal-decorators',
+                        {
+                            legacy: true
+                        }
+                    ]
                 ]
-            })
-    ].filter(Boolean),
-    external: isServingExamples ? [] : new RegExp('node_modules|@vgerbot\\/')
-};
-
+            }),
+            isServingExamples && html(),
+            isServingExamples &&
+                serve({
+                    port: Number(process.env.SERVE_PORT),
+                    dirs: 'dist'
+                }),
+            isServingExamples &&
+                alias({
+                    entries: [
+                        {
+                            find: '@vgerbot/solidium',
+                            replacement: path.resolve(
+                                process.cwd(),
+                                '../../solidium/src/index.ts'
+                            )
+                        }
+                    ]
+                })
+        ].filter(Boolean),
+        external: isServingExamples
+            ? []
+            : new RegExp('node_modules|@vgerbot\\/')
+    } as RollupOptions;
+});
 export default rollupConfig;
 
 function createOutputConfig(
