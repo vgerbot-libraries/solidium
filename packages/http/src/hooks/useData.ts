@@ -1,9 +1,9 @@
 import { DataResource } from '../resource/DataResource';
-import { HttpRequestOptions } from '../types/HttpRequestOptions';
+import { CreateResourceOptions } from '../types/CreateResourceOptions';
 import { useResource } from './useResource';
 
 export function useData<T>(
-    options: HttpRequestOptions,
+    options: CreateResourceOptions,
     parser: (blob: Blob) => Promise<T>
 ) {
     const res = useResource(options);

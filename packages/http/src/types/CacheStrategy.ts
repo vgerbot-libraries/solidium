@@ -9,6 +9,7 @@ export interface CacheStrategy {
      */
     execute(
         request: HttpRequest,
-        invoke: (response?: HttpResponse) => Promise<void>
-    ): Promise<void>;
+        invoke: (response?: HttpResponse) => Promise<HttpResponse>
+    ): Promise<HttpResponse>;
+    clearCache(request: HttpRequest): Promise<void>;
 }

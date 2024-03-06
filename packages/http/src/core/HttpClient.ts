@@ -2,7 +2,7 @@ import { ApplicationContext, Factory, Inject, PostInject } from '@vgerbot/ioc';
 import { HTTP_CONFIGURATION, HTTP_CONFIGURER } from './constants';
 
 import { MemoryStorageProvider } from '../cache/provider/MemoryStorageProvider';
-import { NoCacheStrategy } from '../cache/strategy/NoCacheStrategy';
+import { DefaultCacheStrategy } from '../cache/strategy/DefaultCacheStrategy';
 import { createTrigger } from '../common/createTrigger';
 import { keep } from '../common/keep';
 import { WorkerResource } from '../resource/WorkerResource';
@@ -12,7 +12,7 @@ import {
     HttpConfigurationOptions
 } from '../types/HttpConfiguration';
 import { HttpConfigurer } from '../types/HttpConfigurer';
-import { HttpRequestOptions } from '../types/HttpRequestOptions';
+import { CreateResourceOptions } from '../types/CreateResourceOptions';
 import { Resource } from '../types/Resource';
 import { StorageProvider } from '../types/StorageProvider';
 import { HttpHeadersImpl } from './HttpHeadersImpl';
@@ -60,7 +60,7 @@ export class HttpClient {
             storageProviderClass || MemoryStorageProvider
         ) as StorageProvider;
         const cacheStrategy = appCtx.getInstance(
-            cacheStrategyClass || NoCacheStrategy
+            cacheStrategyClass || DefaultCacheStrategy
         ) as CacheStrategy;
 
         const defaultTrigger = createTrigger(
@@ -88,9 +88,9 @@ export class HttpClient {
                         storageProviderClass || MemoryStorageProvider
                     ) as StorageProvider,
                     cacheStrategy: appCtx.getInstance(
-                        cacheStrategyClass || NoCacheStrategy
+                        cacheStrategyClass || DefaultCacheStrategy
                     ) as CacheStrategy,
-                    trigger: createTrigger(appCtx, triggerOption)
+                    trigger: defaultTrigger
                 };
             },
             validateStatus: internalValidateStatus
@@ -135,7 +135,7 @@ export class HttpClient {
         );
     }
 
-    createResource(options: HttpRequestOptions): Resource {
+    createResource(options: CreateResourceOptions): Resource {
         const worker = this.appCtx.getInstance(WorkerResource);
         worker.init(this.configuration.clone(), options);
         return worker;

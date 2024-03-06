@@ -5,6 +5,7 @@ import { HttpRequestTrigger } from './HttpRequestTrigger';
 import { HttpRequestTriggerOptions } from './HttpRequestTriggerOptions';
 
 export interface HttpRequestOptions {
+    key?: string;
     url: string | URL;
     method?: HttpMethod;
     body?: HttpEntity;

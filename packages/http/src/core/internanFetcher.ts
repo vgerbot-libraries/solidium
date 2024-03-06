@@ -25,8 +25,14 @@ export const internalFetcher: Fetcher = async (
     });
     const responseHeaders = HttpHeadersImpl.fromNativeHeaders(response.headers);
 
+    let bodyPromise: Promise<Blob>;
     return {
-        body: () => response.blob(),
+        body: () => {
+            if (!bodyPromise) {
+                bodyPromise = response.blob();
+            }
+            return bodyPromise;
+        },
         headers: responseHeaders,
         status: response.status,
         statusText: response.statusText,

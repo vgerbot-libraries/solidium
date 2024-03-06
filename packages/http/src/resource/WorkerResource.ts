@@ -6,6 +6,7 @@ import {
     Scope
 } from '@vgerbot/ioc';
 import { Signal } from '@vgerbot/solidium';
+import { createEffect, on } from 'solid-js';
 import { Defer } from '../common/Defer';
 import { createTrigger } from '../common/createTrigger';
 import { noop } from '../common/noop';
@@ -17,6 +18,7 @@ import { HttpRequest } from '../types/HttpRequest';
 import { HttpRequestOptions } from '../types/HttpRequestOptions';
 import { HttpResponse } from '../types/HttpResponse';
 import { Resource } from '../types/Resource';
+import { CreateResourceOptions } from '../types/CreateResourceOptions';
 
 enum ResourceStatus {
     IDLE = 'idle',
@@ -58,22 +60,58 @@ export class WorkerResource implements Resource {
         return this.responseDefer.promise;
     }
 
-    init(configuration: HttpConfiguration, requestOptions: HttpRequestOptions) {
-        this.request = new HttpRequestImpl(configuration, requestOptions);
-        const trigger =
-            createTrigger(this.appCtx, requestOptions.trigger) ||
-            configuration.trigger ||
-            new PassiveTrigger();
+    init(
+        configuration: HttpConfiguration,
+        createResourceOptions: CreateResourceOptions
+    ) {
+        createEffect(
+            on(
+                () => {
+                    return this.convertToRequestOptions(createResourceOptions);
+                },
+                requestOptions => {
+                    this.stopTrigger();
+                    this.request = new HttpRequestImpl(
+                        configuration,
+                        requestOptions
+                    );
+                    const trigger =
+                        createTrigger(this.appCtx, requestOptions.trigger) ||
+                        configuration.trigger ||
+                        new PassiveTrigger();
 
-        this.stopTrigger = trigger.dispatch(() => {
-            return this.refetch();
-        });
+                    this.stopTrigger = trigger.dispatch(() => {
+                        return this.refetch();
+                    });
+                }
+            )
+        );
+    }
+    private convertToRequestOptions(options: CreateResourceOptions) {
+        const obtainProperty = (
+            key: keyof CreateResourceOptions
+        ): HttpRequestOptions[keyof HttpRequestOptions] => {
+            const value = options[key];
+            if (typeof value === 'function') {
+                return value();
+            }
+            return value;
+        };
+        return {
+            key: obtainProperty('key'),
+            url: obtainProperty('url'),
+            method: options.method || HttpMethod.GET,
+            body: obtainProperty('body'),
+            headers: options.headers,
+            queries: obtainProperty('queries'),
+            trigger: options.trigger
+        } as HttpRequestOptions;
     }
     @PreDestroy()
     onCleanup() {
         this.stopTrigger();
     }
-    async refetch(force?: boolean) {
+    async refetch(clearCache?: boolean) {
         if (this.pending) {
             try {
                 await this.responseDefer.promise;
@@ -86,7 +124,7 @@ export class WorkerResource implements Resource {
         this._response = undefined;
         try {
             const configuration = this.request.configuration;
-            const response = await this.executeRequest(force);
+            const response = await this.executeRequest(clearCache);
             await configuration.validateStatus(response);
             this.status = ResourceStatus.SUCCESS;
             this._response = response;
@@ -96,22 +134,26 @@ export class WorkerResource implements Resource {
             this.responseDefer.reject(error);
         }
     }
-    private async executeRequest(force?: boolean) {
+    private async executeRequest(clearCache?: boolean) {
         const configuration = this.request.configuration;
-        const executeRequest = (
+        const executeRequest = async (
             request: HttpRequest
         ): Promise<HttpResponse> => {
-            if (force) {
-                return this.executeRequestWithoutCache(request);
+            const cacheStrategy = request.configuration.cacheStrategy;
+            if (clearCache) {
+                await cacheStrategy.clearCache(request);
             }
-            switch (request.method) {
-                case HttpMethod.PUT:
-                case HttpMethod.DELETE:
-                case HttpMethod.PATCH:
-                case HttpMethod.POST:
-                    return this.executeRequestWithoutCache(request);
-            }
-            return this.executeRequestWithCache(request);
+            return request.configuration.cacheStrategy.execute(
+                request,
+                async (cachedResponse?: HttpResponse) => {
+                    if (cachedResponse) {
+                        return Promise.resolve(cachedResponse);
+                    } else {
+                        const fetcher = request.configuration.fetcher;
+                        return fetcher(request);
+                    }
+                }
+            );
         };
         const interceptedRequestExecutor =
             configuration.interceptors.reduceRight((next, interceptor) => {
@@ -120,28 +162,5 @@ export class WorkerResource implements Resource {
                 };
             }, executeRequest);
         return interceptedRequestExecutor(this.request.clone());
-    }
-    private executeRequestWithoutCache(
-        request: HttpRequest
-    ): Promise<HttpResponse> {
-        const fetcher = request.configuration.fetcher;
-        return fetcher(request);
-    }
-    private executeRequestWithCache(
-        request: HttpRequest
-    ): Promise<HttpResponse> {
-        const defer = new Defer<HttpResponse>();
-        request.configuration.cacheStrategy.execute(
-            request,
-            async (cachedResponse?: HttpResponse) => {
-                if (cachedResponse) {
-                    defer.resolve(cachedResponse);
-                } else {
-                    const fetcher = request.configuration.fetcher;
-                    fetcher(request).then(defer.resolve, defer.reject);
-                }
-            }
-        );
-        return defer.promise;
     }
 }

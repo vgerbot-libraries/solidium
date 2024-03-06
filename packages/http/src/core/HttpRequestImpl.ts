@@ -7,7 +7,6 @@ import { HttpRequest } from '../types/HttpRequest';
 import { HttpRequestOptions } from '../types/HttpRequestOptions';
 
 export class HttpRequestImpl implements HttpRequest {
-    key: string | symbol;
     url: URL;
     body: HttpEntity;
     headers: HttpHeaders;
@@ -17,7 +16,18 @@ export class HttpRequestImpl implements HttpRequest {
         private readonly requestOptions: HttpRequestOptions
     ) {
         const url = new URL(requestOptions.url, configuration.baseUrl);
-        this.key = url.toString();
+        const queries = {
+            ...configuration.search,
+            ...(requestOptions.queries || {})
+        };
+        for (const key in queries) {
+            const value = queries[key];
+            if (Array.isArray(value)) {
+                value.forEach(it => url.searchParams.append(key, it));
+            } else {
+                url.searchParams.set(key, value);
+            }
+        }
         this.url = url;
         this.body = requestOptions.body || new EmptyEntity();
         this.headers = requestOptions.headers
@@ -27,5 +37,11 @@ export class HttpRequestImpl implements HttpRequest {
     }
     clone(): HttpRequest {
         return new HttpRequestImpl(this.configuration, this.requestOptions);
+    }
+    get key(): string {
+        if (this.requestOptions['key']) {
+            return this.requestOptions.key;
+        }
+        return this.url.toString();
     }
 }

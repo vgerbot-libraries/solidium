@@ -1,6 +1,6 @@
-import { HttpRequestOptions } from '../types/HttpRequestOptions';
+import { CreateResourceOptions } from '../types/CreateResourceOptions';
 import { useData } from './useData';
 
-export function useBlob(options: HttpRequestOptions) {
+export function useBlob(options: CreateResourceOptions) {
     return useData(options, blob => Promise.resolve(blob));
 }
