@@ -1,4 +1,5 @@
 import { ApplicationContext, Factory, Inject, PostInject } from '@vgerbot/ioc';
+import { untrack } from 'solid-js';
 import { HTTP_CONFIGURATION, HTTP_CONFIGURER } from './constants';
 
 import { MemoryStorageProvider } from '../cache/provider/MemoryStorageProvider';
@@ -19,6 +20,7 @@ import { HttpHeadersImpl } from './HttpHeadersImpl';
 import { HttpInterceptorRegistryImpl } from './HttpInterceptorRegistryImpl';
 import { internalValidateStatus } from './internalValidateStatus';
 import { internalFetcher } from './internanFetcher';
+import { HttpRequest } from '../types/HttpRequest';
 
 export class HttpClient {
     static configure(configuration: HttpConfigurationOptions) {
@@ -120,7 +122,11 @@ export class HttpClient {
                 this.configuration.search[key] = search[key] + '';
             }
         }
-        this.configuration.fetcher = fetcher || this.configuration.fetcher;
+        this.configuration.fetcher = (request: HttpRequest) => {
+            return untrack(() => {
+                return (fetcher || this.configuration.fetcher)(request);
+            });
+        };
 
         this.configurers?.forEach(configurer => {
             configurer.configHeaders &&
