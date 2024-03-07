@@ -11,6 +11,7 @@ export class HttpRequestImpl implements HttpRequest {
     body: HttpEntity;
     headers: HttpHeaders;
     method: HttpMethod;
+    disableCache: boolean;
     constructor(
         public readonly configuration: HttpConfiguration,
         private readonly requestOptions: HttpRequestOptions
@@ -34,6 +35,7 @@ export class HttpRequestImpl implements HttpRequest {
             ? configuration.headers.mergeAll(requestOptions.headers)
             : configuration.headers.clone();
         this.method = requestOptions.method || HttpMethod.GET;
+        this.disableCache = requestOptions.disableCache || false;
     }
     clone(): HttpRequest {
         return new HttpRequestImpl(this.configuration, this.requestOptions);

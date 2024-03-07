@@ -15,4 +15,5 @@ export interface HttpRequestOptions {
      * Configuration for triggering automatic requests.
      */
     trigger?: HttpRequestTriggerOptions | HttpRequestTrigger;
+    disableCache?: boolean;
 }

@@ -11,4 +11,5 @@ export interface HttpRequest extends Cloneable<HttpRequest> {
     headers: HttpHeaders;
     method: HttpMethod;
     configuration: HttpConfiguration;
+    disableCache: boolean;
 }

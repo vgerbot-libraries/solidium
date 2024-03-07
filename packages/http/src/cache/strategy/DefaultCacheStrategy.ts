@@ -47,6 +47,9 @@ export class DefaultCacheStrategy implements CacheStrategy {
             case HttpMethod.POST:
                 return next();
         }
+        if (request.disableCache) {
+            return next();
+        }
         const provider = request.configuration.storageProvider;
         const key = request.key;
         return provider.get(key).then(value => {

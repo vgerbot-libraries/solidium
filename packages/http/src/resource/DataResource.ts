@@ -63,7 +63,6 @@ export class DataHttpResponse<T> implements HttpResponse {
 }
 
 export class DataResource<T> extends DelegateResource<DataHttpResponse<T>> {
-    [Symbol.toStringTag]: string = 'data-resource';
     @lazyMember({
         evaluate: (instance: DataResource<T>) => {
             const origin = instance.target.response;
