@@ -19,6 +19,7 @@ import { HttpRequestOptions } from '../types/HttpRequestOptions';
 import { HttpResponse } from '../types/HttpResponse';
 import { Resource } from '../types/Resource';
 import { CreateResourceOptions } from '../types/CreateResourceOptions';
+import { HTTPError } from '../error/HTTPError';
 
 enum ResourceStatus {
     IDLE = 'idle',
@@ -52,6 +53,11 @@ export class WorkerResource implements Resource {
     private _response: HttpResponse | undefined;
     get response(): HttpResponse | undefined {
         return this._response;
+    }
+    @Signal
+    private _error: HTTPError | undefined;
+    public get error(): HTTPError | undefined {
+        return this._error;
     }
     request!: HttpRequest;
     private stopTrigger = noop;
@@ -122,6 +128,7 @@ export class WorkerResource implements Resource {
         }
         this.status = ResourceStatus.PENDING;
         this._response = undefined;
+        this._error = undefined;
         try {
             const configuration = this.request.configuration;
             const response = await this.executeRequest(clearCache);

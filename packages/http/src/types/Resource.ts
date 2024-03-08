@@ -1,3 +1,4 @@
+import { HTTPError } from '../error/HTTPError';
 import { HttpRequest } from './HttpRequest';
 import { HttpResponse } from './HttpResponse';
 
@@ -10,5 +11,6 @@ export interface Resource<T extends HttpResponse = HttpResponse> {
     readonly response: T | undefined;
     readonly request: HttpRequest;
     readonly responsePromise: Promise<T>;
+    readonly error: HTTPError | undefined;
     refetch(clearCache?: boolean): Promise<void>;
 }
