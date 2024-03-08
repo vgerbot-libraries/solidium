@@ -1,5 +1,4 @@
 import { createEntity } from '../common/createEntity';
-import { EmptyEntity } from '../entity/EmptyEntity';
 import { HttpConfiguration } from '../types/HttpConfiguration';
 import { HttpEntity } from '../types/HttpEntity';
 import { HttpHeaders } from '../types/HttpHeaders';
@@ -18,12 +17,12 @@ export class HttpRequestImpl implements HttpRequest {
         private readonly requestOptions: HttpRequestOptions
     ) {
         const url = new URL(requestOptions.url, configuration.baseUrl);
-        const queries = {
+        const searchParams = {
             ...configuration.search,
-            ...(requestOptions.queries || {})
+            ...(requestOptions.search || {})
         };
-        for (const key in queries) {
-            const value = queries[key];
+        for (const key in searchParams) {
+            const value = searchParams[key];
             if (Array.isArray(value)) {
                 value.forEach(it => url.searchParams.append(key, it));
             } else {

@@ -109,7 +109,7 @@ export class WorkerResource implements Resource {
             method: options.method || HttpMethod.GET,
             body: obtainProperty('body'),
             headers: options.headers,
-            queries: obtainProperty('queries'),
+            search: obtainProperty('search'),
             trigger: options.trigger
         } as HttpRequestOptions;
     }

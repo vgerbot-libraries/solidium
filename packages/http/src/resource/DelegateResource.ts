@@ -1,3 +1,4 @@
+import { HTTPError } from '../error/HTTPError';
 import { HttpRequest } from '../types/HttpRequest';
 import { HttpResponse } from '../types/HttpResponse';
 import { Resource } from '../types/Resource';
@@ -22,6 +23,9 @@ export abstract class DelegateResource<T extends HttpResponse>
     }
     get request(): HttpRequest {
         return this.target.request;
+    }
+    get error(): HTTPError | undefined {
+        return this.target.error;
     }
     abstract get response(): T | undefined;
     abstract get responsePromise(): Promise<T>;
