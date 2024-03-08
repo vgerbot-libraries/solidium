@@ -18,6 +18,10 @@ export const internalFetcher: Fetcher = async (
             requestNativeHeaders.append(key, value);
         });
     });
+    const contentType = request.body.contentType();
+    if (!contentType.isNone() && !requestNativeHeaders.has('Content-Type')) {
+        requestNativeHeaders.set('Content-Type', contentType.toString());
+    }
     const response = await fetch(request.url, {
         method: request.method,
         headers: requestNativeHeaders,

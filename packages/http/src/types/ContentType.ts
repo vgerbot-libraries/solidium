@@ -30,4 +30,7 @@ export class ContentType implements Cloneable<ContentType> {
     charset(): Charset | string | undefined {
         return this._charset;
     }
+    isNone() {
+        return !this._mediaType;
+    }
 }

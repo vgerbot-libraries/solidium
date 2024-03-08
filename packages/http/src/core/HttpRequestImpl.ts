@@ -1,3 +1,4 @@
+import { createEntity } from '../common/createEntity';
 import { EmptyEntity } from '../entity/EmptyEntity';
 import { HttpConfiguration } from '../types/HttpConfiguration';
 import { HttpEntity } from '../types/HttpEntity';
@@ -30,7 +31,8 @@ export class HttpRequestImpl implements HttpRequest {
             }
         }
         this.url = url;
-        this.body = requestOptions.body || new EmptyEntity();
+        const body = createEntity(requestOptions.body);
+        this.body = body;
         this.headers = requestOptions.headers
             ? configuration.headers.mergeAll(requestOptions.headers)
             : configuration.headers.clone();
