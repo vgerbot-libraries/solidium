@@ -15,7 +15,7 @@ export const Auto = Mark(SOLIDIUM_MARK_CLASS_AUTO, {
     [IS_CLASS_DECORATOR_PROCESSOR]: true,
     afterInstantiation(instance: Record<string | symbol, unknown>) {
         if (!instance || typeof instance !== 'object') {
-            return;
+            return instance;
         }
         const prototype = Object.getPrototypeOf(instance);
         const owner = getOwner();
