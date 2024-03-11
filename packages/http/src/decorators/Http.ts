@@ -19,7 +19,7 @@ interface HttpDecorator extends PropertyDecorator {
     JSONData(options: CreateResourceOptions): PropertyDecorator;
 }
 
-function createHttpDecorator(
+function defineHttpDecorator(
     afterInstantiation: (
         instance: Record<MemberKey, unknown>,
         member: MemberKey
@@ -38,17 +38,17 @@ export const Http = (<T>(
     options: CreateResourceOptions,
     parser: (blob: Blob) => Promise<T>
 ) =>
-    createHttpDecorator((instance, member) => {
+    defineHttpDecorator((instance, member) => {
         instance[member] = useData(options, parser);
     })) as unknown as HttpDecorator;
 
 Http.JSON = (options: CreateResourceOptions) =>
-    createHttpDecorator((instance, member) => {
+    defineHttpDecorator((instance, member) => {
         instance[member] = useJSON(options);
     });
 
 Http.JSONData = (options: CreateResourceOptions) =>
-    createHttpDecorator((instance, member) => {
+    defineHttpDecorator((instance, member) => {
         const resource = useJSON(options);
         Object.defineProperty(instance, member, {
             get: () => resource.data
@@ -56,6 +56,6 @@ Http.JSONData = (options: CreateResourceOptions) =>
     });
 
 Http.SSEJSON = (options: CreateResourceOptions) =>
-    createHttpDecorator((instance, member) => {
+    defineHttpDecorator((instance, member) => {
         instance[member] = useSSEJSON(options);
     });
