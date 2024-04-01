@@ -1,4 +1,5 @@
 import { createEntity } from '../common/createEntity';
+import { resolveURL } from '../common/resolveURL';
 import { HttpConfiguration } from '../types/HttpConfiguration';
 import { HttpEntity } from '../types/HttpEntity';
 import { HttpHeaders } from '../types/HttpHeaders';
@@ -16,7 +17,7 @@ export class HttpRequestImpl implements HttpRequest {
         public readonly configuration: HttpConfiguration,
         private readonly requestOptions: HttpRequestOptions
     ) {
-        const url = new URL(requestOptions.url, configuration.baseUrl);
+        const url = resolveURL(configuration.baseUrl, requestOptions.url);
         const searchParams = {
             ...configuration.search,
             ...(requestOptions.search || {})

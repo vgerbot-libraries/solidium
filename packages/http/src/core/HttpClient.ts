@@ -71,7 +71,7 @@ export class HttpClient {
         );
 
         this.configuration = {
-            baseUrl: new URL(globalThis.location.origin),
+            baseUrl: undefined,
             interceptors: [],
             headers: HttpHeadersImpl.empty(),
             search: {},

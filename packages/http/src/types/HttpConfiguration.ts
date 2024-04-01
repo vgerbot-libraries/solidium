@@ -25,7 +25,7 @@ export interface HttpConfigurationOptions {
 }
 
 export interface HttpConfiguration extends Cloneable<HttpConfiguration> {
-    baseUrl: URL;
+    baseUrl?: URL;
     interceptors: HttpInterceptor[];
     search: Record<string, string>;
     headers: HttpHeaders;
