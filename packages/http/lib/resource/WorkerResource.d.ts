@@ -1,0 +1,28 @@
+import { HttpConfiguration } from '../types/HttpConfiguration';
+import { HttpRequest } from '../types/HttpRequest';
+import { HttpResponse } from '../types/HttpResponse';
+import { Resource } from '../types/Resource';
+import { CreateResourceOptions } from '../types/CreateResourceOptions';
+import { HTTPError } from '../error/HTTPError';
+export declare class WorkerResource implements Resource {
+    private appCtx;
+    private status;
+    get idle(): boolean;
+    get pending(): boolean;
+    get success(): boolean;
+    get failure(): boolean;
+    get completed(): boolean;
+    private _response;
+    get response(): HttpResponse | undefined;
+    private _error;
+    get error(): HTTPError | undefined;
+    request: HttpRequest;
+    private stopTrigger;
+    private responseDefer;
+    get responsePromise(): Promise<HttpResponse>;
+    init(configuration: HttpConfiguration, createResourceOptions: CreateResourceOptions): void;
+    private convertToRequestOptions;
+    onCleanup(): void;
+    refetch(clearCache?: boolean): Promise<void>;
+    private executeRequest;
+}
