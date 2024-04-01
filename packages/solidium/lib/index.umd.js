@@ -1,8 +1,8 @@
 (function (global, factory) {
-    typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('solid-js/web'), require('@vgerbot/ioc'), require('solid-js'), require('solid-js/store')) :
-    typeof define === 'function' && define.amd ? define(['exports', 'solid-js/web', '@vgerbot/ioc', 'solid-js', 'solid-js/store'], factory) :
-    (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.Solidium = {}, global.web, global.ioc, global.solidJs, global.store$1));
-})(this, (function (exports, web, ioc, solidJs, store$1) { 'use strict';
+    typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('solid-js/web'), require('@vgerbot/ioc'), require('solid-js')) :
+    typeof define === 'function' && define.amd ? define(['exports', 'solid-js/web', '@vgerbot/ioc', 'solid-js'], factory) :
+    (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.Solidium = {}, global.web, global.ioc, global.solidJs));
+})(this, (function (exports, web, ioc, solidJs) { 'use strict';
 
     /******************************************************************************
     Copyright (c) Microsoft Corporation.
@@ -441,17 +441,6 @@
       });
     }, _a));
 
-    var SOLIDIUM_MARK_CLASS_STORE = Symbol('solidium-mark-class-store');
-    var Store = function () {
-      var _a;
-      return ioc.Mark(SOLIDIUM_MARK_CLASS_STORE, (_a = {}, _a[IS_CLASS_DECORATOR_PROCESSOR] = true, _a.afterInstantiation = function (instance) {
-        if (!instance || typeof instance !== 'object') {
-          return instance;
-        }
-        return store$1.createStore(instance);
-      }, _a));
-    };
-
     var MissingSolidiumContextError = /** @class */function (_super) {
       __extends(MissingSolidiumContextError, _super);
       function MissingSolidiumContextError() {
@@ -486,12 +475,15 @@
     exports.Auto = Auto;
     exports.Batch = Batch;
     exports.Computed = Computed;
+    exports.IS_CLASS_DECORATOR_PROCESSOR = IS_CLASS_DECORATOR_PROCESSOR;
+    exports.IS_MEMBER_DECORATOR_PROCESSOR = IS_MEMBER_DECORATOR_PROCESSOR;
     exports.Observe = Observe;
     exports.Signal = Signal;
     exports.Solidium = Solidium;
-    exports.Store = Store;
     exports.Track = Track;
     exports.resultOf = resultOf;
+    exports.useApplicationContext = useApplicationContext;
+    exports.useComputed = useComputed;
     exports.useService = useService;
 
     Object.defineProperty(exports, '__esModule', { value: true });

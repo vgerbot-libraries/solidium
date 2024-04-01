@@ -1,7 +1,6 @@
 import { createComponent } from 'solid-js/web';
 import { ClassMetadata, ApplicationContext, InstanceScope, Mark } from '@vgerbot/ioc';
 import { createContext, createRoot, createSignal, createEffect, on, onCleanup, createMemo, untrack, batch, getOwner, runWithOwner, useContext } from 'solid-js';
-import { createStore } from 'solid-js/store';
 
 const IS_MEMBER_DECORATOR_PROCESSOR = Symbol('solidium-is-member-decorator-processor');
 const IS_CLASS_DECORATOR_PROCESSOR = Symbol('solidium-is-class-decorator-processor');
@@ -372,19 +371,6 @@ const Auto = Mark(SOLIDIUM_MARK_CLASS_AUTO, {
   }
 });
 
-const SOLIDIUM_MARK_CLASS_STORE = Symbol('solidium-mark-class-store');
-const Store = () => {
-  return Mark(SOLIDIUM_MARK_CLASS_STORE, {
-    [IS_CLASS_DECORATOR_PROCESSOR]: true,
-    afterInstantiation(instance) {
-      if (!instance || typeof instance !== 'object') {
-        return instance;
-      }
-      return createStore(instance);
-    }
-  });
-};
-
 class MissingSolidiumContextError extends Error {
   constructor() {
     super('<Solidium> not found. Please ensure it is added to the parent node.');
@@ -413,5 +399,5 @@ function useService(cls) {
   return instance;
 }
 
-export { Auto, Batch, Computed, Observe, Signal, Solidium, Store, Track, resultOf, useService };
+export { Auto, Batch, Computed, IS_CLASS_DECORATOR_PROCESSOR, IS_MEMBER_DECORATOR_PROCESSOR, Observe, Signal, Solidium, Track, resultOf, useApplicationContext, useComputed, useService };
 //# sourceMappingURL=index.es.js.map
