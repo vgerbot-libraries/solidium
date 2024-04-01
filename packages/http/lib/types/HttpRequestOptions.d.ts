@@ -10,7 +10,7 @@ export interface HttpRequestOptions {
     method?: HttpMethod;
     body?: HttpEntity | BodyInit | JSONType;
     headers?: HttpHeaders;
-    queries?: Record<string, string | string[]>;
+    search?: Record<string, string | string[]>;
     /**
      * Configuration for triggering automatic requests.
      */

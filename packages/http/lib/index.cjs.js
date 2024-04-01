@@ -1033,14 +1033,41 @@ function createEntity(data) {
   return new PlainTextEntity(data + '');
 }
 
+function resolveURL(baseURL, url) {
+  if (url instanceof URL) {
+    return url;
+  }
+  if (typeof url === 'string') {
+    if (/^\w+\:\/\/[^\/].+/.test(url)) {
+      return new URL(url);
+    }
+  }
+  if (!url && !baseURL) {
+    if (!baseURL) {
+      throw new Error('Cannot resolve base URL and request URL, both of them are not defined!');
+    }
+  }
+  if (!url) {
+    return new URL('', baseURL);
+  }
+  if (!baseURL) {
+    if (typeof globalThis.location === 'object') {
+      baseURL = globalThis.location.origin;
+    } else {
+      throw new Error('Cannot resolve base URL, current is not runing in browser environment!');
+    }
+  }
+  return new URL(url, baseURL);
+}
+
 var HttpRequestImpl = /** @class */function () {
   function HttpRequestImpl(configuration, requestOptions) {
     this.configuration = configuration;
     this.requestOptions = requestOptions;
-    var url = new URL(requestOptions.url, configuration.baseUrl);
-    var queries = __assign(__assign({}, configuration.search), requestOptions.queries || {});
+    var url = resolveURL(configuration.baseUrl, requestOptions.url);
+    var searchParams = __assign(__assign({}, configuration.search), requestOptions.search || {});
     var _loop_1 = function (key) {
-      var value = queries[key];
+      var value = searchParams[key];
       if (Array.isArray(value)) {
         value.forEach(function (it) {
           return url.searchParams.append(key, it);
@@ -1049,7 +1076,7 @@ var HttpRequestImpl = /** @class */function () {
         url.searchParams.set(key, value);
       }
     };
-    for (var key in queries) {
+    for (var key in searchParams) {
       _loop_1(key);
     }
     this.url = url;
@@ -1179,7 +1206,7 @@ var WorkerResource = /** @class */function () {
       method: options.method || HttpMethod.GET,
       body: obtainProperty('body'),
       headers: options.headers,
-      queries: obtainProperty('queries'),
+      search: obtainProperty('search'),
       trigger: options.trigger
     };
   };
@@ -1412,7 +1439,7 @@ var HttpClient = /** @class */function () {
       immediate: true
     });
     this.configuration = {
-      baseUrl: new URL(globalThis.location.origin),
+      baseUrl: undefined,
       interceptors: [],
       headers: HttpHeadersImpl.empty(),
       search: {},

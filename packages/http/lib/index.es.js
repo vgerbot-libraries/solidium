@@ -870,14 +870,41 @@ function createEntity(data) {
   return new PlainTextEntity(data + '');
 }
 
+function resolveURL(baseURL, url) {
+  if (url instanceof URL) {
+    return url;
+  }
+  if (typeof url === 'string') {
+    if (/^\w+\:\/\/[^\/].+/.test(url)) {
+      return new URL(url);
+    }
+  }
+  if (!url && !baseURL) {
+    if (!baseURL) {
+      throw new Error('Cannot resolve base URL and request URL, both of them are not defined!');
+    }
+  }
+  if (!url) {
+    return new URL('', baseURL);
+  }
+  if (!baseURL) {
+    if (typeof globalThis.location === 'object') {
+      baseURL = globalThis.location.origin;
+    } else {
+      throw new Error('Cannot resolve base URL, current is not runing in browser environment!');
+    }
+  }
+  return new URL(url, baseURL);
+}
+
 class HttpRequestImpl {
   constructor(configuration, requestOptions) {
     this.configuration = configuration;
     this.requestOptions = requestOptions;
-    const url = new URL(requestOptions.url, configuration.baseUrl);
-    const queries = Object.assign(Object.assign({}, configuration.search), requestOptions.queries || {});
-    for (const key in queries) {
-      const value = queries[key];
+    const url = resolveURL(configuration.baseUrl, requestOptions.url);
+    const searchParams = Object.assign(Object.assign({}, configuration.search), requestOptions.search || {});
+    for (const key in searchParams) {
+      const value = searchParams[key];
       if (Array.isArray(value)) {
         value.forEach(it => url.searchParams.append(key, it));
       } else {
@@ -971,7 +998,7 @@ let WorkerResource = class WorkerResource {
       method: options.method || HttpMethod.GET,
       body: obtainProperty('body'),
       headers: options.headers,
-      queries: obtainProperty('queries'),
+      search: obtainProperty('search'),
       trigger: options.trigger
     };
   }
@@ -1134,7 +1161,7 @@ class HttpClient {
       immediate: true
     });
     this.configuration = {
-      baseUrl: new URL(globalThis.location.origin),
+      baseUrl: undefined,
       interceptors: [],
       headers: HttpHeadersImpl.empty(),
       search: {},

@@ -20,7 +20,7 @@ export interface HttpConfigurationOptions {
     cacheStrategy?: Newable<CacheStrategy>;
 }
 export interface HttpConfiguration extends Cloneable<HttpConfiguration> {
-    baseUrl: URL;
+    baseUrl?: URL;
     interceptors: HttpInterceptor[];
     search: Record<string, string>;
     headers: HttpHeaders;
