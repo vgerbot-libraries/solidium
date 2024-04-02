@@ -3,42 +3,53 @@ import {
     MemberDecoratorProcessor,
     IS_MEMBER_DECORATOR_PROCESSOR
 } from '../core/DecoratorProcessor';
-import { AccessorArray, createEffect, on, onCleanup } from 'solid-js';
+import { createEffect, on, onCleanup } from 'solid-js';
 import { clean, store } from '../common/store-result';
 
 export const OBSERVE_PROPERTY_MARK_KEY = Symbol('solidium_observed_property');
-export type ObserveOptions =
+
+type DependencyObserverOptions<T> = {
+    deps: Array<(this: T) => unknown>;
+    defer?: boolean;
+};
+
+type ScheduledObserverOptions = {
+    schedule:
+        | {
+              mode: 'throttle';
+              trailing?: boolean;
+              leading?: boolean;
+              wait?: number;
+          }
+        | {
+              mode: 'debounce';
+              trailing?: boolean;
+              leading?: boolean;
+              wait?: number;
+              maxWait?: number;
+          };
+};
+
+export type ObserveOptions<T> =
     | {}
-    | {
-          deps: AccessorArray<unknown>;
-          defer?: boolean;
-      }
-    | {
-          schedule:
-              | {
-                    mode: 'throttle';
-                    trailing?: boolean;
-                    leading?: boolean;
-                    wait?: number;
-                }
-              | {
-                    mode: 'debounce';
-                    trailing?: boolean;
-                    leading?: boolean;
-                    wait?: number;
-                    maxWait?: number;
-                };
-      };
+    | DependencyObserverOptions<T>
+    | ScheduledObserverOptions;
 interface ObserverableObject {
     [key: MemberKey]: () => unknown;
 }
+
+export function Observe<T>(
+    options: DependencyObserverOptions<T>
+): MethodDecorator;
+export function Observe(options: ScheduledObserverOptions): MethodDecorator;
+export function Observe(options?: {}): MethodDecorator;
 /**
  *
  * @param options optional
  * @returns an method decorator
  */
-export const Observe = (options: ObserveOptions = {}) =>
-    Mark(OBSERVE_PROPERTY_MARK_KEY, {
+export function Observe<T>(options: ObserveOptions<T> = {}) {
+    return Mark(OBSERVE_PROPERTY_MARK_KEY, {
         [IS_MEMBER_DECORATOR_PROCESSOR]: true,
         afterInstantiation(instance, methodName) {
             // TODO: supports scheduling
@@ -63,3 +74,4 @@ export const Observe = (options: ObserveOptions = {}) =>
             return instance;
         }
     } as MemberDecoratorProcessor) as MethodDecorator;
+}

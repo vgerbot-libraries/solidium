@@ -315,7 +315,7 @@
      * @param options optional
      * @returns an method decorator
      */
-    var Observe = function (options) {
+    function Observe(options) {
       var _a;
       if (options === void 0) {
         options = {};
@@ -338,7 +338,7 @@
         }
         return instance;
       }, _a));
-    };
+    }
 
     var NOT_CHANGED_SYMBOL = Symbol('solidium-not-change-symbol');
     function useComputed(fn) {

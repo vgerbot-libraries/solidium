@@ -250,27 +250,29 @@ const OBSERVE_PROPERTY_MARK_KEY = Symbol('solidium_observed_property');
  * @param options optional
  * @returns an method decorator
  */
-const Observe = (options = {}) => Mark(OBSERVE_PROPERTY_MARK_KEY, {
-  [IS_MEMBER_DECORATOR_PROCESSOR]: true,
-  afterInstantiation(instance, methodName) {
-    // TODO: supports scheduling
-    const fn = () => {
-      const ret = instance[methodName].call(instance);
-      store(instance, methodName, ret);
-      onCleanup(() => {
-        clean(instance, methodName);
-      });
-    };
-    if ('deps' in options) {
-      createEffect(on(options.deps, fn, {
-        defer: options.defer
-      }));
-    } else {
-      createEffect(fn);
+function Observe(options = {}) {
+  return Mark(OBSERVE_PROPERTY_MARK_KEY, {
+    [IS_MEMBER_DECORATOR_PROCESSOR]: true,
+    afterInstantiation(instance, methodName) {
+      // TODO: supports scheduling
+      const fn = () => {
+        const ret = instance[methodName].call(instance);
+        store(instance, methodName, ret);
+        onCleanup(() => {
+          clean(instance, methodName);
+        });
+      };
+      if ('deps' in options) {
+        createEffect(on(options.deps, fn, {
+          defer: options.defer
+        }));
+      } else {
+        createEffect(fn);
+      }
+      return instance;
     }
-    return instance;
-  }
-});
+  });
+}
 
 const NOT_CHANGED_SYMBOL = Symbol('solidium-not-change-symbol');
 function useComputed(fn) {

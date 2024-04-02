@@ -1,9 +1,9 @@
-import { AccessorArray } from 'solid-js';
 export declare const OBSERVE_PROPERTY_MARK_KEY: unique symbol;
-export type ObserveOptions = {} | {
-    deps: AccessorArray<unknown>;
+type DependencyObserverOptions<T> = {
+    deps: Array<(this: T) => unknown>;
     defer?: boolean;
-} | {
+};
+type ScheduledObserverOptions = {
     schedule: {
         mode: 'throttle';
         trailing?: boolean;
@@ -17,9 +17,8 @@ export type ObserveOptions = {} | {
         maxWait?: number;
     };
 };
-/**
- *
- * @param options optional
- * @returns an method decorator
- */
-export declare const Observe: (options?: ObserveOptions) => MethodDecorator;
+export type ObserveOptions<T> = {} | DependencyObserverOptions<T> | ScheduledObserverOptions;
+export declare function Observe<T>(options: DependencyObserverOptions<T>): MethodDecorator;
+export declare function Observe(options: ScheduledObserverOptions): MethodDecorator;
+export declare function Observe(options?: {}): MethodDecorator;
+export {};
