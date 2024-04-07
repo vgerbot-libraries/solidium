@@ -226,8 +226,9 @@ function isSignalMember(target, member) {
 const SIGNAL_MARK_KEY = Symbol('solidium_mark_as_signal_property');
 const Signal = Mark(SIGNAL_MARK_KEY, {
   [IS_MEMBER_DECORATOR_PROCESSOR]: true,
-  beforeInstantiation: function (constructor, member) {
-    defineSignalMember(constructor.prototype, member);
+  afterInstantiation(instance, member) {
+    defineSignalMember(instance, member, instance[member]);
+    return instance;
   }
 });
 
@@ -323,7 +324,7 @@ const Computed = Mark(COMPUTED_GETTER_MARK_KEY, {
 const BATCH_METHOD_MARK_KEY = Symbol('solidium-batch-method-mark-key');
 const Batch = Mark(BATCH_METHOD_MARK_KEY, {
   [IS_MEMBER_DECORATOR_PROCESSOR]: true,
-  afterInstantiation(instance, member, metadata) {
+  afterInstantiation(instance, member) {
     const origin = instance[member];
     if (typeof origin !== 'function') {
       return;

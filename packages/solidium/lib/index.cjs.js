@@ -293,8 +293,9 @@ function isSignalMember(target, member) {
 
 var _a$3;
 var SIGNAL_MARK_KEY = Symbol('solidium_mark_as_signal_property');
-var Signal = ioc.Mark(SIGNAL_MARK_KEY, (_a$3 = {}, _a$3[IS_MEMBER_DECORATOR_PROCESSOR] = true, _a$3.beforeInstantiation = function (constructor, member) {
-  defineSignalMember(constructor.prototype, member);
+var Signal = ioc.Mark(SIGNAL_MARK_KEY, (_a$3 = {}, _a$3[IS_MEMBER_DECORATOR_PROCESSOR] = true, _a$3.afterInstantiation = function (instance, member) {
+  defineSignalMember(instance, member, instance[member]);
+  return instance;
 }, _a$3));
 
 var RESULT_MAP = new SignalMap();
@@ -390,7 +391,7 @@ var Computed = ioc.Mark(COMPUTED_GETTER_MARK_KEY, (_a$2 = {}, _a$2[IS_MEMBER_DEC
 
 var _a$1;
 var BATCH_METHOD_MARK_KEY = Symbol('solidium-batch-method-mark-key');
-var Batch = ioc.Mark(BATCH_METHOD_MARK_KEY, (_a$1 = {}, _a$1[IS_MEMBER_DECORATOR_PROCESSOR] = true, _a$1.afterInstantiation = function (instance, member, metadata) {
+var Batch = ioc.Mark(BATCH_METHOD_MARK_KEY, (_a$1 = {}, _a$1[IS_MEMBER_DECORATOR_PROCESSOR] = true, _a$1.afterInstantiation = function (instance, member) {
   var origin = instance[member];
   if (typeof origin !== 'function') {
     return;

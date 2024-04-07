@@ -1,4 +1,4 @@
-import { Mark, MemberKey, Newable } from '@vgerbot/ioc';
+import { Mark, MemberKey } from '@vgerbot/ioc';
 import {
     MemberDecoratorProcessor,
     IS_MEMBER_DECORATOR_PROCESSOR
@@ -9,10 +9,8 @@ export const SIGNAL_MARK_KEY = Symbol('solidium_mark_as_signal_property');
 
 export const Signal = Mark(SIGNAL_MARK_KEY, {
     [IS_MEMBER_DECORATOR_PROCESSOR]: true,
-    beforeInstantiation: function <T>(
-        constructor: Newable<T>,
-        member: MemberKey
-    ) {
-        defineSignalMember(constructor.prototype, member);
+    afterInstantiation<T>(instance: T, member: MemberKey) {
+        defineSignalMember(instance, member, instance[member as keyof T]);
+        return instance;
     }
 } as MemberDecoratorProcessor) as PropertyDecorator;

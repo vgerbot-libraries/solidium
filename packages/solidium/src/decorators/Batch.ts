@@ -13,7 +13,7 @@ type HasMethod = {
 
 export const Batch = Mark(BATCH_METHOD_MARK_KEY, {
     [IS_MEMBER_DECORATOR_PROCESSOR]: true,
-    afterInstantiation(instance, member, metadata) {
+    afterInstantiation(instance, member) {
         const origin = (instance as HasMethod)[member];
         if (typeof origin !== 'function') {
             return;
