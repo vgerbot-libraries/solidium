@@ -13,9 +13,17 @@ const SOLIDIUM_CLASS_DECORATOR_PROCESSOR_KEY = Symbol(
     'solidium-class-decorator-processors'
 );
 
+type ConstructorWithDecoratorProcessor<T> = Newable<T> & {
+    [SOLIDIUM_CLASS_DECORATOR_PROCESSOR_KEY]?: Set<ClassDecoratorProcessor>;
+    [SOLIDIUM_MEMBER_DECORATOR_PROCESSOR_KEY]?: AllProcessorsMap;
+};
+
 type AllProcessorsMap = Map<MemberKey, Set<MemberDecoratorProcessor>>;
 
-export function beforeInstantiation<T>(constructor: Newable<T>) {
+function initClassDecoratorProcessorsSet<T>(constructor: Newable<T>) {
+    if (constructor.hasOwnProperty(SOLIDIUM_CLASS_DECORATOR_PROCESSOR_KEY)) {
+        return;
+    }
     const metadata = ClassMetadata.getInstance(constructor).reader();
     const classMarkInfo = metadata.getCtorMarkInfo();
     const allClassDecoratorProcessor = new Set<ClassDecoratorProcessor>();
@@ -37,6 +45,27 @@ export function beforeInstantiation<T>(constructor: Newable<T>) {
             allClassDecoratorProcessor.add(processor);
         });
     }
+    if (allClassDecoratorProcessor.size === 0) {
+        return;
+    }
+    Object.defineProperty(constructor, SOLIDIUM_CLASS_DECORATOR_PROCESSOR_KEY, {
+        enumerable: false,
+        configurable: false,
+        writable: false,
+        value: allClassDecoratorProcessor
+    });
+    allClassDecoratorProcessor.forEach(processor => {
+        processor.beforeInstantiation &&
+            processor.beforeInstantiation(constructor, metadata);
+    });
+}
+
+function initMemberDecoratorProcessorsSet<T>(constructor: Newable<T>) {
+    if (constructor.hasOwnProperty(SOLIDIUM_MEMBER_DECORATOR_PROCESSOR_KEY)) {
+        return;
+    }
+    const metadata = ClassMetadata.getInstance(constructor).reader();
+
     const instanceMembers = metadata.getAllMarkedMembers();
     const allMemberDecoratorProcessors = new Map<
         MemberKey,
@@ -69,55 +98,41 @@ export function beforeInstantiation<T>(constructor: Newable<T>) {
             processors.add(markData);
         });
     });
-    if (allClassDecoratorProcessor.size > 0) {
-        Object.defineProperty(
-            constructor,
-            SOLIDIUM_CLASS_DECORATOR_PROCESSOR_KEY,
-            {
-                enumerable: false,
-                configurable: false,
-                writable: false,
-                value: allClassDecoratorProcessor
-            }
-        );
-        allClassDecoratorProcessor.forEach(processor => {
-            processor.beforeInstantiation &&
-                processor.beforeInstantiation(constructor, metadata);
-        });
+    if (allMemberDecoratorProcessors.size === 0) {
+        return;
     }
-    if (allMemberDecoratorProcessors.size > 0) {
-        Object.defineProperty(
-            constructor,
-            SOLIDIUM_MEMBER_DECORATOR_PROCESSOR_KEY,
-            {
-                enumerable: false,
-                configurable: false,
-                writable: false,
-                value: allMemberDecoratorProcessors
+    Object.defineProperty(
+        constructor,
+        SOLIDIUM_MEMBER_DECORATOR_PROCESSOR_KEY,
+        {
+            enumerable: false,
+            configurable: false,
+            writable: false,
+            value: allMemberDecoratorProcessors
+        }
+    );
+    allMemberDecoratorProcessors.forEach((processors, member) => {
+        processors.forEach(processor => {
+            if (processor.beforeInstantiation) {
+                processor.beforeInstantiation<T>(constructor, member, metadata);
             }
-        );
-        allMemberDecoratorProcessors.forEach((processors, member) => {
-            processors.forEach(processor => {
-                if (processor.beforeInstantiation) {
-                    processor.beforeInstantiation<T>(
-                        constructor,
-                        member,
-                        metadata
-                    );
-                }
-            });
         });
-    }
+    });
+}
+
+export function beforeInstantiation<T>(constructor: Newable<T>) {
+    initClassDecoratorProcessorsSet(constructor);
+    initMemberDecoratorProcessorsSet(constructor);
 }
 
 export function afterInstantiation<T extends object>(instance: T): T {
-    const constructor = instance.constructor as Newable<T>;
+    const constructor =
+        instance.constructor as ConstructorWithDecoratorProcessor<T>;
     const metadata = ClassMetadata.getInstance(constructor).reader();
+    const allClassProcessors =
+        constructor[SOLIDIUM_CLASS_DECORATOR_PROCESSOR_KEY];
 
-    if (SOLIDIUM_CLASS_DECORATOR_PROCESSOR_KEY in constructor) {
-        const allClassProcessors = constructor[
-            SOLIDIUM_CLASS_DECORATOR_PROCESSOR_KEY
-        ] as Set<ClassDecoratorProcessor>;
+    if (!!allClassProcessors) {
         allClassProcessors.forEach(processor => {
             const newInstance =
                 processor.afterInstantiation &&
@@ -127,11 +142,9 @@ export function afterInstantiation<T extends object>(instance: T): T {
             }
         });
     }
-    if (SOLIDIUM_MEMBER_DECORATOR_PROCESSOR_KEY in constructor) {
-        const allMemberProcessors = constructor[
-            SOLIDIUM_MEMBER_DECORATOR_PROCESSOR_KEY
-        ] as AllProcessorsMap;
-
+    const allMemberProcessors =
+        constructor[SOLIDIUM_MEMBER_DECORATOR_PROCESSOR_KEY];
+    if (!!allMemberProcessors) {
         allMemberProcessors.forEach((processors, member) => {
             processors.forEach(processor => {
                 if (processor.afterInstantiation) {

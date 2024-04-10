@@ -66,7 +66,10 @@
 
     var SOLIDIUM_MEMBER_DECORATOR_PROCESSOR_KEY = Symbol('solidium-member-decorator-processors');
     var SOLIDIUM_CLASS_DECORATOR_PROCESSOR_KEY = Symbol('solidium-class-decorator-processors');
-    function beforeInstantiation(constructor) {
+    function initClassDecoratorProcessorsSet(constructor) {
+      if (constructor.hasOwnProperty(SOLIDIUM_CLASS_DECORATOR_PROCESSOR_KEY)) {
+        return;
+      }
       var metadata = ioc.ClassMetadata.getInstance(constructor).reader();
       var classMarkInfo = metadata.getCtorMarkInfo();
       var allClassDecoratorProcessor = new Set();
@@ -80,6 +83,24 @@
           allClassDecoratorProcessor.add(processor);
         });
       }
+      if (allClassDecoratorProcessor.size === 0) {
+        return;
+      }
+      Object.defineProperty(constructor, SOLIDIUM_CLASS_DECORATOR_PROCESSOR_KEY, {
+        enumerable: false,
+        configurable: false,
+        writable: false,
+        value: allClassDecoratorProcessor
+      });
+      allClassDecoratorProcessor.forEach(function (processor) {
+        processor.beforeInstantiation && processor.beforeInstantiation(constructor, metadata);
+      });
+    }
+    function initMemberDecoratorProcessorsSet(constructor) {
+      if (constructor.hasOwnProperty(SOLIDIUM_MEMBER_DECORATOR_PROCESSOR_KEY)) {
+        return;
+      }
+      var metadata = ioc.ClassMetadata.getInstance(constructor).reader();
       var instanceMembers = metadata.getAllMarkedMembers();
       var allMemberDecoratorProcessors = new Map();
       instanceMembers.forEach(function (member) {
@@ -98,38 +119,32 @@
           processors.add(markData);
         });
       });
-      if (allClassDecoratorProcessor.size > 0) {
-        Object.defineProperty(constructor, SOLIDIUM_CLASS_DECORATOR_PROCESSOR_KEY, {
-          enumerable: false,
-          configurable: false,
-          writable: false,
-          value: allClassDecoratorProcessor
-        });
-        allClassDecoratorProcessor.forEach(function (processor) {
-          processor.beforeInstantiation && processor.beforeInstantiation(constructor, metadata);
-        });
+      if (allMemberDecoratorProcessors.size === 0) {
+        return;
       }
-      if (allMemberDecoratorProcessors.size > 0) {
-        Object.defineProperty(constructor, SOLIDIUM_MEMBER_DECORATOR_PROCESSOR_KEY, {
-          enumerable: false,
-          configurable: false,
-          writable: false,
-          value: allMemberDecoratorProcessors
+      Object.defineProperty(constructor, SOLIDIUM_MEMBER_DECORATOR_PROCESSOR_KEY, {
+        enumerable: false,
+        configurable: false,
+        writable: false,
+        value: allMemberDecoratorProcessors
+      });
+      allMemberDecoratorProcessors.forEach(function (processors, member) {
+        processors.forEach(function (processor) {
+          if (processor.beforeInstantiation) {
+            processor.beforeInstantiation(constructor, member, metadata);
+          }
         });
-        allMemberDecoratorProcessors.forEach(function (processors, member) {
-          processors.forEach(function (processor) {
-            if (processor.beforeInstantiation) {
-              processor.beforeInstantiation(constructor, member, metadata);
-            }
-          });
-        });
-      }
+      });
+    }
+    function beforeInstantiation(constructor) {
+      initClassDecoratorProcessorsSet(constructor);
+      initMemberDecoratorProcessorsSet(constructor);
     }
     function afterInstantiation(instance) {
       var constructor = instance.constructor;
       var metadata = ioc.ClassMetadata.getInstance(constructor).reader();
-      if (SOLIDIUM_CLASS_DECORATOR_PROCESSOR_KEY in constructor) {
-        var allClassProcessors = constructor[SOLIDIUM_CLASS_DECORATOR_PROCESSOR_KEY];
+      var allClassProcessors = constructor[SOLIDIUM_CLASS_DECORATOR_PROCESSOR_KEY];
+      if (!!allClassProcessors) {
         allClassProcessors.forEach(function (processor) {
           var newInstance = processor.afterInstantiation && processor.afterInstantiation(instance, metadata);
           if (newInstance instanceof constructor) {
@@ -137,8 +152,8 @@
           }
         });
       }
-      if (SOLIDIUM_MEMBER_DECORATOR_PROCESSOR_KEY in constructor) {
-        var allMemberProcessors = constructor[SOLIDIUM_MEMBER_DECORATOR_PROCESSOR_KEY];
+      var allMemberProcessors = constructor[SOLIDIUM_MEMBER_DECORATOR_PROCESSOR_KEY];
+      if (!!allMemberProcessors) {
         allMemberProcessors.forEach(function (processors, member) {
           processors.forEach(function (processor) {
             if (processor.afterInstantiation) {
