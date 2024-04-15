@@ -94,14 +94,14 @@ export class WorkerResource implements Resource {
         );
     }
     private convertToRequestOptions(options: CreateResourceOptions) {
-        const obtainProperty = (
-            key: keyof CreateResourceOptions
-        ): HttpRequestOptions[keyof HttpRequestOptions] => {
+        const obtainProperty = <T extends keyof CreateResourceOptions>(
+            key: T
+        ): HttpRequestOptions[T] => {
             const value = options[key];
             if (typeof value === 'function') {
-                return value();
+                return (value as () => HttpRequestOptions[T])();
             }
-            return value;
+            return value as HttpRequestOptions[T];
         };
         return {
             key: obtainProperty('key'),
@@ -110,7 +110,9 @@ export class WorkerResource implements Resource {
             body: obtainProperty('body'),
             headers: options.headers,
             search: obtainProperty('search'),
-            trigger: options.trigger
+            trigger: options.trigger,
+            fetcher: options.fetcher,
+            interceptors: options.interceptors
         } as HttpRequestOptions;
     }
     @PreDestroy()
@@ -156,7 +158,7 @@ export class WorkerResource implements Resource {
                     if (cachedResponse) {
                         return Promise.resolve(cachedResponse);
                     } else {
-                        const fetcher = request.configuration.fetcher;
+                        const fetcher = request.fetcher;
                         return fetcher(request);
                     }
                 }

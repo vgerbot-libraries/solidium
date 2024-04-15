@@ -1,8 +1,10 @@
 import { createEntity } from '../common/createEntity';
 import { resolveURL } from '../common/resolveURL';
+import { Fetcher } from '../types/Fetcher';
 import { HttpConfiguration } from '../types/HttpConfiguration';
 import { HttpEntity } from '../types/HttpEntity';
 import { HttpHeaders } from '../types/HttpHeaders';
+import { HttpInterceptor } from '../types/HttpInterceptor';
 import { HttpMethod } from '../types/HttpMethod';
 import { HttpRequest } from '../types/HttpRequest';
 import { HttpRequestOptions } from '../types/HttpRequestOptions';
@@ -13,6 +15,7 @@ export class HttpRequestImpl implements HttpRequest {
     headers: HttpHeaders;
     method: HttpMethod;
     disableCache: boolean;
+    fetcher: Fetcher;
     constructor(
         public readonly configuration: HttpConfiguration,
         private readonly requestOptions: HttpRequestOptions
@@ -38,6 +41,7 @@ export class HttpRequestImpl implements HttpRequest {
             : configuration.headers.clone();
         this.method = requestOptions.method || HttpMethod.GET;
         this.disableCache = requestOptions.disableCache || false;
+        this.fetcher = requestOptions.fetcher || configuration.fetcher;
     }
     clone(): HttpRequest {
         return new HttpRequestImpl(this.configuration, this.requestOptions);
@@ -47,5 +51,10 @@ export class HttpRequestImpl implements HttpRequest {
             return this.requestOptions.key;
         }
         return this.url.toString();
+    }
+    get interceptors(): HttpInterceptor[] {
+        return this.configuration.interceptors.concat(
+            this.requestOptions.interceptors || []
+        );
     }
 }

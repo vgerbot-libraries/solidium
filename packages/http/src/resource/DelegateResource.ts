@@ -1,7 +1,28 @@
 import { HTTPError } from '../error/HTTPError';
+import { HttpHeaders } from '../types/HttpHeaders';
 import { HttpRequest } from '../types/HttpRequest';
 import { HttpResponse } from '../types/HttpResponse';
 import { Resource } from '../types/Resource';
+
+export abstract class DelegateResponse implements HttpResponse {
+    body(): Promise<Blob> {
+        return this.origin.body();
+    }
+    get headers(): HttpHeaders {
+        return this.origin.headers;
+    }
+    get status(): number {
+        return this.origin.status;
+    }
+    get statusText(): string {
+        return this.origin.statusText;
+    }
+    get request(): HttpRequest {
+        return this.origin.request;
+    }
+    constructor(protected readonly origin: HttpResponse) {}
+    abstract clone(): HttpResponse;
+}
 
 export abstract class DelegateResource<T extends HttpResponse>
     implements Resource<T>

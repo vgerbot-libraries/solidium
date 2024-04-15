@@ -1,7 +1,9 @@
 import { Cloneable } from './Cloneable';
+import { Fetcher } from './Fetcher';
 import { HttpConfiguration } from './HttpConfiguration';
 import { HttpEntity } from './HttpEntity';
 import { HttpHeaders } from './HttpHeaders';
+import { HttpInterceptor } from './HttpInterceptor';
 import { HttpMethod } from './HttpMethod';
 
 export interface HttpRequest extends Cloneable<HttpRequest> {
@@ -12,4 +14,6 @@ export interface HttpRequest extends Cloneable<HttpRequest> {
     method: HttpMethod;
     configuration: HttpConfiguration;
     disableCache: boolean;
+    fetcher: Fetcher;
+    interceptors: HttpInterceptor[];
 }

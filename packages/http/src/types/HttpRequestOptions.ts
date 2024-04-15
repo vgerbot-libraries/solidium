@@ -1,5 +1,7 @@
+import { Fetcher } from './Fetcher';
 import { HttpEntity } from './HttpEntity';
 import { HttpHeaders } from './HttpHeaders';
+import { HttpInterceptor } from './HttpInterceptor';
 import { HttpMethod } from './HttpMethod';
 import { HttpRequestTrigger } from './HttpRequestTrigger';
 import { HttpRequestTriggerOptions } from './HttpRequestTriggerOptions';
@@ -17,4 +19,6 @@ export interface HttpRequestOptions {
      */
     trigger?: HttpRequestTriggerOptions | HttpRequestTrigger;
     disableCache?: boolean;
+    interceptors?: HttpInterceptor[];
+    fetcher?: Fetcher;
 }

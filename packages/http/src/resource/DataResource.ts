@@ -1,27 +1,13 @@
 import { lazyMember } from '@vgerbot/lazy';
-import { HttpHeaders } from '../types/HttpHeaders';
-import { HttpRequest } from '../types/HttpRequest';
 import { HttpResponse } from '../types/HttpResponse';
 import { Resource } from '../types/Resource';
-import { DelegateResource } from './DelegateResource';
+import { DelegateResource, DelegateResponse } from './DelegateResource';
 import { createSignal, Signal, getOwner, Owner, runWithOwner } from 'solid-js';
 
-export class DataHttpResponse<T> implements HttpResponse {
-    body(): Promise<Blob> {
-        return this.origin.body();
-    }
-    get headers(): HttpHeaders {
-        return this.origin.headers;
-    }
-    get status(): number {
-        return this.origin.status;
-    }
-    get statusText(): string {
-        return this.origin.statusText;
-    }
-    get request(): HttpRequest {
-        return this.origin.request;
-    }
+export class DataHttpResponse<T>
+    extends DelegateResponse
+    implements HttpResponse
+{
     clone(): HttpResponse {
         return new DataHttpResponse(
             this.origin.clone(),
@@ -38,10 +24,11 @@ export class DataHttpResponse<T> implements HttpResponse {
     private readonly _dataSignal: Signal<unknown>;
     private readonly _parserErrorSignal: Signal<Error | undefined>;
     constructor(
-        private readonly origin: HttpResponse,
+        protected readonly origin: HttpResponse,
         private readonly owner: Owner | null,
         private readonly parser: (blob: Blob) => Promise<T>
     ) {
+        super(origin);
         this._dataSignal = runWithOwner(owner, () => {
             return createSignal();
         }) as Signal<unknown>;

@@ -1,6 +1,10 @@
 import { HttpRequest } from './HttpRequest';
+import { HttpRequestController } from './HttpRequestController';
 import { HttpResponse } from './HttpResponse';
 
 export interface Fetcher {
-    (request: HttpRequest): Promise<HttpResponse>;
+    (
+        request: HttpRequest,
+        constroller: HttpRequestController
+    ): Promise<HttpResponse>;
 }
