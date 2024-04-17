@@ -7,6 +7,8 @@ import {
 import { ParentProps, createContext, createRoot } from 'solid-js';
 import { afterInstantiation, beforeInstantiation } from './processor';
 import { Identifier } from '@vgerbot/ioc/dist/types/Identifier';
+import { COMPONENT_TREE_SCOPE } from '../decorators/ComponentTreeScope';
+import { ComponentTreeScopeInstanceResolution } from '../ioc/ScopedInstanceResolution';
 
 export const IoCContext = createContext<ApplicationContext>();
 
@@ -53,6 +55,10 @@ export function Solidium(props: SolidiumProps) {
     };
     appCtx.registerBeforeInstantiationProcessor(beforeInstantiation);
     appCtx.registerAfterInstantiationProcessor(afterInstantiation);
+    appCtx.registerInstanceScopeResolution(
+        COMPONENT_TREE_SCOPE,
+        ComponentTreeScopeInstanceResolution
+    );
     if (typeof props.init === 'function') {
         props.init(appCtx);
     }
