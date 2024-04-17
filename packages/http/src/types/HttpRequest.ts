@@ -1,3 +1,5 @@
+import { HttpEvent } from '../events/HttpEvent';
+import { HttpEventMap, HttpEventType } from '../events/HttpEventMap';
 import { Cloneable } from './Cloneable';
 import { Fetcher } from './Fetcher';
 import { HttpConfiguration } from './HttpConfiguration';
@@ -16,4 +18,9 @@ export interface HttpRequest extends Cloneable<HttpRequest> {
     disableCache: boolean;
     fetcher: Fetcher;
     interceptors: HttpInterceptor[];
+    dispatch(event: HttpEvent): void;
+    on<T extends HttpEventType>(
+        type: T,
+        listener: (event: HttpEventMap[T]) => void
+    ): () => void;
 }

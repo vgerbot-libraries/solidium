@@ -24,7 +24,7 @@ export class SSEResponse<T> implements HttpResponse {
         return this.origin.request;
     }
     clone(): HttpResponse {
-        throw new Error('Method not implemented.');
+        return new SSEResponse(this.origin, this.owner, this.chunkParser);
     }
     public get data(): T[] {
         return this._dataSignal[0]();
@@ -33,7 +33,7 @@ export class SSEResponse<T> implements HttpResponse {
     constructor(
         private readonly origin: HttpResponse,
         private readonly owner: Owner | null,
-        chunkParser: (chunk: string) => T
+        private readonly chunkParser: (chunk: string) => T
     ) {
         this._dataSignal = runWithOwner(this.owner, () => {
             return createSignal([] as T[]);

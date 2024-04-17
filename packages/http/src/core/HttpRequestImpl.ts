@@ -1,5 +1,7 @@
 import { createEntity } from '../common/createEntity';
 import { resolveURL } from '../common/resolveURL';
+import { HttpEvent } from '../events/HttpEvent';
+import { HttpEventMap, HttpEventType } from '../events/HttpEventMap';
 import { Fetcher } from '../types/Fetcher';
 import { HttpConfiguration } from '../types/HttpConfiguration';
 import { HttpEntity } from '../types/HttpEntity';
@@ -16,6 +18,10 @@ export class HttpRequestImpl implements HttpRequest {
     method: HttpMethod;
     disableCache: boolean;
     fetcher: Fetcher;
+    private readonly listeners: Map<
+        HttpEventType,
+        Array<(event: HttpEvent) => void>
+    > = new Map();
     constructor(
         public readonly configuration: HttpConfiguration,
         private readonly requestOptions: HttpRequestOptions
@@ -42,6 +48,31 @@ export class HttpRequestImpl implements HttpRequest {
         this.method = requestOptions.method || HttpMethod.GET;
         this.disableCache = requestOptions.disableCache || false;
         this.fetcher = requestOptions.fetcher || configuration.fetcher;
+    }
+    on<T extends HttpEventType>(
+        type: T,
+        listener: (event: HttpEventMap[T]) => void
+    ): () => void {
+        if (!this.listeners.has(type)) {
+            this.listeners.set(type, []);
+        }
+        const listeners = this.listeners.get(type) as Array<
+            (event: HttpEventMap[T]) => void
+        >;
+        const store = listener.bind(this);
+        listeners.push(store);
+        return () => {
+            const index = listeners.indexOf(store);
+            if (index > -1) {
+                listeners.splice(index, 1);
+            }
+        };
+    }
+    dispatch(event: HttpEvent): void {
+        const listeners = this.listeners.get(event.type);
+        if (listeners) {
+            listeners.forEach(listener => listener(event));
+        }
     }
     clone(): HttpRequest {
         return new HttpRequestImpl(this.configuration, this.requestOptions);

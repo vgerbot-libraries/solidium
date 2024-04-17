@@ -18,7 +18,7 @@ import { StorageProvider } from '../types/StorageProvider';
 import { HttpHeadersImpl } from './HttpHeadersImpl';
 import { HttpInterceptorRegistryImpl } from './HttpInterceptorRegistryImpl';
 import { internalValidateStatus } from './internalValidateStatus';
-import { internalFetcher } from './internalFetcher';
+import { builtinFetcher } from './builtinFetcher';
 
 export class HttpClient {
     static configure(configuration: HttpConfigurationOptions) {
@@ -73,7 +73,7 @@ export class HttpClient {
             interceptors: [],
             headers: HttpHeadersImpl.empty(),
             search: {},
-            fetcher: fetcher || internalFetcher,
+            fetcher: fetcher || builtinFetcher,
             storageProvider: storageProvider,
             cacheStrategy,
             trigger: defaultTrigger,

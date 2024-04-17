@@ -20,6 +20,8 @@ import { HttpResponse } from '../types/HttpResponse';
 import { Resource } from '../types/Resource';
 import { CreateResourceOptions } from '../types/CreateResourceOptions';
 import { HTTPError } from '../error/HTTPError';
+import { UploadProgressEvent } from '../events/UploadProgressEvent';
+import { DownloadProgressEvent } from '../events/DownloadProgressEvent';
 
 enum ResourceStatus {
     IDLE = 'idle',
@@ -49,6 +51,10 @@ export class WorkerResource implements Resource {
     get completed(): boolean {
         return this.success || this.failure;
     }
+    @Signal
+    public uploadProgress: number = 0;
+    @Signal
+    public downloadProgress: number = 0;
     @Signal
     private _response: HttpResponse | undefined;
     get response(): HttpResponse | undefined {
@@ -159,7 +165,24 @@ export class WorkerResource implements Resource {
                         return Promise.resolve(cachedResponse);
                     } else {
                         const fetcher = request.fetcher;
-                        return fetcher(request);
+                        const cleanupUploadProgressEventListener = request.on(
+                            'uploadprogress',
+                            (e: UploadProgressEvent) => {
+                                this.uploadProgress =
+                                    e.uploadedBytes / e.totalBytes;
+                            }
+                        );
+                        const cleanupDownloadProgressEventListener = request.on(
+                            'downloadprogress',
+                            (e: DownloadProgressEvent) => {
+                                this.downloadProgress =
+                                    e.uploadedBytes / e.totalBytes;
+                            }
+                        );
+                        return fetcher(request).finally(() => {
+                            cleanupDownloadProgressEventListener();
+                            cleanupUploadProgressEventListener();
+                        });
                     }
                 }
             );

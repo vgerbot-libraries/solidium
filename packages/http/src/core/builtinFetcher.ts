@@ -1,21 +1,24 @@
 import { Defer } from '../common/Defer';
+import { DownloadProgressEvent } from '../events/DownloadProgressEvent';
+import { RequestEndEvent } from '../events/RequestEndEvent';
+import { RequestStartEvent } from '../events/RequestStartEvent';
+import { TimeoutEvent } from '../events/TimeoutEvent';
+import { UploadProgressEvent } from '../events/UploadProgressEvent';
 import { Fetcher } from '../types/Fetcher';
 import { HttpBody } from '../types/HttpBody';
 import { HttpMethod } from '../types/HttpMethod';
 import { HttpRequest } from '../types/HttpRequest';
-import { HttpRequestController } from '../types/HttpRequestController';
 import { HttpResponse } from '../types/HttpResponse';
 import { HttpHeadersImpl } from './HttpHeadersImpl';
 
-export const internalFetcher: Fetcher = async (
-    request: HttpRequest,
-    controller: HttpRequestController
+export const builtinFetcher: Fetcher = async (
+    request: HttpRequest
 ): Promise<HttpResponse> => {
     const body = await resolveBody(request);
     if (body instanceof ReadableStream) {
-        return fetchRequestImpl(request, controller, body);
+        return fetchRequestImpl(request, body);
     } else {
-        return xhrRequestImpl(request, controller, body);
+        return xhrRequestImpl(request, body);
     }
 };
 async function resolveBody(request: HttpRequest) {
@@ -40,11 +43,10 @@ function resolveHeaders(request: HttpRequest) {
 }
 async function xhrRequestImpl(
     request: HttpRequest,
-    controller: HttpRequestController,
     body: undefined | HttpBody
 ) {
     if (body instanceof ReadableStream) {
-        return fetchRequestImpl(request, controller, body);
+        return fetchRequestImpl(request, body);
     }
     const xhr = new XMLHttpRequest();
     const defer = new Defer();
@@ -55,17 +57,22 @@ async function xhrRequestImpl(
     });
 
     xhr.upload.addEventListener('progress', ev => {
-        controller.dispatchUploadProgress(request, ev.total, ev.loaded);
+        request.dispatch(new UploadProgressEvent(request, ev.total, ev.loaded));
+    });
+    xhr.addEventListener('progress', ev => {
+        request.dispatch(
+            new DownloadProgressEvent(request, ev.total, ev.loaded)
+        );
     });
     xhr.addEventListener('loadend', () => {
         defer.resolve(null);
-        controller.dispatchRequestEndEvent(request);
+        request.dispatch(new RequestEndEvent(request));
     });
     xhr.addEventListener('loadstart', () => {
-        controller.dispatchRequestStartEvent(request);
+        request.dispatch(new RequestStartEvent(request));
     });
     xhr.addEventListener('timeout', () => {
-        controller.dispatchTimeoutEvent(request);
+        request.dispatch(new TimeoutEvent(request));
     });
     xhr.open(
         request.method,
@@ -131,11 +138,7 @@ function resolveResponseData(xhr: XMLHttpRequest) {
     }
     return new Blob([]);
 }
-async function fetchRequestImpl(
-    request: HttpRequest,
-    controller: HttpRequestController,
-    body: ReadableStream
-) {
+async function fetchRequestImpl(request: HttpRequest, body: ReadableStream) {
     const headers = resolveHeaders(request);
     const response = await fetch(request.url, {
         method: request.method,
