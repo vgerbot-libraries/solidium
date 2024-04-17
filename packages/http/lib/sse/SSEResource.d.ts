@@ -7,6 +7,7 @@ import { Resource } from '../types/Resource';
 export declare class SSEResponse<T> implements HttpResponse {
     private readonly origin;
     private readonly owner;
+    private readonly chunkParser;
     body(): Promise<Blob>;
     get headers(): HttpHeaders;
     get status(): number;

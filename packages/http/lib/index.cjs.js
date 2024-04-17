@@ -3,8 +3,8 @@
 Object.defineProperty(exports, '__esModule', { value: true });
 
 var ioc = require('@vgerbot/ioc');
-var solidJs = require('solid-js');
 var solidium = require('@vgerbot/solidium');
+var solidJs = require('solid-js');
 var lazy = require('@vgerbot/lazy');
 
 /******************************************************************************
@@ -96,6 +96,42 @@ function __generator(thisArg, body) {
         } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
+}
+
+function __values(o) {
+    var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
+    if (m) return m.call(o);
+    if (o && typeof o.length === "number") return {
+        next: function () {
+            if (o && i >= o.length) o = void 0;
+            return { value: o && o[i++], done: !o };
+        }
+    };
+    throw new TypeError(s ? "Object is not iterable." : "Symbol.iterator is not defined.");
+}
+
+function __await(v) {
+    return this instanceof __await ? (this.v = v, this) : new __await(v);
+}
+
+function __asyncGenerator(thisArg, _arguments, generator) {
+    if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
+    var g = generator.apply(thisArg, _arguments || []), i, q = [];
+    return i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function () { return this; }, i;
+    function verb(n) { if (g[n]) i[n] = function (v) { return new Promise(function (a, b) { q.push([n, v, a, b]) > 1 || resume(n, v); }); }; }
+    function resume(n, v) { try { step(g[n](v)); } catch (e) { settle(q[0][3], e); } }
+    function step(r) { r.value instanceof __await ? Promise.resolve(r.value.v).then(fulfill, reject) : settle(q[0][2], r); }
+    function fulfill(value) { resume("next", value); }
+    function reject(value) { resume("throw", value); }
+    function settle(f, v) { if (f(v), q.shift(), q.length) resume(q[0][0], q[0][1]); }
+}
+
+function __asyncValues(o) {
+    if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
+    var m = o[Symbol.asyncIterator], i;
+    return m ? m.call(o) : (o = typeof __values === "function" ? __values(o) : o[Symbol.iterator](), i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function () { return this; }, i);
+    function verb(n) { i[n] = o[n] && function (v) { return new Promise(function (resolve, reject) { v = o[n](v), settle(resolve, reject, v.done, v.value); }); }; }
+    function settle(resolve, reject, d, v) { Promise.resolve(v).then(function(v) { resolve({ value: v, done: d }); }, reject); }
 }
 
 typeof SuppressedError === "function" ? SuppressedError : function (error, suppressed, message) {
@@ -1064,6 +1100,7 @@ var HttpRequestImpl = /** @class */function () {
   function HttpRequestImpl(configuration, requestOptions) {
     this.configuration = configuration;
     this.requestOptions = requestOptions;
+    this.listeners = new Map();
     var url = resolveURL(configuration.baseUrl, requestOptions.url);
     var searchParams = __assign(__assign({}, configuration.search), requestOptions.search || {});
     var _loop_1 = function (key) {
@@ -1085,7 +1122,30 @@ var HttpRequestImpl = /** @class */function () {
     this.headers = requestOptions.headers ? configuration.headers.mergeAll(requestOptions.headers) : configuration.headers.clone();
     this.method = requestOptions.method || HttpMethod.GET;
     this.disableCache = requestOptions.disableCache || false;
+    this.fetcher = requestOptions.fetcher || configuration.fetcher;
   }
+  HttpRequestImpl.prototype.on = function (type, listener) {
+    if (!this.listeners.has(type)) {
+      this.listeners.set(type, []);
+    }
+    var listeners = this.listeners.get(type);
+    var store = listener.bind(this);
+    listeners.push(store);
+    return function () {
+      var index = listeners.indexOf(store);
+      if (index > -1) {
+        listeners.splice(index, 1);
+      }
+    };
+  };
+  HttpRequestImpl.prototype.dispatch = function (event) {
+    var listeners = this.listeners.get(event.type);
+    if (listeners) {
+      listeners.forEach(function (listener) {
+        return listener(event);
+      });
+    }
+  };
   HttpRequestImpl.prototype.clone = function () {
     return new HttpRequestImpl(this.configuration, this.requestOptions);
   };
@@ -1095,6 +1155,13 @@ var HttpRequestImpl = /** @class */function () {
         return this.requestOptions.key;
       }
       return this.url.toString();
+    },
+    enumerable: false,
+    configurable: true
+  });
+  Object.defineProperty(HttpRequestImpl.prototype, "interceptors", {
+    get: function () {
+      return this.configuration.interceptors.concat(this.requestOptions.interceptors || []);
     },
     enumerable: false,
     configurable: true
@@ -1120,6 +1187,8 @@ var ResourceStatus;
 var WorkerResource = /** @class */function () {
   function WorkerResource() {
     this.status = ResourceStatus.IDLE;
+    this.uploadProgress = 0;
+    this.downloadProgress = 0;
     this.stopTrigger = noop;
     this.responseDefer = new Defer();
   }
@@ -1207,7 +1276,9 @@ var WorkerResource = /** @class */function () {
       body: obtainProperty('body'),
       headers: options.headers,
       search: obtainProperty('search'),
-      trigger: options.trigger
+      trigger: options.trigger,
+      fetcher: options.fetcher,
+      interceptors: options.interceptors
     };
   };
   WorkerResource.prototype.onCleanup = function () {
@@ -1284,13 +1355,23 @@ var WorkerResource = /** @class */function () {
                 case 2:
                   return [2 /*return*/, request.configuration.cacheStrategy.execute(request, function (cachedResponse) {
                     return __awaiter(_this, void 0, void 0, function () {
-                      var fetcher;
+                      var fetcher, cleanupUploadProgressEventListener_1, cleanupDownloadProgressEventListener_1;
+                      var _this = this;
                       return __generator(this, function (_a) {
                         if (cachedResponse) {
                           return [2 /*return*/, Promise.resolve(cachedResponse)];
                         } else {
-                          fetcher = request.configuration.fetcher;
-                          return [2 /*return*/, fetcher(request)];
+                          fetcher = request.fetcher;
+                          cleanupUploadProgressEventListener_1 = request.on('uploadprogress', function (e) {
+                            _this.uploadProgress = e.uploadedBytes / e.totalBytes;
+                          });
+                          cleanupDownloadProgressEventListener_1 = request.on('downloadprogress', function (e) {
+                            _this.downloadProgress = e.uploadedBytes / e.totalBytes;
+                          });
+                          return [2 /*return*/, fetcher(request).finally(function () {
+                            cleanupDownloadProgressEventListener_1();
+                            cleanupUploadProgressEventListener_1();
+                          })];
                         }
                       });
                     });
@@ -1310,6 +1391,8 @@ var WorkerResource = /** @class */function () {
   };
   __decorate([ioc.Inject(), __metadata("design:type", ioc.ApplicationContext)], WorkerResource.prototype, "appCtx", void 0);
   __decorate([solidium.Signal, __metadata("design:type", String)], WorkerResource.prototype, "status", void 0);
+  __decorate([solidium.Signal, __metadata("design:type", Number)], WorkerResource.prototype, "uploadProgress", void 0);
+  __decorate([solidium.Signal, __metadata("design:type", Number)], WorkerResource.prototype, "downloadProgress", void 0);
   __decorate([solidium.Signal, __metadata("design:type", Object)], WorkerResource.prototype, "_response", void 0);
   __decorate([solidium.Signal, __metadata("design:type", Object)], WorkerResource.prototype, "_error", void 0);
   __decorate([ioc.PreDestroy(), __metadata("design:type", Function), __metadata("design:paramtypes", []), __metadata("design:returntype", void 0)], WorkerResource.prototype, "onCleanup", null);
@@ -1350,9 +1433,90 @@ function internalValidateStatus(response) {
   });
 }
 
-var internalFetcher = function (request) {
+var HttpEvent = /** @class */function () {
+  function HttpEvent(request) {
+    this.request = request;
+  }
+  return HttpEvent;
+}();
+
+var DownloadProgressEvent = /** @class */function (_super) {
+  __extends(DownloadProgressEvent, _super);
+  function DownloadProgressEvent(request, totalBytes, uploadedBytes) {
+    var _this = _super.call(this, request) || this;
+    _this.request = request;
+    _this.totalBytes = totalBytes;
+    _this.uploadedBytes = uploadedBytes;
+    _this.type = 'downloadprogress';
+    return _this;
+  }
+  return DownloadProgressEvent;
+}(HttpEvent);
+
+var RequestEndEvent = /** @class */function (_super) {
+  __extends(RequestEndEvent, _super);
+  function RequestEndEvent() {
+    var _this = _super !== null && _super.apply(this, arguments) || this;
+    _this.type = 'end';
+    return _this;
+  }
+  return RequestEndEvent;
+}(HttpEvent);
+
+var RequestStartEvent = /** @class */function (_super) {
+  __extends(RequestStartEvent, _super);
+  function RequestStartEvent() {
+    var _this = _super !== null && _super.apply(this, arguments) || this;
+    _this.type = 'start';
+    return _this;
+  }
+  return RequestStartEvent;
+}(HttpEvent);
+
+var TimeoutEvent = /** @class */function (_super) {
+  __extends(TimeoutEvent, _super);
+  function TimeoutEvent() {
+    var _this = _super !== null && _super.apply(this, arguments) || this;
+    _this.type = 'timeout';
+    return _this;
+  }
+  return TimeoutEvent;
+}(HttpEvent);
+
+var UploadProgressEvent = /** @class */function (_super) {
+  __extends(UploadProgressEvent, _super);
+  function UploadProgressEvent(request, totalBytes, uploadedBytes) {
+    var _this = _super.call(this, request) || this;
+    _this.request = request;
+    _this.totalBytes = totalBytes;
+    _this.uploadedBytes = uploadedBytes;
+    _this.type = 'uploadprogress';
+    return _this;
+  }
+  return UploadProgressEvent;
+}(HttpEvent);
+
+var builtinFetcher = function (request) {
   return __awaiter(void 0, void 0, void 0, function () {
-    var cannotHaveBody, data, _a, requestNativeHeaders, requestHeadersMap, contentType, response, responseHeaders, bodyPromise;
+    var body;
+    return __generator(this, function (_a) {
+      switch (_a.label) {
+        case 0:
+          return [4 /*yield*/, resolveBody(request)];
+        case 1:
+          body = _a.sent();
+          if (body instanceof ReadableStream) {
+            return [2 /*return*/, fetchRequestImpl(request, body)];
+          } else {
+            return [2 /*return*/, xhrRequestImpl(request, body)];
+          }
+      }
+    });
+  });
+};
+function resolveBody(request) {
+  return __awaiter(this, void 0, void 0, function () {
+    var cannotHaveBody, _a;
     return __generator(this, function (_b) {
       switch (_b.label) {
         case 0:
@@ -1366,25 +1530,132 @@ var internalFetcher = function (request) {
           _a = _b.sent();
           _b.label = 3;
         case 3:
-          data = _a;
-          requestNativeHeaders = new Headers({});
-          requestHeadersMap = request.headers.getAll();
-          requestHeadersMap.forEach(function (values, key) {
-            values.forEach(function (value) {
-              requestNativeHeaders.append(key, value);
-            });
-          });
-          contentType = request.body.contentType();
-          if (!contentType.isNone() && !requestNativeHeaders.has('Content-Type')) {
-            requestNativeHeaders.set('Content-Type', contentType.toString());
+          return [2 /*return*/, _a];
+      }
+    });
+  });
+}
+function resolveHeaders(request) {
+  var requestNativeHeaders = new Headers({});
+  var requestHeadersMap = request.headers.getAll();
+  requestHeadersMap.forEach(function (values, key) {
+    values.forEach(function (value) {
+      requestNativeHeaders.append(key, value);
+    });
+  });
+  var contentType = request.body.contentType();
+  if (!contentType.isNone() && !requestNativeHeaders.has('Content-Type')) {
+    requestNativeHeaders.set('Content-Type', contentType.toString());
+  }
+  return requestNativeHeaders;
+}
+function xhrRequestImpl(request, body) {
+  return __awaiter(this, void 0, void 0, function () {
+    var xhr, defer, requestHeaders, headersMap, headers, responseBody, response;
+    return __generator(this, function (_a) {
+      switch (_a.label) {
+        case 0:
+          if (body instanceof ReadableStream) {
+            return [2 /*return*/, fetchRequestImpl(request, body)];
           }
+          xhr = new XMLHttpRequest();
+          defer = new Defer();
+          requestHeaders = resolveHeaders(request);
+          requestHeaders.forEach(function (value, key) {
+            xhr.setRequestHeader(key, value);
+          });
+          xhr.upload.addEventListener('progress', function (ev) {
+            request.dispatch(new UploadProgressEvent(request, ev.total, ev.loaded));
+          });
+          xhr.addEventListener('progress', function (ev) {
+            request.dispatch(new DownloadProgressEvent(request, ev.total, ev.loaded));
+          });
+          xhr.addEventListener('loadend', function () {
+            defer.resolve(null);
+            request.dispatch(new RequestEndEvent(request));
+          });
+          xhr.addEventListener('loadstart', function () {
+            request.dispatch(new RequestStartEvent(request));
+          });
+          xhr.addEventListener('timeout', function () {
+            request.dispatch(new TimeoutEvent(request));
+          });
+          xhr.open(request.method, request.url, true, request.url.username, request.url.password);
+          xhr.send(body);
+          return [4 /*yield*/, defer.promise];
+        case 1:
+          _a.sent();
+          headersMap = resolveAllResponseHeaders(xhr);
+          headers = new HttpHeadersImpl(headersMap);
+          responseBody = resolveResponseData(xhr);
+          response = {
+            body: function () {
+              return Promise.resolve(responseBody);
+            },
+            headers: headers,
+            status: xhr.status,
+            statusText: xhr.statusText,
+            request: request,
+            clone: function () {
+              return __assign({}, response);
+            }
+          };
+          return [2 /*return*/, response];
+      }
+    });
+  });
+}
+function resolveAllResponseHeaders(xhr) {
+  var xhrHeaders = xhr.getAllResponseHeaders();
+  return xhrHeaders.split('\r\n').map(function (item) {
+    return item.split(':');
+  }).reduce(function (map, _a) {
+    var _b;
+    var key = _a[0],
+      value = _a[1];
+    if (map.has(key)) {
+      (_b = map.get(key)) === null || _b === void 0 ? void 0 : _b.push(value);
+    } else {
+      map.set(key, [value]);
+    }
+    return map;
+  }, new Map());
+}
+function resolveResponseData(xhr) {
+  switch (xhr.responseType) {
+    case 'blob':
+      return xhr.response;
+    case 'json':
+      return new Blob([xhr.response], {
+        type: 'application/json'
+      });
+    case 'arraybuffer':
+      var contentType = xhr.getResponseHeader('content-type');
+      return new Blob([xhr.response], {
+        type: contentType || 'application/octet-stream'
+      });
+    case 'document':
+    default:
+      if (xhr.status < 200 || xhr.status >= 500) {
+        return new Blob([xhr.response]);
+      }
+  }
+  return new Blob([]);
+}
+function fetchRequestImpl(request, body) {
+  return __awaiter(this, void 0, void 0, function () {
+    var headers, response, responseHeaders, bodyPromise;
+    return __generator(this, function (_a) {
+      switch (_a.label) {
+        case 0:
+          headers = resolveHeaders(request);
           return [4 /*yield*/, fetch(request.url, {
             method: request.method,
-            headers: requestNativeHeaders,
-            body: data
+            headers: headers,
+            body: body
           })];
-        case 4:
-          response = _b.sent();
+        case 1:
+          response = _a.sent();
           responseHeaders = HttpHeadersImpl.fromNativeHeaders(response.headers);
           return [2 /*return*/, {
             body: function () {
@@ -1401,7 +1672,7 @@ var internalFetcher = function (request) {
       }
     });
   });
-};
+}
 
 var HttpClient = /** @class */function () {
   function HttpClient() {
@@ -1443,7 +1714,7 @@ var HttpClient = /** @class */function () {
       interceptors: [],
       headers: HttpHeadersImpl.empty(),
       search: {},
-      fetcher: internalFetcher,
+      fetcher: fetcher || builtinFetcher,
       storageProvider: storageProvider,
       cacheStrategy: cacheStrategy,
       trigger: defaultTrigger,
@@ -1483,11 +1754,6 @@ var HttpClient = /** @class */function () {
         this.configuration.search[key] = search[key] + '';
       }
     }
-    this.configuration.fetcher = function (request) {
-      return solidJs.untrack(function () {
-        return (fetcher || _this.configuration.fetcher)(request);
-      });
-    };
     (_b = this.configurers) === null || _b === void 0 ? void 0 : _b.forEach(function (configurer) {
       configurer.configHeaders && configurer.configHeaders(_this.configuration.headers);
       configurer.addInterceptors && configurer.addInterceptors(_this.interceptorRegistry);
@@ -1506,6 +1772,43 @@ var HttpClient = /** @class */function () {
   return HttpClient;
 }();
 
+var DelegateResponse = /** @class */function () {
+  function DelegateResponse(origin) {
+    this.origin = origin;
+  }
+  DelegateResponse.prototype.body = function () {
+    return this.origin.body();
+  };
+  Object.defineProperty(DelegateResponse.prototype, "headers", {
+    get: function () {
+      return this.origin.headers;
+    },
+    enumerable: false,
+    configurable: true
+  });
+  Object.defineProperty(DelegateResponse.prototype, "status", {
+    get: function () {
+      return this.origin.status;
+    },
+    enumerable: false,
+    configurable: true
+  });
+  Object.defineProperty(DelegateResponse.prototype, "statusText", {
+    get: function () {
+      return this.origin.statusText;
+    },
+    enumerable: false,
+    configurable: true
+  });
+  Object.defineProperty(DelegateResponse.prototype, "request", {
+    get: function () {
+      return this.origin.request;
+    },
+    enumerable: false,
+    configurable: true
+  });
+  return DelegateResponse;
+}();
 var DelegateResource = /** @class */function () {
   function DelegateResource(target) {
     this.target = target;
@@ -1565,19 +1868,20 @@ var DelegateResource = /** @class */function () {
   return DelegateResource;
 }();
 
-var DataHttpResponse = /** @class */function () {
+var DataHttpResponse = /** @class */function (_super) {
+  __extends(DataHttpResponse, _super);
   function DataHttpResponse(origin, owner, parser) {
-    var _this = this;
-    this.origin = origin;
-    this.owner = owner;
-    this.parser = parser;
-    this._dataSignal = solidJs.runWithOwner(owner, function () {
+    var _this = _super.call(this, origin) || this;
+    _this.origin = origin;
+    _this.owner = owner;
+    _this.parser = parser;
+    _this._dataSignal = solidJs.runWithOwner(owner, function () {
       return solidJs.createSignal();
     });
-    this._parserErrorSignal = solidJs.runWithOwner(owner, function () {
+    _this._parserErrorSignal = solidJs.runWithOwner(owner, function () {
       return solidJs.createSignal();
     });
-    this.origin.body().then(function (blob) {
+    _this.origin.body().then(function (blob) {
       return parser(blob).catch(function (reason) {
         _this._parserErrorSignal[1](reason);
         return undefined;
@@ -1585,38 +1889,8 @@ var DataHttpResponse = /** @class */function () {
     }).then(function (data) {
       _this._dataSignal[1](data);
     });
+    return _this;
   }
-  DataHttpResponse.prototype.body = function () {
-    return this.origin.body();
-  };
-  Object.defineProperty(DataHttpResponse.prototype, "headers", {
-    get: function () {
-      return this.origin.headers;
-    },
-    enumerable: false,
-    configurable: true
-  });
-  Object.defineProperty(DataHttpResponse.prototype, "status", {
-    get: function () {
-      return this.origin.status;
-    },
-    enumerable: false,
-    configurable: true
-  });
-  Object.defineProperty(DataHttpResponse.prototype, "statusText", {
-    get: function () {
-      return this.origin.statusText;
-    },
-    enumerable: false,
-    configurable: true
-  });
-  Object.defineProperty(DataHttpResponse.prototype, "request", {
-    get: function () {
-      return this.origin.request;
-    },
-    enumerable: false,
-    configurable: true
-  });
   DataHttpResponse.prototype.clone = function () {
     return new DataHttpResponse(this.origin.clone(), this.owner, this.parser);
   };
@@ -1635,7 +1909,7 @@ var DataHttpResponse = /** @class */function () {
     configurable: true
   });
   return DataHttpResponse;
-}();
+}(DelegateResponse);
 var DataResource = /** @class */function (_super) {
   __extends(DataResource, _super);
   function DataResource(target, parser) {
@@ -1724,6 +1998,252 @@ function useBlob(options) {
   });
 }
 
+function chunkIterator(readableStream) {
+  return __asyncGenerator(this, arguments, function chunkIterator_1() {
+    var reader, _a, value, done;
+    return __generator(this, function (_b) {
+      switch (_b.label) {
+        case 0:
+          reader = readableStream.getReader();
+          _b.label = 1;
+        case 1:
+          return [4 /*yield*/, __await(reader.read())];
+        case 2:
+          _a = _b.sent(), value = _a.value, done = _a.done;
+          if (!done) return [3 /*break*/, 4];
+          return [4 /*yield*/, __await(void 0)];
+        case 3:
+          return [2 /*return*/, _b.sent()];
+        case 4:
+          return [4 /*yield*/, __await(value)];
+        case 5:
+          return [4 /*yield*/, _b.sent()];
+        case 6:
+          _b.sent();
+          return [3 /*break*/, 1];
+        case 7:
+          return [2 /*return*/];
+      }
+    });
+  });
+}
+
+var SSEResponse = /** @class */function () {
+  function SSEResponse(origin, owner, chunkParser) {
+    var _this = this;
+    this.origin = origin;
+    this.owner = owner;
+    this.chunkParser = chunkParser;
+    this._dataSignal = solidJs.runWithOwner(this.owner, function () {
+      return solidJs.createSignal([]);
+    });
+    (function () {
+      return __awaiter(_this, void 0, void 0, function () {
+        var blob, decoder, _a, _b, _c, chunk, chunkText, text, data, _d, allData, setAllData, e_1_1;
+        var _e, e_1, _f, _g;
+        return __generator(this, function (_h) {
+          switch (_h.label) {
+            case 0:
+              return [4 /*yield*/, this.origin.body()];
+            case 1:
+              blob = _h.sent();
+              decoder = new TextDecoder();
+              _h.label = 2;
+            case 2:
+              _h.trys.push([2, 7, 8, 13]);
+              _a = true, _b = __asyncValues(chunkIterator(blob.stream()));
+              _h.label = 3;
+            case 3:
+              return [4 /*yield*/, _b.next()];
+            case 4:
+              if (!(_c = _h.sent(), _e = _c.done, !_e)) return [3 /*break*/, 6];
+              _g = _c.value;
+              _a = false;
+              chunk = _g;
+              chunkText = decoder.decode(chunk);
+              text = chunkText.replace(/^data:\s+/, '').replace(/\n+^/, '');
+              data = chunkParser(text);
+              _d = this._dataSignal, allData = _d[0], setAllData = _d[1];
+              setAllData(allData().concat(data));
+              _h.label = 5;
+            case 5:
+              _a = true;
+              return [3 /*break*/, 3];
+            case 6:
+              return [3 /*break*/, 13];
+            case 7:
+              e_1_1 = _h.sent();
+              e_1 = {
+                error: e_1_1
+              };
+              return [3 /*break*/, 13];
+            case 8:
+              _h.trys.push([8,, 11, 12]);
+              if (!(!_a && !_e && (_f = _b.return))) return [3 /*break*/, 10];
+              return [4 /*yield*/, _f.call(_b)];
+            case 9:
+              _h.sent();
+              _h.label = 10;
+            case 10:
+              return [3 /*break*/, 12];
+            case 11:
+              if (e_1) throw e_1.error;
+              return [7 /*endfinally*/];
+            case 12:
+              return [7 /*endfinally*/];
+            case 13:
+              return [2 /*return*/];
+          }
+        });
+      });
+    })();
+  }
+  SSEResponse.prototype.body = function () {
+    return this.origin.body();
+  };
+  Object.defineProperty(SSEResponse.prototype, "headers", {
+    get: function () {
+      return this.origin.headers;
+    },
+    enumerable: false,
+    configurable: true
+  });
+  Object.defineProperty(SSEResponse.prototype, "status", {
+    get: function () {
+      return this.origin.status;
+    },
+    enumerable: false,
+    configurable: true
+  });
+  Object.defineProperty(SSEResponse.prototype, "statusText", {
+    get: function () {
+      return this.origin.statusText;
+    },
+    enumerable: false,
+    configurable: true
+  });
+  Object.defineProperty(SSEResponse.prototype, "request", {
+    get: function () {
+      return this.origin.request;
+    },
+    enumerable: false,
+    configurable: true
+  });
+  SSEResponse.prototype.clone = function () {
+    return new SSEResponse(this.origin, this.owner, this.chunkParser);
+  };
+  Object.defineProperty(SSEResponse.prototype, "data", {
+    get: function () {
+      return this._dataSignal[0]();
+    },
+    enumerable: false,
+    configurable: true
+  });
+  return SSEResponse;
+}();
+var SSEResource = /** @class */function (_super) {
+  __extends(SSEResource, _super);
+  function SSEResource(target, parser) {
+    var _this = _super.call(this, target) || this;
+    _this.parser = parser;
+    _this.owner = solidJs.getOwner();
+    return _this;
+  }
+  Object.defineProperty(SSEResource.prototype, "chunk", {
+    /**
+     * @description Get the last chunk of data
+     */
+    get: function () {
+      var data = this.data;
+      return data[data.length - 1];
+    },
+    enumerable: false,
+    configurable: true
+  });
+  Object.defineProperty(SSEResource.prototype, "data", {
+    get: function () {
+      var _a;
+      return ((_a = this.response) === null || _a === void 0 ? void 0 : _a.data) || [];
+    },
+    enumerable: false,
+    configurable: true
+  });
+  Object.defineProperty(SSEResource.prototype, "responsePromise", {
+    get: function () {
+      var _this = this;
+      return this.target.responsePromise.then(function () {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        return _this.response;
+      });
+    },
+    enumerable: false,
+    configurable: true
+  });
+  __decorate([lazy.lazyMember({
+    evaluate: function (instance) {
+      var origin = instance.target.response;
+      return origin ? new SSEResponse(origin, instance.owner, instance.parser) : undefined;
+    },
+    resetBy: [function (instance) {
+      return instance.target.response;
+    }],
+    enumerable: true
+  }), __metadata("design:type", Object)], SSEResource.prototype, "response", void 0);
+  return SSEResource;
+}(DelegateResource);
+
+function useSSE(options, chunkParser) {
+  var headers = options.headers || new HttpHeadersImpl();
+  headers.set('Accept', 'text/event-stream');
+  var worker = useResource(__assign(__assign({}, options), {
+    headers: headers,
+    disableCache: true
+  }));
+  return new SSEResource(worker, chunkParser);
+}
+
+function useSSEJSON(options) {
+  return useSSE(options, function (json) {
+    return JSON.parse(json);
+  });
+}
+
+var HTTP_PROPERTY_MARK_KEY = Symbol('solidium-http-mark-key');
+function defineHttpDecorator(afterInstantiation) {
+  var _a;
+  return ioc.Mark(HTTP_PROPERTY_MARK_KEY, (_a = {}, _a[solidium.IS_MEMBER_DECORATOR_PROCESSOR] = true, _a.afterInstantiation = function (instance, member) {
+    afterInstantiation(instance, member);
+    return instance;
+  }, _a));
+}
+var Http = function (options, parser) {
+  return defineHttpDecorator(function (instance, member) {
+    instance[member] = useData(options, parser);
+  });
+};
+Http.JSON = function (options) {
+  return defineHttpDecorator(function (instance, member) {
+    instance[member] = useJSON(options);
+  });
+};
+Http.JSONData = function (options) {
+  return defineHttpDecorator(function (instance, member) {
+    var resource = useJSON(options);
+    Object.defineProperty(instance, member, {
+      get: function () {
+        return resource.data;
+      }
+    });
+  });
+};
+Http.SSEJSON = function (options) {
+  return defineHttpDecorator(function (instance, member) {
+    instance[member] = useSSEJSON(options);
+  });
+};
+
+exports.HTTP_PROPERTY_MARK_KEY = HTTP_PROPERTY_MARK_KEY;
+exports.Http = Http;
 exports.HttpClient = HttpClient;
 exports.useArrayBuffer = useArrayBuffer;
 exports.useBlob = useBlob;

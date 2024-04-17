@@ -1,18 +1,11 @@
-import { HttpHeaders } from '../types/HttpHeaders';
-import { HttpRequest } from '../types/HttpRequest';
 import { HttpResponse } from '../types/HttpResponse';
 import { Resource } from '../types/Resource';
-import { DelegateResource } from './DelegateResource';
+import { DelegateResource, DelegateResponse } from './DelegateResource';
 import { Owner } from 'solid-js';
-export declare class DataHttpResponse<T> implements HttpResponse {
-    private readonly origin;
+export declare class DataHttpResponse<T> extends DelegateResponse implements HttpResponse {
+    protected readonly origin: HttpResponse;
     private readonly owner;
     private readonly parser;
-    body(): Promise<Blob>;
-    get headers(): HttpHeaders;
-    get status(): number;
-    get statusText(): string;
-    get request(): HttpRequest;
     clone(): HttpResponse;
     get data(): T | undefined;
     get parser_error(): Error | undefined;

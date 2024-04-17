@@ -1,6 +1,6 @@
-import { Inject, PreDestroy, Scope, InstanceScope, ApplicationContext, PostInject, Factory } from '@vgerbot/ioc';
-import { createEffect, on, untrack, runWithOwner, createSignal, getOwner } from 'solid-js';
-import { Signal, useService } from '@vgerbot/solidium';
+import { Inject, PreDestroy, Scope, InstanceScope, ApplicationContext, PostInject, Factory, Mark } from '@vgerbot/ioc';
+import { Signal, useService, IS_MEMBER_DECORATOR_PROCESSOR } from '@vgerbot/solidium';
+import { createEffect, on, runWithOwner, createSignal, getOwner } from 'solid-js';
 import { lazyMember } from '@vgerbot/lazy';
 
 /******************************************************************************
@@ -37,6 +37,42 @@ function __awaiter(thisArg, _arguments, P, generator) {
         function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
+}
+
+function __values(o) {
+    var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
+    if (m) return m.call(o);
+    if (o && typeof o.length === "number") return {
+        next: function () {
+            if (o && i >= o.length) o = void 0;
+            return { value: o && o[i++], done: !o };
+        }
+    };
+    throw new TypeError(s ? "Object is not iterable." : "Symbol.iterator is not defined.");
+}
+
+function __await(v) {
+    return this instanceof __await ? (this.v = v, this) : new __await(v);
+}
+
+function __asyncGenerator(thisArg, _arguments, generator) {
+    if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
+    var g = generator.apply(thisArg, _arguments || []), i, q = [];
+    return i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function () { return this; }, i;
+    function verb(n) { if (g[n]) i[n] = function (v) { return new Promise(function (a, b) { q.push([n, v, a, b]) > 1 || resume(n, v); }); }; }
+    function resume(n, v) { try { step(g[n](v)); } catch (e) { settle(q[0][3], e); } }
+    function step(r) { r.value instanceof __await ? Promise.resolve(r.value.v).then(fulfill, reject) : settle(q[0][2], r); }
+    function fulfill(value) { resume("next", value); }
+    function reject(value) { resume("throw", value); }
+    function settle(f, v) { if (f(v), q.shift(), q.length) resume(q[0][0], q[0][1]); }
+}
+
+function __asyncValues(o) {
+    if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
+    var m = o[Symbol.asyncIterator], i;
+    return m ? m.call(o) : (o = typeof __values === "function" ? __values(o) : o[Symbol.iterator](), i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function () { return this; }, i);
+    function verb(n) { i[n] = o[n] && function (v) { return new Promise(function (resolve, reject) { v = o[n](v), settle(resolve, reject, v.done, v.value); }); }; }
+    function settle(resolve, reject, d, v) { Promise.resolve(v).then(function(v) { resolve({ value: v, done: d }); }, reject); }
 }
 
 typeof SuppressedError === "function" ? SuppressedError : function (error, suppressed, message) {
@@ -901,6 +937,7 @@ class HttpRequestImpl {
   constructor(configuration, requestOptions) {
     this.configuration = configuration;
     this.requestOptions = requestOptions;
+    this.listeners = new Map();
     const url = resolveURL(configuration.baseUrl, requestOptions.url);
     const searchParams = Object.assign(Object.assign({}, configuration.search), requestOptions.search || {});
     for (const key in searchParams) {
@@ -917,6 +954,27 @@ class HttpRequestImpl {
     this.headers = requestOptions.headers ? configuration.headers.mergeAll(requestOptions.headers) : configuration.headers.clone();
     this.method = requestOptions.method || HttpMethod.GET;
     this.disableCache = requestOptions.disableCache || false;
+    this.fetcher = requestOptions.fetcher || configuration.fetcher;
+  }
+  on(type, listener) {
+    if (!this.listeners.has(type)) {
+      this.listeners.set(type, []);
+    }
+    const listeners = this.listeners.get(type);
+    const store = listener.bind(this);
+    listeners.push(store);
+    return () => {
+      const index = listeners.indexOf(store);
+      if (index > -1) {
+        listeners.splice(index, 1);
+      }
+    };
+  }
+  dispatch(event) {
+    const listeners = this.listeners.get(event.type);
+    if (listeners) {
+      listeners.forEach(listener => listener(event));
+    }
   }
   clone() {
     return new HttpRequestImpl(this.configuration, this.requestOptions);
@@ -926,6 +984,9 @@ class HttpRequestImpl {
       return this.requestOptions.key;
     }
     return this.url.toString();
+  }
+  get interceptors() {
+    return this.configuration.interceptors.concat(this.requestOptions.interceptors || []);
   }
 }
 
@@ -945,6 +1006,8 @@ var ResourceStatus;
 let WorkerResource = class WorkerResource {
   constructor() {
     this.status = ResourceStatus.IDLE;
+    this.uploadProgress = 0;
+    this.downloadProgress = 0;
     this.stopTrigger = noop;
     this.responseDefer = new Defer();
   }
@@ -999,7 +1062,9 @@ let WorkerResource = class WorkerResource {
       body: obtainProperty('body'),
       headers: options.headers,
       search: obtainProperty('search'),
-      trigger: options.trigger
+      trigger: options.trigger,
+      fetcher: options.fetcher,
+      interceptors: options.interceptors
     };
   }
   onCleanup() {
@@ -1043,8 +1108,17 @@ let WorkerResource = class WorkerResource {
           if (cachedResponse) {
             return Promise.resolve(cachedResponse);
           } else {
-            const fetcher = request.configuration.fetcher;
-            return fetcher(request);
+            const fetcher = request.fetcher;
+            const cleanupUploadProgressEventListener = request.on('uploadprogress', e => {
+              this.uploadProgress = e.uploadedBytes / e.totalBytes;
+            });
+            const cleanupDownloadProgressEventListener = request.on('downloadprogress', e => {
+              this.downloadProgress = e.uploadedBytes / e.totalBytes;
+            });
+            return fetcher(request).finally(() => {
+              cleanupDownloadProgressEventListener();
+              cleanupUploadProgressEventListener();
+            });
           }
         }));
       });
@@ -1059,6 +1133,8 @@ let WorkerResource = class WorkerResource {
 };
 __decorate([Inject(), __metadata("design:type", ApplicationContext)], WorkerResource.prototype, "appCtx", void 0);
 __decorate([Signal, __metadata("design:type", String)], WorkerResource.prototype, "status", void 0);
+__decorate([Signal, __metadata("design:type", Number)], WorkerResource.prototype, "uploadProgress", void 0);
+__decorate([Signal, __metadata("design:type", Number)], WorkerResource.prototype, "downloadProgress", void 0);
 __decorate([Signal, __metadata("design:type", Object)], WorkerResource.prototype, "_response", void 0);
 __decorate([Signal, __metadata("design:type", Object)], WorkerResource.prototype, "_error", void 0);
 __decorate([PreDestroy(), __metadata("design:type", Function), __metadata("design:paramtypes", []), __metadata("design:returntype", void 0)], WorkerResource.prototype, "onCleanup", null);
@@ -1093,9 +1169,68 @@ function internalValidateStatus(response) {
   });
 }
 
-const internalFetcher = request => __awaiter(void 0, void 0, void 0, function* () {
-  const cannotHaveBody = request.method === HttpMethod.GET || request.method === HttpMethod.HEAD;
-  const data = cannotHaveBody ? undefined : yield request.body.data();
+class HttpEvent {
+  constructor(request) {
+    this.request = request;
+  }
+}
+
+class DownloadProgressEvent extends HttpEvent {
+  constructor(request, totalBytes, uploadedBytes) {
+    super(request);
+    this.request = request;
+    this.totalBytes = totalBytes;
+    this.uploadedBytes = uploadedBytes;
+    this.type = 'downloadprogress';
+  }
+}
+
+class RequestEndEvent extends HttpEvent {
+  constructor() {
+    super(...arguments);
+    this.type = 'end';
+  }
+}
+
+class RequestStartEvent extends HttpEvent {
+  constructor() {
+    super(...arguments);
+    this.type = 'start';
+  }
+}
+
+class TimeoutEvent extends HttpEvent {
+  constructor() {
+    super(...arguments);
+    this.type = 'timeout';
+  }
+}
+
+class UploadProgressEvent extends HttpEvent {
+  constructor(request, totalBytes, uploadedBytes) {
+    super(request);
+    this.request = request;
+    this.totalBytes = totalBytes;
+    this.uploadedBytes = uploadedBytes;
+    this.type = 'uploadprogress';
+  }
+}
+
+const builtinFetcher = request => __awaiter(void 0, void 0, void 0, function* () {
+  const body = yield resolveBody(request);
+  if (body instanceof ReadableStream) {
+    return fetchRequestImpl(request, body);
+  } else {
+    return xhrRequestImpl(request, body);
+  }
+});
+function resolveBody(request) {
+  return __awaiter(this, void 0, void 0, function* () {
+    const cannotHaveBody = request.method === HttpMethod.GET || request.method === HttpMethod.HEAD;
+    return cannotHaveBody ? undefined : yield request.body.data();
+  });
+}
+function resolveHeaders(request) {
   const requestNativeHeaders = new Headers({});
   const requestHeadersMap = request.headers.getAll();
   requestHeadersMap.forEach((values, key) => {
@@ -1107,26 +1242,115 @@ const internalFetcher = request => __awaiter(void 0, void 0, void 0, function* (
   if (!contentType.isNone() && !requestNativeHeaders.has('Content-Type')) {
     requestNativeHeaders.set('Content-Type', contentType.toString());
   }
-  const response = yield fetch(request.url, {
-    method: request.method,
-    headers: requestNativeHeaders,
-    body: data
-  });
-  const responseHeaders = HttpHeadersImpl.fromNativeHeaders(response.headers);
-  let bodyPromise;
-  return {
-    body: () => {
-      if (!bodyPromise) {
-        bodyPromise = response.blob();
+  return requestNativeHeaders;
+}
+function xhrRequestImpl(request, body) {
+  return __awaiter(this, void 0, void 0, function* () {
+    if (body instanceof ReadableStream) {
+      return fetchRequestImpl(request, body);
+    }
+    const xhr = new XMLHttpRequest();
+    const defer = new Defer();
+    const requestHeaders = resolveHeaders(request);
+    requestHeaders.forEach((value, key) => {
+      xhr.setRequestHeader(key, value);
+    });
+    xhr.upload.addEventListener('progress', ev => {
+      request.dispatch(new UploadProgressEvent(request, ev.total, ev.loaded));
+    });
+    xhr.addEventListener('progress', ev => {
+      request.dispatch(new DownloadProgressEvent(request, ev.total, ev.loaded));
+    });
+    xhr.addEventListener('loadend', () => {
+      defer.resolve(null);
+      request.dispatch(new RequestEndEvent(request));
+    });
+    xhr.addEventListener('loadstart', () => {
+      request.dispatch(new RequestStartEvent(request));
+    });
+    xhr.addEventListener('timeout', () => {
+      request.dispatch(new TimeoutEvent(request));
+    });
+    xhr.open(request.method, request.url, true, request.url.username, request.url.password);
+    xhr.send(body);
+    yield defer.promise;
+    const headersMap = resolveAllResponseHeaders(xhr);
+    const headers = new HttpHeadersImpl(headersMap);
+    const responseBody = resolveResponseData(xhr);
+    const response = {
+      body: () => {
+        return Promise.resolve(responseBody);
+      },
+      headers: headers,
+      status: xhr.status,
+      statusText: xhr.statusText,
+      request: request,
+      clone: function () {
+        return Object.assign({}, response);
       }
-      return bodyPromise;
-    },
-    headers: responseHeaders,
-    status: response.status,
-    statusText: response.statusText,
-    request: request
-  };
-});
+    };
+    return response;
+  });
+}
+function resolveAllResponseHeaders(xhr) {
+  const xhrHeaders = xhr.getAllResponseHeaders();
+  return xhrHeaders.split('\r\n').map(item => {
+    return item.split(':');
+  }).reduce((map, [key, value]) => {
+    var _a;
+    if (map.has(key)) {
+      (_a = map.get(key)) === null || _a === void 0 ? void 0 : _a.push(value);
+    } else {
+      map.set(key, [value]);
+    }
+    return map;
+  }, new Map());
+}
+function resolveResponseData(xhr) {
+  switch (xhr.responseType) {
+    case 'blob':
+      return xhr.response;
+    case 'json':
+      return new Blob([xhr.response], {
+        type: 'application/json'
+      });
+    case 'arraybuffer':
+      const contentType = xhr.getResponseHeader('content-type');
+      return new Blob([xhr.response], {
+        type: contentType || 'application/octet-stream'
+      });
+    case 'document':
+    default:
+      if (xhr.status < 200 || xhr.status >= 500) {
+        return new Blob([xhr.response]);
+      }
+  }
+  return new Blob([]);
+}
+function fetchRequestImpl(request, body) {
+  return __awaiter(this, void 0, void 0, function* () {
+    const headers = resolveHeaders(request);
+    const response = yield fetch(request.url, {
+      method: request.method,
+      headers: headers,
+      body: body
+    });
+    const responseHeaders = HttpHeadersImpl.fromNativeHeaders(response.headers);
+    let bodyPromise;
+    return {
+      body: () => {
+        if (!bodyPromise) {
+          bodyPromise = response.blob();
+        }
+        return bodyPromise;
+      },
+      headers: responseHeaders,
+      status: response.status,
+      statusText: response.statusText,
+      request: request
+    };
+  });
+}
 
 class HttpClient {
   constructor() {
@@ -1165,7 +1389,7 @@ class HttpClient {
       interceptors: [],
       headers: HttpHeadersImpl.empty(),
       search: {},
-      fetcher: internalFetcher,
+      fetcher: fetcher || builtinFetcher,
       storageProvider: storageProvider,
       cacheStrategy,
       trigger: defaultTrigger,
@@ -1205,11 +1429,6 @@ class HttpClient {
         this.configuration.search[key] = search[key] + '';
       }
     }
-    this.configuration.fetcher = request => {
-      return untrack(() => {
-        return (fetcher || this.configuration.fetcher)(request);
-      });
-    };
     (_a = this.configurers) === null || _a === void 0 ? void 0 : _a.forEach(configurer => {
       configurer.configHeaders && configurer.configHeaders(this.configuration.headers);
       configurer.addInterceptors && configurer.addInterceptors(this.interceptorRegistry);
@@ -1227,6 +1446,26 @@ __decorate([Inject(HTTP_CONFIGURER), __metadata("design:type", Array)], HttpClie
 __decorate([Inject(), __metadata("design:type", ApplicationContext)], HttpClient.prototype, "appCtx", void 0);
 __decorate([PostInject(), __metadata("design:type", Function), __metadata("design:paramtypes", []), __metadata("design:returntype", void 0)], HttpClient.prototype, "afterInjected", null);
 
+class DelegateResponse {
+  body() {
+    return this.origin.body();
+  }
+  get headers() {
+    return this.origin.headers;
+  }
+  get status() {
+    return this.origin.status;
+  }
+  get statusText() {
+    return this.origin.statusText;
+  }
+  get request() {
+    return this.origin.request;
+  }
+  constructor(origin) {
+    this.origin = origin;
+  }
+}
 class DelegateResource {
   get idle() {
     return this.target.idle;
@@ -1257,22 +1496,7 @@ class DelegateResource {
   }
 }
 
-class DataHttpResponse {
-  body() {
-    return this.origin.body();
-  }
-  get headers() {
-    return this.origin.headers;
-  }
-  get status() {
-    return this.origin.status;
-  }
-  get statusText() {
-    return this.origin.statusText;
-  }
-  get request() {
-    return this.origin.request;
-  }
+class DataHttpResponse extends DelegateResponse {
   clone() {
     return new DataHttpResponse(this.origin.clone(), this.owner, this.parser);
   }
@@ -1283,6 +1507,7 @@ class DataHttpResponse {
     return this._parserErrorSignal[0]();
   }
   constructor(origin, owner, parser) {
+    super(origin);
     this.origin = origin;
     this.owner = owner;
     this.parser = parser;
@@ -1366,5 +1591,154 @@ function useBlob(options) {
   return useData(options, blob => Promise.resolve(blob));
 }
 
-export { HttpClient, useArrayBuffer, useBlob, useData, useJSON, usePlainText };
+function chunkIterator(readableStream) {
+  return __asyncGenerator(this, arguments, function* chunkIterator_1() {
+    const reader = readableStream.getReader();
+    while (true) {
+      const {
+        value,
+        done
+      } = yield __await(reader.read());
+      if (done) {
+        return yield __await(void 0);
+      }
+      yield yield __await(value);
+    }
+  });
+}
+
+class SSEResponse {
+  body() {
+    return this.origin.body();
+  }
+  get headers() {
+    return this.origin.headers;
+  }
+  get status() {
+    return this.origin.status;
+  }
+  get statusText() {
+    return this.origin.statusText;
+  }
+  get request() {
+    return this.origin.request;
+  }
+  clone() {
+    return new SSEResponse(this.origin, this.owner, this.chunkParser);
+  }
+  get data() {
+    return this._dataSignal[0]();
+  }
+  constructor(origin, owner, chunkParser) {
+    this.origin = origin;
+    this.owner = owner;
+    this.chunkParser = chunkParser;
+    this._dataSignal = runWithOwner(this.owner, () => {
+      return createSignal([]);
+    });
+    (() => __awaiter(this, void 0, void 0, function* () {
+      var _a, e_1, _b, _c;
+      const blob = yield this.origin.body();
+      const decoder = new TextDecoder();
+      try {
+        for (var _d = true, _e = __asyncValues(chunkIterator(blob.stream())), _f; _f = yield _e.next(), _a = _f.done, !_a; _d = true) {
+          _c = _f.value;
+          _d = false;
+          const chunk = _c;
+          const chunkText = decoder.decode(chunk);
+          const text = chunkText.replace(/^data:\s+/, '').replace(/\n+^/, '');
+          const data = chunkParser(text);
+          const [allData, setAllData] = this._dataSignal;
+          setAllData(allData().concat(data));
+        }
+      } catch (e_1_1) {
+        e_1 = {
+          error: e_1_1
+        };
+      } finally {
+        try {
+          if (!_d && !_a && (_b = _e.return)) yield _b.call(_e);
+        } finally {
+          if (e_1) throw e_1.error;
+        }
+      }
+    }))();
+  }
+}
+class SSEResource extends DelegateResource {
+  /**
+   * @description Get the last chunk of data
+   */
+  get chunk() {
+    const data = this.data;
+    return data[data.length - 1];
+  }
+  get data() {
+    var _a;
+    return ((_a = this.response) === null || _a === void 0 ? void 0 : _a.data) || [];
+  }
+  get responsePromise() {
+    return this.target.responsePromise.then(() => {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      return this.response;
+    });
+  }
+  constructor(target, parser) {
+    super(target);
+    this.parser = parser;
+    this.owner = getOwner();
+  }
+}
+__decorate([lazyMember({
+  evaluate: instance => {
+    const origin = instance.target.response;
+    return origin ? new SSEResponse(origin, instance.owner, instance.parser) : undefined;
+  },
+  resetBy: [instance => instance.target.response],
+  enumerable: true
+}), __metadata("design:type", Object)], SSEResource.prototype, "response", void 0);
+
+function useSSE(options, chunkParser) {
+  const headers = options.headers || new HttpHeadersImpl();
+  headers.set('Accept', 'text/event-stream');
+  const worker = useResource(Object.assign(Object.assign({}, options), {
+    headers,
+    disableCache: true
+  }));
+  return new SSEResource(worker, chunkParser);
+}
+
+function useSSEJSON(options) {
+  return useSSE(options, json => {
+    return JSON.parse(json);
+  });
+}
+
+const HTTP_PROPERTY_MARK_KEY = Symbol('solidium-http-mark-key');
+function defineHttpDecorator(afterInstantiation) {
+  return Mark(HTTP_PROPERTY_MARK_KEY, {
+    [IS_MEMBER_DECORATOR_PROCESSOR]: true,
+    afterInstantiation(instance, member) {
+      afterInstantiation(instance, member);
+      return instance;
+    }
+  });
+}
+const Http = (options, parser) => defineHttpDecorator((instance, member) => {
+  instance[member] = useData(options, parser);
+});
+Http.JSON = options => defineHttpDecorator((instance, member) => {
+  instance[member] = useJSON(options);
+});
+Http.JSONData = options => defineHttpDecorator((instance, member) => {
+  const resource = useJSON(options);
+  Object.defineProperty(instance, member, {
+    get: () => resource.data
+  });
+});
+Http.SSEJSON = options => defineHttpDecorator((instance, member) => {
+  instance[member] = useSSEJSON(options);
+});
+
+export { HTTP_PROPERTY_MARK_KEY, Http, HttpClient, useArrayBuffer, useBlob, useData, useJSON, usePlainText };
 //# sourceMappingURL=index.es.js.map

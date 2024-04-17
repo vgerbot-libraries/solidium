@@ -12,6 +12,8 @@ export declare class WorkerResource implements Resource {
     get success(): boolean;
     get failure(): boolean;
     get completed(): boolean;
+    uploadProgress: number;
+    downloadProgress: number;
     private _response;
     get response(): HttpResponse | undefined;
     private _error;

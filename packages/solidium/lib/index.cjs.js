@@ -167,6 +167,97 @@ function afterInstantiation(instance) {
   return instance;
 }
 
+var COMPONENT_TREE_SCOPE = 'solidium-component-tree-scope';
+/**
+ * 标记为 ComponentTreeScoped 的类，其不再是全局共享单实例，而是子组件共享单实例
+ */
+ioc.Scope(COMPONENT_TREE_SCOPE);
+
+var instanceSerialNo = -1;
+var InstanceWrapper = /** @class */function () {
+  function InstanceWrapper(instance) {
+    this.instance = instance;
+    this.serialNo = ++instanceSerialNo;
+  }
+  InstanceWrapper.prototype.compareTo = function (other) {
+    return this.serialNo > other.serialNo ? -1 : this.serialNo < other.serialNo ? 1 : 0;
+  };
+  return InstanceWrapper;
+}();
+
+var ComponentTreeScopeInstanceResolution = /** @class */function () {
+  function ComponentTreeScopeInstanceResolution() {
+    this.allInstances = [];
+  }
+  ComponentTreeScopeInstanceResolution.prototype.shouldGenerate = function (options) {
+    var solidOwner = this.getParentSolidOwner(options.identifier);
+    return !solidOwner;
+  };
+  ComponentTreeScopeInstanceResolution.prototype.saveInstance = function (options) {
+    var _this = this;
+    var owner = solidJs.getOwner();
+    if (!owner) {
+      return;
+    }
+    if (!owner.instances) {
+      owner.instances = new Map();
+    }
+    var wrapper = new InstanceWrapper(options.instance);
+    this.allInstances.push(wrapper);
+    owner.instances.set(options.identifier, wrapper);
+    solidJs.runWithOwner(owner, function () {
+      solidJs.onCleanup(function () {
+        _this.invokeInstancePreDestroy(wrapper.instance);
+        var index = _this.allInstances.indexOf(wrapper);
+        if (index > -1) {
+          _this.allInstances.splice(index, 1);
+        }
+      });
+    });
+  };
+  ComponentTreeScopeInstanceResolution.prototype.getInstance = function (options) {
+    var _a, _b;
+    var solidOwner = this.getParentSolidOwner(options.identifier);
+    if (!solidOwner) {
+      return;
+    }
+    return (_b = (_a = solidOwner.instances) === null || _a === void 0 ? void 0 : _a.get(options.identifier)) === null || _b === void 0 ? void 0 : _b.instance;
+  };
+  ComponentTreeScopeInstanceResolution.prototype.destroy = function () {
+    var _this = this;
+    this.allInstances.sort(function (a, b) {
+      return a.compareTo(b);
+    });
+    this.allInstances.forEach(function (wrapper) {
+      _this.invokeInstancePreDestroy(wrapper.instance);
+    });
+    this.allInstances.length = 0;
+  };
+  ComponentTreeScopeInstanceResolution.prototype.invokeInstancePreDestroy = function (instance) {
+    var classMetadata = ioc.ClassMetadata.getInstance(instance.constructor);
+    var preDestroyMethods = classMetadata.getMethods(ioc.Lifecycle.PRE_DESTROY);
+    preDestroyMethods.forEach(function (methodName) {
+      var method = instance[methodName];
+      if (typeof method === 'function') {
+        method.call(instance);
+      }
+    });
+  };
+  ComponentTreeScopeInstanceResolution.prototype.getParentSolidOwner = function (identifier) {
+    var _a;
+    var owner = solidJs.getOwner();
+    while (!!owner && !!owner.instances) {
+      var hasInstance = owner.instances.has(identifier);
+      if (hasInstance) {
+        return owner;
+      }
+      owner = (_a = owner.owner) === null || _a === void 0 ? void 0 : _a.owner;
+    }
+    return owner;
+  };
+  return ComponentTreeScopeInstanceResolution;
+}();
+
 var IoCContext = solidJs.createContext();
 var ServiceInstanceStatusManager = /** @class */function () {
   function ServiceInstanceStatusManager() {
@@ -208,6 +299,7 @@ function Solidium(props) {
   };
   appCtx.registerBeforeInstantiationProcessor(beforeInstantiation);
   appCtx.registerAfterInstantiationProcessor(afterInstantiation);
+  appCtx.registerInstanceScopeResolution(COMPONENT_TREE_SCOPE, ComponentTreeScopeInstanceResolution);
   if (typeof props.init === 'function') {
     props.init(appCtx);
   }
