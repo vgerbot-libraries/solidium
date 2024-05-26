@@ -4,7 +4,7 @@ import { HttpResponse } from '../types/HttpResponse';
 import { Resource } from '../types/Resource';
 import { CreateResourceOptions } from '../types/CreateResourceOptions';
 import { HTTPError } from '../error/HTTPError';
-export declare class WorkerResource implements Resource {
+export declare class ActuatorResource implements Resource {
     private appCtx;
     private status;
     get idle(): boolean;

@@ -31,7 +31,7 @@ enum ResourceStatus {
 }
 
 @Scope(InstanceScope.TRANSIENT)
-export class WorkerResource implements Resource {
+export class ActuatorResource implements Resource {
     @Inject()
     private appCtx!: ApplicationContext;
     @Signal

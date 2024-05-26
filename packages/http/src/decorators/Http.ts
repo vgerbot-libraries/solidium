@@ -4,8 +4,8 @@ import {
     MemberDecoratorProcessor
 } from '@vgerbot/solidium';
 import { useData, useJSON } from '../hooks';
-import { useSSEJSON } from '../hooks/useSSEJSON';
 import { CreateResourceOptions } from '../types/CreateResourceOptions';
+import { useSSE } from '../hooks/useSSE';
 
 export const HTTP_PROPERTY_MARK_KEY = Symbol('solidium-http-mark-key');
 
@@ -15,7 +15,10 @@ interface HttpDecorator extends PropertyDecorator {
         parser: (blob: Blob) => Promise<T>
     ): PropertyDecorator;
     JSON(options: CreateResourceOptions): PropertyDecorator;
-    SSEJSON(options: CreateResourceOptions): PropertyDecorator;
+    SSE(
+        options: CreateResourceOptions,
+        chunkParser?: (chunk: string) => unknown
+    ): PropertyDecorator;
     JSONData(options: CreateResourceOptions): PropertyDecorator;
 }
 
@@ -55,7 +58,10 @@ Http.JSONData = (options: CreateResourceOptions) =>
         });
     });
 
-Http.SSEJSON = (options: CreateResourceOptions) =>
+Http.SSE = (
+    options: CreateResourceOptions,
+    chunkParser: (chunk: string) => unknown = chunk => JSON.parse(chunk)
+) =>
     defineHttpDecorator((instance, member) => {
-        instance[member] = useSSEJSON(options);
+        instance[member] = useSSE(options, chunkParser);
     });

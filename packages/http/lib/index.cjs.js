@@ -1184,71 +1184,71 @@ var ResourceStatus;
   ResourceStatus["SUCCESS"] = "success";
   ResourceStatus["FAILURE"] = "failure";
 })(ResourceStatus || (ResourceStatus = {}));
-var WorkerResource = /** @class */function () {
-  function WorkerResource() {
+var ActuatorResource = /** @class */function () {
+  function ActuatorResource() {
     this.status = ResourceStatus.IDLE;
     this.uploadProgress = 0;
     this.downloadProgress = 0;
     this.stopTrigger = noop;
     this.responseDefer = new Defer();
   }
-  Object.defineProperty(WorkerResource.prototype, "idle", {
+  Object.defineProperty(ActuatorResource.prototype, "idle", {
     get: function () {
       return this.status === ResourceStatus.IDLE;
     },
     enumerable: false,
     configurable: true
   });
-  Object.defineProperty(WorkerResource.prototype, "pending", {
+  Object.defineProperty(ActuatorResource.prototype, "pending", {
     get: function () {
       return this.status === ResourceStatus.PENDING;
     },
     enumerable: false,
     configurable: true
   });
-  Object.defineProperty(WorkerResource.prototype, "success", {
+  Object.defineProperty(ActuatorResource.prototype, "success", {
     get: function () {
       return this.status === ResourceStatus.SUCCESS;
     },
     enumerable: false,
     configurable: true
   });
-  Object.defineProperty(WorkerResource.prototype, "failure", {
+  Object.defineProperty(ActuatorResource.prototype, "failure", {
     get: function () {
       return this.status === ResourceStatus.FAILURE;
     },
     enumerable: false,
     configurable: true
   });
-  Object.defineProperty(WorkerResource.prototype, "completed", {
+  Object.defineProperty(ActuatorResource.prototype, "completed", {
     get: function () {
       return this.success || this.failure;
     },
     enumerable: false,
     configurable: true
   });
-  Object.defineProperty(WorkerResource.prototype, "response", {
+  Object.defineProperty(ActuatorResource.prototype, "response", {
     get: function () {
       return this._response;
     },
     enumerable: false,
     configurable: true
   });
-  Object.defineProperty(WorkerResource.prototype, "error", {
+  Object.defineProperty(ActuatorResource.prototype, "error", {
     get: function () {
       return this._error;
     },
     enumerable: false,
     configurable: true
   });
-  Object.defineProperty(WorkerResource.prototype, "responsePromise", {
+  Object.defineProperty(ActuatorResource.prototype, "responsePromise", {
     get: function () {
       return this.responseDefer.promise;
     },
     enumerable: false,
     configurable: true
   });
-  WorkerResource.prototype.init = function (configuration, createResourceOptions) {
+  ActuatorResource.prototype.init = function (configuration, createResourceOptions) {
     var _this = this;
     solidJs.createEffect(solidJs.on(function () {
       return _this.convertToRequestOptions(createResourceOptions);
@@ -1261,7 +1261,7 @@ var WorkerResource = /** @class */function () {
       });
     }));
   };
-  WorkerResource.prototype.convertToRequestOptions = function (options) {
+  ActuatorResource.prototype.convertToRequestOptions = function (options) {
     var obtainProperty = function (key) {
       var value = options[key];
       if (typeof value === 'function') {
@@ -1281,10 +1281,10 @@ var WorkerResource = /** @class */function () {
       interceptors: options.interceptors
     };
   };
-  WorkerResource.prototype.onCleanup = function () {
+  ActuatorResource.prototype.onCleanup = function () {
     this.stopTrigger();
   };
-  WorkerResource.prototype.refetch = function (clearCache) {
+  ActuatorResource.prototype.refetch = function (clearCache) {
     return __awaiter(this, void 0, void 0, function () {
       var configuration, response, error_1;
       return __generator(this, function (_a) {
@@ -1333,7 +1333,7 @@ var WorkerResource = /** @class */function () {
       });
     });
   };
-  WorkerResource.prototype.executeRequest = function (clearCache) {
+  ActuatorResource.prototype.executeRequest = function (clearCache) {
     return __awaiter(this, void 0, void 0, function () {
       var configuration, executeRequest, interceptedRequestExecutor;
       var _this = this;
@@ -1389,15 +1389,15 @@ var WorkerResource = /** @class */function () {
       });
     });
   };
-  __decorate([ioc.Inject(), __metadata("design:type", ioc.ApplicationContext)], WorkerResource.prototype, "appCtx", void 0);
-  __decorate([solidium.Signal, __metadata("design:type", String)], WorkerResource.prototype, "status", void 0);
-  __decorate([solidium.Signal, __metadata("design:type", Number)], WorkerResource.prototype, "uploadProgress", void 0);
-  __decorate([solidium.Signal, __metadata("design:type", Number)], WorkerResource.prototype, "downloadProgress", void 0);
-  __decorate([solidium.Signal, __metadata("design:type", Object)], WorkerResource.prototype, "_response", void 0);
-  __decorate([solidium.Signal, __metadata("design:type", Object)], WorkerResource.prototype, "_error", void 0);
-  __decorate([ioc.PreDestroy(), __metadata("design:type", Function), __metadata("design:paramtypes", []), __metadata("design:returntype", void 0)], WorkerResource.prototype, "onCleanup", null);
-  WorkerResource = __decorate([ioc.Scope(ioc.InstanceScope.TRANSIENT)], WorkerResource);
-  return WorkerResource;
+  __decorate([ioc.Inject(), __metadata("design:type", ioc.ApplicationContext)], ActuatorResource.prototype, "appCtx", void 0);
+  __decorate([solidium.Signal, __metadata("design:type", String)], ActuatorResource.prototype, "status", void 0);
+  __decorate([solidium.Signal, __metadata("design:type", Number)], ActuatorResource.prototype, "uploadProgress", void 0);
+  __decorate([solidium.Signal, __metadata("design:type", Number)], ActuatorResource.prototype, "downloadProgress", void 0);
+  __decorate([solidium.Signal, __metadata("design:type", Object)], ActuatorResource.prototype, "_response", void 0);
+  __decorate([solidium.Signal, __metadata("design:type", Object)], ActuatorResource.prototype, "_error", void 0);
+  __decorate([ioc.PreDestroy(), __metadata("design:type", Function), __metadata("design:paramtypes", []), __metadata("design:returntype", void 0)], ActuatorResource.prototype, "onCleanup", null);
+  ActuatorResource = __decorate([ioc.Scope(ioc.InstanceScope.TRANSIENT)], ActuatorResource);
+  return ActuatorResource;
 }();
 
 var HttpInterceptorRegistryImpl = /** @class */function () {
@@ -1761,7 +1761,7 @@ var HttpClient = /** @class */function () {
     (_a = this.configuration.interceptors).push.apply(_a, this.interceptorRegistry.getInterceptors());
   };
   HttpClient.prototype.createResource = function (options) {
-    var worker = this.appCtx.getInstance(WorkerResource);
+    var worker = this.appCtx.getInstance(ActuatorResource);
     worker.init(this.configuration.clone(), options);
     return worker;
   };
@@ -2202,12 +2202,6 @@ function useSSE(options, chunkParser) {
   return new SSEResource(worker, chunkParser);
 }
 
-function useSSEJSON(options) {
-  return useSSE(options, function (json) {
-    return JSON.parse(json);
-  });
-}
-
 var HTTP_PROPERTY_MARK_KEY = Symbol('solidium-http-mark-key');
 function defineHttpDecorator(afterInstantiation) {
   var _a;
@@ -2236,9 +2230,14 @@ Http.JSONData = function (options) {
     });
   });
 };
-Http.SSEJSON = function (options) {
+Http.SSE = function (options, chunkParser) {
+  if (chunkParser === void 0) {
+    chunkParser = function (chunk) {
+      return JSON.parse(chunk);
+    };
+  }
   return defineHttpDecorator(function (instance, member) {
-    instance[member] = useSSEJSON(options);
+    instance[member] = useSSE(options, chunkParser);
   });
 };
 

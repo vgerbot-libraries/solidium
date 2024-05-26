@@ -1003,7 +1003,7 @@ var ResourceStatus;
   ResourceStatus["SUCCESS"] = "success";
   ResourceStatus["FAILURE"] = "failure";
 })(ResourceStatus || (ResourceStatus = {}));
-let WorkerResource = class WorkerResource {
+let ActuatorResource = class ActuatorResource {
   constructor() {
     this.status = ResourceStatus.IDLE;
     this.uploadProgress = 0;
@@ -1131,14 +1131,14 @@ let WorkerResource = class WorkerResource {
     });
   }
 };
-__decorate([Inject(), __metadata("design:type", ApplicationContext)], WorkerResource.prototype, "appCtx", void 0);
-__decorate([Signal, __metadata("design:type", String)], WorkerResource.prototype, "status", void 0);
-__decorate([Signal, __metadata("design:type", Number)], WorkerResource.prototype, "uploadProgress", void 0);
-__decorate([Signal, __metadata("design:type", Number)], WorkerResource.prototype, "downloadProgress", void 0);
-__decorate([Signal, __metadata("design:type", Object)], WorkerResource.prototype, "_response", void 0);
-__decorate([Signal, __metadata("design:type", Object)], WorkerResource.prototype, "_error", void 0);
-__decorate([PreDestroy(), __metadata("design:type", Function), __metadata("design:paramtypes", []), __metadata("design:returntype", void 0)], WorkerResource.prototype, "onCleanup", null);
-WorkerResource = __decorate([Scope(InstanceScope.TRANSIENT)], WorkerResource);
+__decorate([Inject(), __metadata("design:type", ApplicationContext)], ActuatorResource.prototype, "appCtx", void 0);
+__decorate([Signal, __metadata("design:type", String)], ActuatorResource.prototype, "status", void 0);
+__decorate([Signal, __metadata("design:type", Number)], ActuatorResource.prototype, "uploadProgress", void 0);
+__decorate([Signal, __metadata("design:type", Number)], ActuatorResource.prototype, "downloadProgress", void 0);
+__decorate([Signal, __metadata("design:type", Object)], ActuatorResource.prototype, "_response", void 0);
+__decorate([Signal, __metadata("design:type", Object)], ActuatorResource.prototype, "_error", void 0);
+__decorate([PreDestroy(), __metadata("design:type", Function), __metadata("design:paramtypes", []), __metadata("design:returntype", void 0)], ActuatorResource.prototype, "onCleanup", null);
+ActuatorResource = __decorate([Scope(InstanceScope.TRANSIENT)], ActuatorResource);
 
 class HttpInterceptorRegistryImpl {
   constructor() {
@@ -1436,7 +1436,7 @@ class HttpClient {
     this.configuration.interceptors.push(...this.interceptorRegistry.getInterceptors());
   }
   createResource(options) {
-    const worker = this.appCtx.getInstance(WorkerResource);
+    const worker = this.appCtx.getInstance(ActuatorResource);
     worker.init(this.configuration.clone(), options);
     return worker;
   }
@@ -1708,12 +1708,6 @@ function useSSE(options, chunkParser) {
   return new SSEResource(worker, chunkParser);
 }
 
-function useSSEJSON(options) {
-  return useSSE(options, json => {
-    return JSON.parse(json);
-  });
-}
-
 const HTTP_PROPERTY_MARK_KEY = Symbol('solidium-http-mark-key');
 function defineHttpDecorator(afterInstantiation) {
   return Mark(HTTP_PROPERTY_MARK_KEY, {
@@ -1736,8 +1730,8 @@ Http.JSONData = options => defineHttpDecorator((instance, member) => {
     get: () => resource.data
   });
 });
-Http.SSEJSON = options => defineHttpDecorator((instance, member) => {
-  instance[member] = useSSEJSON(options);
+Http.SSE = (options, chunkParser = chunk => JSON.parse(chunk)) => defineHttpDecorator((instance, member) => {
+  instance[member] = useSSE(options, chunkParser);
 });
 
 export { HTTP_PROPERTY_MARK_KEY, Http, HttpClient, useArrayBuffer, useBlob, useData, useJSON, usePlainText };

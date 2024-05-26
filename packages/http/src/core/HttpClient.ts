@@ -5,7 +5,7 @@ import { MemoryStorageProvider } from '../cache/provider/MemoryStorageProvider';
 import { DefaultCacheStrategy } from '../cache/strategy/DefaultCacheStrategy';
 import { createTrigger } from '../common/createTrigger';
 import { keep } from '../common/keep';
-import { WorkerResource } from '../resource/WorkerResource';
+import { ActuatorResource } from '../resource/ActuatorResource';
 import { CacheStrategy } from '../types/CacheStrategy';
 import {
     HttpConfiguration,
@@ -135,7 +135,7 @@ export class HttpClient {
     }
 
     createResource(options: CreateResourceOptions): Resource {
-        const worker = this.appCtx.getInstance(WorkerResource);
+        const worker = this.appCtx.getInstance(ActuatorResource);
         worker.init(this.configuration.clone(), options);
         return worker;
     }
