@@ -1,10 +1,7 @@
-import { Mark, MemberKey } from '@vgerbot/ioc';
-import {
-    MemberDecoratorProcessor,
-    IS_MEMBER_DECORATOR_PROCESSOR
-} from '../core/DecoratorProcessor';
+import { MemberKey } from '@vgerbot/ioc';
 import { createEffect, on, onCleanup } from 'solid-js';
 import { clean, store } from '../common/store-result';
+import { defineMemberDecoratorProcessor } from '../core/defineMemberDecoratorProcessor';
 
 export const OBSERVE_PROPERTY_MARK_KEY = Symbol('solidium_observed_property');
 
@@ -49,29 +46,29 @@ export function Observe(options?: {}): MethodDecorator;
  * @returns an method decorator
  */
 export function Observe<T>(options: ObserveOptions<T> = {}) {
-    return Mark(OBSERVE_PROPERTY_MARK_KEY, {
-        [IS_MEMBER_DECORATOR_PROCESSOR]: true,
-        afterInstantiation(instance, methodName) {
-            // TODO: supports scheduling
-            const fn = () => {
-                const ret = (instance as ObserverableObject)[methodName].call(
-                    instance
-                );
-                store(instance as Object, methodName, ret);
-                onCleanup(() => {
-                    clean(instance as Object, methodName);
-                });
-            };
-            if ('deps' in options) {
-                createEffect(
-                    on(options.deps, fn, {
-                        defer: options.defer
-                    })
-                );
-            } else {
-                createEffect(fn);
+    return defineMemberDecoratorProcessor<ObserverableObject>(
+        OBSERVE_PROPERTY_MARK_KEY,
+        {
+            afterInstantiation(instance, methodName) {
+                // TODO: supports scheduling
+                const fn = () => {
+                    const ret = instance[methodName].call(instance);
+                    store(instance as Object, methodName, ret);
+                    onCleanup(() => {
+                        clean(instance as Object, methodName);
+                    });
+                };
+                if ('deps' in options) {
+                    createEffect(
+                        on(options.deps, fn, {
+                            defer: options.defer
+                        })
+                    );
+                } else {
+                    createEffect(fn);
+                }
+                return instance;
             }
-            return instance;
         }
-    } as MemberDecoratorProcessor) as MethodDecorator;
+    ) as MethodDecorator;
 }

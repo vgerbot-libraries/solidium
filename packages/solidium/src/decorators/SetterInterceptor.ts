@@ -1,12 +1,9 @@
-import { Mark, MemberKey, Newable } from '@vgerbot/ioc';
-import {
-    MemberDecoratorProcessor,
-    IS_MEMBER_DECORATOR_PROCESSOR
-} from '../core/DecoratorProcessor';
+import { MemberKey, Newable } from '@vgerbot/ioc';
 import {
     SetterInterceptorOptions,
     appendSetterInterceptor
 } from '../helper/appendSetterInterceptor';
+import { defineMemberDecoratorProcessor } from '../core/defineMemberDecoratorProcessor';
 
 export const SETTER_INTERCEPTOR_METHOD_MARK_KEY = Symbol(
     'solidium_setter_interceptor_method'
@@ -24,8 +21,7 @@ export const SetterInterceptor = (
             break;
         default:
     }
-    return Mark(SETTER_INTERCEPTOR_METHOD_MARK_KEY, {
-        [IS_MEMBER_DECORATOR_PROCESSOR]: true,
+    return defineMemberDecoratorProcessor(SETTER_INTERCEPTOR_METHOD_MARK_KEY, {
         beforeInstantiation: <T>(
             constructor: Newable<T>,
             member: MemberKey
@@ -36,5 +32,5 @@ export const SetterInterceptor = (
                 member
             );
         }
-    } as MemberDecoratorProcessor) as MethodDecorator;
+    }) as MethodDecorator;
 };

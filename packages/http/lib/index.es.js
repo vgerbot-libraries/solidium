@@ -1,5 +1,5 @@
-import { Inject, PreDestroy, Scope, InstanceScope, ApplicationContext, PostInject, Factory, Mark } from '@vgerbot/ioc';
-import { Signal, useService, IS_MEMBER_DECORATOR_PROCESSOR } from '@vgerbot/solidium';
+import { Inject, PreDestroy, Scope, InstanceScope, ApplicationContext, PostInject, Factory } from '@vgerbot/ioc';
+import { Signal, useService, defineMemberDecoratorProcessor } from '@vgerbot/solidium';
 import { createEffect, on, runWithOwner, createSignal, getOwner } from 'solid-js';
 import { lazyMember } from '@vgerbot/lazy';
 
@@ -1710,8 +1710,7 @@ function useSSE(options, chunkParser) {
 
 const HTTP_PROPERTY_MARK_KEY = Symbol('solidium-http-mark-key');
 function defineHttpDecorator(afterInstantiation) {
-  return Mark(HTTP_PROPERTY_MARK_KEY, {
-    [IS_MEMBER_DECORATOR_PROCESSOR]: true,
+  return defineMemberDecoratorProcessor(HTTP_PROPERTY_MARK_KEY, {
     afterInstantiation(instance, member) {
       afterInstantiation(instance, member);
       return instance;

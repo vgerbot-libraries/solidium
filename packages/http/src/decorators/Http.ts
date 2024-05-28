@@ -1,8 +1,5 @@
-import { Mark, MemberKey } from '@vgerbot/ioc';
-import {
-    IS_MEMBER_DECORATOR_PROCESSOR,
-    MemberDecoratorProcessor
-} from '@vgerbot/solidium';
+import { MemberKey } from '@vgerbot/ioc';
+import { defineMemberDecoratorProcessor } from '@vgerbot/solidium';
 import { useData, useJSON } from '../hooks';
 import { CreateResourceOptions } from '../types/CreateResourceOptions';
 import { useSSE } from '../hooks/useSSE';
@@ -28,13 +25,15 @@ function defineHttpDecorator(
         member: MemberKey
     ) => void
 ) {
-    return Mark(HTTP_PROPERTY_MARK_KEY, {
-        [IS_MEMBER_DECORATOR_PROCESSOR]: true,
-        afterInstantiation(instance: Record<MemberKey, unknown>, member) {
-            afterInstantiation(instance, member);
-            return instance;
+    return defineMemberDecoratorProcessor<Record<MemberKey, unknown>>(
+        HTTP_PROPERTY_MARK_KEY,
+        {
+            afterInstantiation(instance, member) {
+                afterInstantiation(instance, member);
+                return instance;
+            }
         }
-    } as MemberDecoratorProcessor) as PropertyDecorator;
+    );
 }
 
 export const Http = (<T>(

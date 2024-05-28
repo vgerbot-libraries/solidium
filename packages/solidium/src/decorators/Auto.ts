@@ -1,18 +1,13 @@
-import { Mark } from '@vgerbot/ioc';
-import {
-    ClassDecoratorProcessor,
-    IS_CLASS_DECORATOR_PROCESSOR
-} from '../core/DecoratorProcessor';
 import { getOwner, runWithOwner } from 'solid-js';
 import {
     defineSignalMember,
     isSignalMember
 } from '../helper/defineSignalMember';
+import { defineClassDecoratorProcessor } from '../core/defineClassDecoratorProcessor';
 
 export const SOLIDIUM_MARK_CLASS_AUTO = Symbol('solidium-mark-class-auto');
 
-export const Auto = Mark(SOLIDIUM_MARK_CLASS_AUTO, {
-    [IS_CLASS_DECORATOR_PROCESSOR]: true,
+export const Auto = defineClassDecoratorProcessor(SOLIDIUM_MARK_CLASS_AUTO, {
     afterInstantiation(instance: Record<string | symbol, unknown>) {
         if (!instance || typeof instance !== 'object') {
             return instance;
@@ -39,4 +34,4 @@ export const Auto = Mark(SOLIDIUM_MARK_CLASS_AUTO, {
             }
         });
     }
-} as ClassDecoratorProcessor) as ClassDecorator;
+}) as ClassDecorator;

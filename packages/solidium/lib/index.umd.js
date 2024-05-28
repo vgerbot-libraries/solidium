@@ -396,12 +396,18 @@
       return !!(extraDataOfMember === null || extraDataOfMember === void 0 ? void 0 : extraDataOfMember.get(IS_SIGNAL_MEMBER_METADATA_KEY));
     }
 
-    var _a$3;
+    function defineMemberDecoratorProcessor(key, processor) {
+      var _a;
+      return ioc.Mark(key, __assign((_a = {}, _a[IS_MEMBER_DECORATOR_PROCESSOR] = true, _a), processor));
+    }
+
     var SIGNAL_MARK_KEY = Symbol('solidium_mark_as_signal_property');
-    var Signal = ioc.Mark(SIGNAL_MARK_KEY, (_a$3 = {}, _a$3[IS_MEMBER_DECORATOR_PROCESSOR] = true, _a$3.afterInstantiation = function (instance, member) {
-      defineSignalMember(instance, member, instance[member]);
-      return instance;
-    }, _a$3));
+    var Signal = defineMemberDecoratorProcessor(SIGNAL_MARK_KEY, {
+      afterInstantiation: function (instance, member) {
+        defineSignalMember(instance, member, instance[member]);
+        return instance;
+      }
+    });
 
     var RESULT_MAP = new SignalMap();
     function store(instance, methodName, value) {
@@ -424,28 +430,29 @@
      * @returns an method decorator
      */
     function Observe(options) {
-      var _a;
       if (options === void 0) {
         options = {};
       }
-      return ioc.Mark(OBSERVE_PROPERTY_MARK_KEY, (_a = {}, _a[IS_MEMBER_DECORATOR_PROCESSOR] = true, _a.afterInstantiation = function (instance, methodName) {
-        // TODO: supports scheduling
-        var fn = function () {
-          var ret = instance[methodName].call(instance);
-          store(instance, methodName, ret);
-          solidJs.onCleanup(function () {
-            clean(instance, methodName);
-          });
-        };
-        if ('deps' in options) {
-          solidJs.createEffect(solidJs.on(options.deps, fn, {
-            defer: options.defer
-          }));
-        } else {
-          solidJs.createEffect(fn);
+      return defineMemberDecoratorProcessor(OBSERVE_PROPERTY_MARK_KEY, {
+        afterInstantiation: function (instance, methodName) {
+          // TODO: supports scheduling
+          var fn = function () {
+            var ret = instance[methodName].call(instance);
+            store(instance, methodName, ret);
+            solidJs.onCleanup(function () {
+              clean(instance, methodName);
+            });
+          };
+          if ('deps' in options) {
+            solidJs.createEffect(solidJs.on(options.deps, fn, {
+              defer: options.defer
+            }));
+          } else {
+            solidJs.createEffect(fn);
+          }
+          return instance;
         }
-        return instance;
-      }, _a));
+      });
     }
 
     var NOT_CHANGED_SYMBOL = Symbol('solidium-not-change-symbol');
@@ -468,86 +475,94 @@
       };
     }
 
-    var _a$2;
     var COMPUTED_GETTER_MARK_KEY = Symbol('solidium_computed_getter');
-    var Computed = ioc.Mark(COMPUTED_GETTER_MARK_KEY, (_a$2 = {}, _a$2[IS_MEMBER_DECORATOR_PROCESSOR] = true, _a$2.afterInstantiation = function (instance, member) {
-      var prototype = Object.getPrototypeOf(instance);
-      var descriptor = Object.getOwnPropertyDescriptor(prototype, member);
-      var originGetter = descriptor === null || descriptor === void 0 ? void 0 : descriptor.get;
-      var hasGetter = !!originGetter;
-      var hasSetter = !!(descriptor === null || descriptor === void 0 ? void 0 : descriptor.set);
-      if (!hasGetter) {
-        // WARNING
-        return instance;
-      }
-      if (hasSetter) {
-        // WARNING
-        return instance;
-      }
-      var getter = useComputed(function () {
-        var _a;
-        return (_a = descriptor === null || descriptor === void 0 ? void 0 : descriptor.get) === null || _a === void 0 ? void 0 : _a.call(instance);
-      });
-      Object.defineProperty(instance, member, __assign(__assign({}, descriptor), {
-        get: getter
-      }));
-      return instance;
-    }, _a$2));
-
-    var _a$1;
-    var BATCH_METHOD_MARK_KEY = Symbol('solidium-batch-method-mark-key');
-    var Batch = ioc.Mark(BATCH_METHOD_MARK_KEY, (_a$1 = {}, _a$1[IS_MEMBER_DECORATOR_PROCESSOR] = true, _a$1.afterInstantiation = function (instance, member) {
-      var origin = instance[member];
-      if (typeof origin !== 'function') {
-        return;
-      }
-      var batchFn = solidJs.batch(function () {
-        var args = [];
-        for (var _i = 0; _i < arguments.length; _i++) {
-          args[_i] = arguments[_i];
+    var Computed = defineMemberDecoratorProcessor(COMPUTED_GETTER_MARK_KEY, {
+      afterInstantiation: function (instance, member) {
+        var prototype = Object.getPrototypeOf(instance);
+        var descriptor = Object.getOwnPropertyDescriptor(prototype, member);
+        var originGetter = descriptor === null || descriptor === void 0 ? void 0 : descriptor.get;
+        var hasGetter = !!originGetter;
+        var hasSetter = !!(descriptor === null || descriptor === void 0 ? void 0 : descriptor.set);
+        if (!hasGetter) {
+          // WARNING
+          return instance;
         }
-        return origin.apply(instance, args);
-      });
-      Object.defineProperty(instance, member, {
-        enumerable: false,
-        writable: true,
-        value: batchFn
-      });
-    }, _a$1));
+        if (hasSetter) {
+          // WARNING
+          return instance;
+        }
+        var getter = useComputed(function () {
+          var _a;
+          return (_a = descriptor === null || descriptor === void 0 ? void 0 : descriptor.get) === null || _a === void 0 ? void 0 : _a.call(instance);
+        });
+        Object.defineProperty(instance, member, __assign(__assign({}, descriptor), {
+          get: getter
+        }));
+        return instance;
+      }
+    });
+
+    var BATCH_METHOD_MARK_KEY = Symbol('solidium-batch-method-mark-key');
+    var Batch = defineMemberDecoratorProcessor(BATCH_METHOD_MARK_KEY, {
+      afterInstantiation: function (instance, member) {
+        var origin = instance[member];
+        if (typeof origin !== 'function') {
+          return;
+        }
+        var batchFn = solidJs.batch(function () {
+          var args = [];
+          for (var _i = 0; _i < arguments.length; _i++) {
+            args[_i] = arguments[_i];
+          }
+          return origin.apply(instance, args);
+        });
+        Object.defineProperty(instance, member, {
+          enumerable: false,
+          writable: true,
+          value: batchFn
+        });
+      }
+    });
 
     var TRACK_METHOD_MARK_KEY = Symbol('solidium_track_method');
     var Track = function (fn) {
       return ioc.Mark(TRACK_METHOD_MARK_KEY, fn);
     };
 
-    var _a;
+    function defineClassDecoratorProcessor(key, processor) {
+      var _a;
+      return ioc.Mark(key, __assign((_a = {}, _a[IS_CLASS_DECORATOR_PROCESSOR] = true, _a), processor));
+    }
+
     var SOLIDIUM_MARK_CLASS_AUTO = Symbol('solidium-mark-class-auto');
-    var Auto = ioc.Mark(SOLIDIUM_MARK_CLASS_AUTO, (_a = {}, _a[IS_CLASS_DECORATOR_PROCESSOR] = true, _a.afterInstantiation = function (instance) {
-      if (!instance || typeof instance !== 'object') {
-        return instance;
-      }
-      var prototype = Object.getPrototypeOf(instance);
-      var owner = solidJs.getOwner();
-      return new Proxy(instance, {
-        get: function (target, p, receiver) {
-          if (typeof prototype[p] === 'function') {
-            return Reflect.get(target, p, receiver);
-          }
-          if (isSignalMember(prototype, p)) {
-            delete target[p];
-            return Reflect.get(target, p, receiver);
-          }
-          solidJs.runWithOwner(owner, function () {
-            defineSignalMember(prototype, p, target[p]);
-            delete target[p];
-          });
-          return Reflect.get(target, p, receiver);
-        },
-        set: function (target, p, newValue, receiver) {
-          return Reflect.set(target, p, newValue, receiver);
+    var Auto = defineClassDecoratorProcessor(SOLIDIUM_MARK_CLASS_AUTO, {
+      afterInstantiation: function (instance) {
+        if (!instance || typeof instance !== 'object') {
+          return instance;
         }
-      });
-    }, _a));
+        var prototype = Object.getPrototypeOf(instance);
+        var owner = solidJs.getOwner();
+        return new Proxy(instance, {
+          get: function (target, p, receiver) {
+            if (typeof prototype[p] === 'function') {
+              return Reflect.get(target, p, receiver);
+            }
+            if (isSignalMember(prototype, p)) {
+              delete target[p];
+              return Reflect.get(target, p, receiver);
+            }
+            solidJs.runWithOwner(owner, function () {
+              defineSignalMember(prototype, p, target[p]);
+              delete target[p];
+            });
+            return Reflect.get(target, p, receiver);
+          },
+          set: function (target, p, newValue, receiver) {
+            return Reflect.set(target, p, newValue, receiver);
+          }
+        });
+      }
+    });
 
     var MissingSolidiumContextError = /** @class */function (_super) {
       __extends(MissingSolidiumContextError, _super);
@@ -589,6 +604,8 @@
     exports.Signal = Signal;
     exports.Solidium = Solidium;
     exports.Track = Track;
+    exports.defineClassDecoratorProcessor = defineClassDecoratorProcessor;
+    exports.defineMemberDecoratorProcessor = defineMemberDecoratorProcessor;
     exports.resultOf = resultOf;
     exports.useApplicationContext = useApplicationContext;
     exports.useComputed = useComputed;

@@ -7,28 +7,25 @@ export const IS_CLASS_DECORATOR_PROCESSOR = Symbol(
     'solidium-is-class-decorator-processor'
 );
 
-export interface MemberDecoratorProcessor {
+export interface MemberDecoratorProcessor<T> {
     [IS_MEMBER_DECORATOR_PROCESSOR]: true;
-    beforeInstantiation?: <T>(
+    beforeInstantiation?: (
         constructor: Newable<T>,
         member: MemberKey,
         metadata: ClassMetadataReader<T>
     ) => void;
-    afterInstantiation?: <T>(
+    afterInstantiation?: (
         instance: T,
         member: MemberKey,
         metadata: ClassMetadataReader<T>
     ) => void;
 }
 
-export interface ClassDecoratorProcessor {
+export interface ClassDecoratorProcessor<T> {
     [IS_CLASS_DECORATOR_PROCESSOR]: true;
-    beforeInstantiation?: <T>(
+    beforeInstantiation?: (
         constructor: Newable<T>,
         metadata: ClassMetadataReader<T>
     ) => void;
-    afterInstantiation?: <T>(
-        instance: T,
-        metadata: ClassMetadataReader<T>
-    ) => T;
+    afterInstantiation?: (instance: T, metadata: ClassMetadataReader<T>) => T;
 }

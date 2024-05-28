@@ -2201,11 +2201,12 @@
 
     var HTTP_PROPERTY_MARK_KEY = Symbol('solidium-http-mark-key');
     function defineHttpDecorator(afterInstantiation) {
-      var _a;
-      return ioc.Mark(HTTP_PROPERTY_MARK_KEY, (_a = {}, _a[solidium.IS_MEMBER_DECORATOR_PROCESSOR] = true, _a.afterInstantiation = function (instance, member) {
-        afterInstantiation(instance, member);
-        return instance;
-      }, _a));
+      return solidium.defineMemberDecoratorProcessor(HTTP_PROPERTY_MARK_KEY, {
+        afterInstantiation: function (instance, member) {
+          afterInstantiation(instance, member);
+          return instance;
+        }
+      });
     }
     var Http = function (options, parser) {
       return defineHttpDecorator(function (instance, member) {

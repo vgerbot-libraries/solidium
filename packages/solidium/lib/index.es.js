@@ -324,9 +324,14 @@ function isSignalMember(target, member) {
   return !!(extraDataOfMember === null || extraDataOfMember === void 0 ? void 0 : extraDataOfMember.get(IS_SIGNAL_MEMBER_METADATA_KEY));
 }
 
+function defineMemberDecoratorProcessor(key, processor) {
+  return Mark(key, Object.assign({
+    [IS_MEMBER_DECORATOR_PROCESSOR]: true
+  }, processor));
+}
+
 const SIGNAL_MARK_KEY = Symbol('solidium_mark_as_signal_property');
-const Signal = Mark(SIGNAL_MARK_KEY, {
-  [IS_MEMBER_DECORATOR_PROCESSOR]: true,
+const Signal = defineMemberDecoratorProcessor(SIGNAL_MARK_KEY, {
   afterInstantiation(instance, member) {
     defineSignalMember(instance, member, instance[member]);
     return instance;
@@ -353,8 +358,7 @@ const OBSERVE_PROPERTY_MARK_KEY = Symbol('solidium_observed_property');
  * @returns an method decorator
  */
 function Observe(options = {}) {
-  return Mark(OBSERVE_PROPERTY_MARK_KEY, {
-    [IS_MEMBER_DECORATOR_PROCESSOR]: true,
+  return defineMemberDecoratorProcessor(OBSERVE_PROPERTY_MARK_KEY, {
     afterInstantiation(instance, methodName) {
       // TODO: supports scheduling
       const fn = () => {
@@ -395,8 +399,7 @@ function useComputed(fn) {
 }
 
 const COMPUTED_GETTER_MARK_KEY = Symbol('solidium_computed_getter');
-const Computed = Mark(COMPUTED_GETTER_MARK_KEY, {
-  [IS_MEMBER_DECORATOR_PROCESSOR]: true,
+const Computed = defineMemberDecoratorProcessor(COMPUTED_GETTER_MARK_KEY, {
   afterInstantiation: (instance, member) => {
     const prototype = Object.getPrototypeOf(instance);
     const descriptor = Object.getOwnPropertyDescriptor(prototype, member);
@@ -423,8 +426,7 @@ const Computed = Mark(COMPUTED_GETTER_MARK_KEY, {
 });
 
 const BATCH_METHOD_MARK_KEY = Symbol('solidium-batch-method-mark-key');
-const Batch = Mark(BATCH_METHOD_MARK_KEY, {
-  [IS_MEMBER_DECORATOR_PROCESSOR]: true,
+const Batch = defineMemberDecoratorProcessor(BATCH_METHOD_MARK_KEY, {
   afterInstantiation(instance, member) {
     const origin = instance[member];
     if (typeof origin !== 'function') {
@@ -444,9 +446,14 @@ const Batch = Mark(BATCH_METHOD_MARK_KEY, {
 const TRACK_METHOD_MARK_KEY = Symbol('solidium_track_method');
 const Track = fn => Mark(TRACK_METHOD_MARK_KEY, fn);
 
+function defineClassDecoratorProcessor(key, processor) {
+  return Mark(key, Object.assign({
+    [IS_CLASS_DECORATOR_PROCESSOR]: true
+  }, processor));
+}
+
 const SOLIDIUM_MARK_CLASS_AUTO = Symbol('solidium-mark-class-auto');
-const Auto = Mark(SOLIDIUM_MARK_CLASS_AUTO, {
-  [IS_CLASS_DECORATOR_PROCESSOR]: true,
+const Auto = defineClassDecoratorProcessor(SOLIDIUM_MARK_CLASS_AUTO, {
   afterInstantiation(instance) {
     if (!instance || typeof instance !== 'object') {
       return instance;
@@ -503,5 +510,5 @@ function useService(cls) {
   return instance;
 }
 
-export { Auto, Batch, Computed, IS_CLASS_DECORATOR_PROCESSOR, IS_MEMBER_DECORATOR_PROCESSOR, Observe, Signal, Solidium, Track, resultOf, useApplicationContext, useComputed, useService };
+export { Auto, Batch, Computed, IS_CLASS_DECORATOR_PROCESSOR, IS_MEMBER_DECORATOR_PROCESSOR, Observe, Signal, Solidium, Track, defineClassDecoratorProcessor, defineMemberDecoratorProcessor, resultOf, useApplicationContext, useComputed, useService };
 //# sourceMappingURL=index.es.js.map
