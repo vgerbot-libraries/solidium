@@ -1,13 +1,13 @@
-export type InterceptorFunction<T> = (
+export type SetterInterceptorFunction<T> = (
     this: T,
     oldValue: unknown,
     newValue: unknown
 ) => unknown;
 
-export function interceptor<T>(
-    before: InterceptorFunction<T> | undefined,
-    after: InterceptorFunction<T>
-): InterceptorFunction<T> {
+export function combineSetterInterceptor<T>(
+    before: SetterInterceptorFunction<T> | undefined,
+    after: SetterInterceptorFunction<T>
+): SetterInterceptorFunction<T> {
     if (typeof before !== 'function') {
         return after;
     }

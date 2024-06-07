@@ -1,5 +1,8 @@
 import { MemberKey } from '@vgerbot/ioc';
-import { InterceptorFunction, interceptor } from '../common/interceptor';
+import {
+    SetterInterceptorFunction,
+    combineSetterInterceptor
+} from '../common/interceptor';
 
 export const SETTER_INTERCEPTOR_MAP_KEY = Symbol(
     'solidium-setter-interceptors-map'
@@ -7,7 +10,7 @@ export const SETTER_INTERCEPTOR_MAP_KEY = Symbol(
 
 export interface SetterInterceptorTarget<T> {
     [SETTER_INTERCEPTOR_MAP_KEY]:
-        | Map<MemberKey, InterceptorFunction<T>>
+        | Map<MemberKey, SetterInterceptorFunction<T>>
         | undefined;
 }
 
@@ -22,7 +25,7 @@ export function appendSetterInterceptor<T>(
 ) {
     let interceptorsMap = target[SETTER_INTERCEPTOR_MAP_KEY];
     if (!interceptorsMap) {
-        interceptorsMap = new Map<MemberKey, InterceptorFunction<T>>();
+        interceptorsMap = new Map<MemberKey, SetterInterceptorFunction<T>>();
         Object.defineProperty(target, SETTER_INTERCEPTOR_MAP_KEY, {
             value: interceptorsMap,
             enumerable: false,
@@ -31,7 +34,7 @@ export function appendSetterInterceptor<T>(
         });
     }
     const leftInterceptor = interceptorsMap.get(options.key);
-    const newInterceptor = interceptor(
+    const newInterceptor = combineSetterInterceptor(
         leftInterceptor,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (target as any)[interceptorMethodName]

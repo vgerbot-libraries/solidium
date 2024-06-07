@@ -1,8 +1,8 @@
 import { MemberKey } from '@vgerbot/ioc';
-import { InterceptorFunction } from '../common/interceptor';
+import { SetterInterceptorFunction } from '../common/interceptor';
 export declare const SETTER_INTERCEPTOR_MAP_KEY: unique symbol;
 export interface SetterInterceptorTarget<T> {
-    [SETTER_INTERCEPTOR_MAP_KEY]: Map<MemberKey, InterceptorFunction<T>> | undefined;
+    [SETTER_INTERCEPTOR_MAP_KEY]: Map<MemberKey, SetterInterceptorFunction<T>> | undefined;
 }
 export type SetterInterceptorOptions = {
     key: string | symbol;

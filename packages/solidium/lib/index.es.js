@@ -288,11 +288,37 @@ function extraDataOf(target, key) {
   return metadata.get(key);
 }
 
+function combineSetterInterceptor(before, after) {
+  if (typeof before !== 'function') {
+    return after;
+  }
+  return function (oldValue, newValue) {
+    return after.call(this, oldValue, before.call(this, oldValue, newValue));
+  };
+}
+
 const SETTER_INTERCEPTOR_MAP_KEY = Symbol('solidium-setter-interceptors-map');
+function appendSetterInterceptor(target, options, interceptorMethodName) {
+  let interceptorsMap = target[SETTER_INTERCEPTOR_MAP_KEY];
+  if (!interceptorsMap) {
+    interceptorsMap = new Map();
+    Object.defineProperty(target, SETTER_INTERCEPTOR_MAP_KEY, {
+      value: interceptorsMap,
+      enumerable: false,
+      writable: false,
+      configurable: false
+    });
+  }
+  const leftInterceptor = interceptorsMap.get(options.key);
+  const newInterceptor = combineSetterInterceptor(leftInterceptor,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  target[interceptorMethodName]);
+  interceptorsMap.set(options.key, newInterceptor);
+}
 
 const signalMap = new SignalMap();
 const IS_SIGNAL_MEMBER_METADATA_KEY = 'is_signal_member_metadata_key';
-function defineSignalMember(target, member, defaultValue) {
+function defineSignalMember(target, member, defaultValue, interceptors) {
   const descriptor = Object.getOwnPropertyDescriptor(target, member);
   const hasGetter = !!(descriptor === null || descriptor === void 0 ? void 0 : descriptor.get);
   const hasSetter = !!(descriptor === null || descriptor === void 0 ? void 0 : descriptor.set);
@@ -309,12 +335,21 @@ function defineSignalMember(target, member, defaultValue) {
   Object.defineProperty(target, member, {
     get: function () {
       const [get] = signalMap.get(this, member, defaultValue);
+      if (interceptors === null || interceptors === void 0 ? void 0 : interceptors.getter) {
+        return interceptors.getter.call(this, get());
+      }
       return get();
     },
     set: function (newValue) {
       const [get, set] = signalMap.get(this, member);
       const interceptorMap = target[SETTER_INTERCEPTOR_MAP_KEY];
-      const interceptor = interceptorMap === null || interceptorMap === void 0 ? void 0 : interceptorMap.get(member);
+      let interceptor;
+      const setterInterceptor = interceptorMap === null || interceptorMap === void 0 ? void 0 : interceptorMap.get(member);
+      if (setterInterceptor && (interceptors === null || interceptors === void 0 ? void 0 : interceptors.setter)) {
+        interceptor = combineSetterInterceptor(setterInterceptor, interceptors.setter);
+      } else {
+        interceptor = setterInterceptor || (interceptors === null || interceptors === void 0 ? void 0 : interceptors.setter);
+      }
       return set(interceptor ? interceptor.call(this, get(), newValue) : newValue);
     }
   });
@@ -510,5 +545,5 @@ function useService(cls) {
   return instance;
 }
 
-export { Auto, Batch, Computed, IS_CLASS_DECORATOR_PROCESSOR, IS_MEMBER_DECORATOR_PROCESSOR, Observe, Signal, Solidium, Track, defineClassDecoratorProcessor, defineMemberDecoratorProcessor, resultOf, useApplicationContext, useComputed, useService };
+export { Auto, Batch, Computed, IS_CLASS_DECORATOR_PROCESSOR, IS_MEMBER_DECORATOR_PROCESSOR, Observe, SETTER_INTERCEPTOR_MAP_KEY, Signal, Solidium, Track, appendSetterInterceptor, defineClassDecoratorProcessor, defineMemberDecoratorProcessor, defineSignalMember, isSignalMember, resultOf, useApplicationContext, useComputed, useService };
 //# sourceMappingURL=index.es.js.map

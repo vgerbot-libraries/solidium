@@ -14,11 +14,11 @@ const SOLIDIUM_CLASS_DECORATOR_PROCESSOR_KEY = Symbol(
 );
 
 type ConstructorWithDecoratorProcessor<T> = Newable<T> & {
-    [SOLIDIUM_CLASS_DECORATOR_PROCESSOR_KEY]?: Set<ClassDecoratorProcessor>;
+    [SOLIDIUM_CLASS_DECORATOR_PROCESSOR_KEY]?: Set<ClassDecoratorProcessor<T>>;
     [SOLIDIUM_MEMBER_DECORATOR_PROCESSOR_KEY]?: AllProcessorsMap;
 };
 
-type AllProcessorsMap = Map<MemberKey, Set<MemberDecoratorProcessor>>;
+type AllProcessorsMap = Map<MemberKey, Set<MemberDecoratorProcessor<unknown>>>;
 
 function initClassDecoratorProcessorsSet<T>(constructor: Newable<T>) {
     if (constructor.hasOwnProperty(SOLIDIUM_CLASS_DECORATOR_PROCESSOR_KEY)) {
@@ -26,7 +26,7 @@ function initClassDecoratorProcessorsSet<T>(constructor: Newable<T>) {
     }
     const metadata = ClassMetadata.getInstance(constructor).reader();
     const classMarkInfo = metadata.getCtorMarkInfo();
-    const allClassDecoratorProcessor = new Set<ClassDecoratorProcessor>();
+    const allClassDecoratorProcessor = new Set<ClassDecoratorProcessor<T>>();
     if (classMarkInfo) {
         const classMarkInfoMembers = [
             ...Object.getOwnPropertyNames(classMarkInfo),
@@ -35,7 +35,7 @@ function initClassDecoratorProcessorsSet<T>(constructor: Newable<T>) {
         classMarkInfoMembers.forEach(markInfoKey => {
             const processor = classMarkInfo[
                 markInfoKey
-            ] as ClassDecoratorProcessor;
+            ] as ClassDecoratorProcessor<T>;
             if (
                 typeof processor !== 'object' ||
                 !processor[IS_CLASS_DECORATOR_PROCESSOR]
@@ -69,7 +69,7 @@ function initMemberDecoratorProcessorsSet<T>(constructor: Newable<T>) {
     const instanceMembers = metadata.getAllMarkedMembers();
     const allMemberDecoratorProcessors = new Map<
         MemberKey,
-        Set<MemberDecoratorProcessor>
+        Set<MemberDecoratorProcessor<unknown>>
     >();
     instanceMembers.forEach(member => {
         const markInfo = metadata.getMembersMarkInfo(member);
@@ -82,7 +82,7 @@ function initMemberDecoratorProcessorsSet<T>(constructor: Newable<T>) {
         ];
         markInfoMembers.forEach(key => {
             const markData = markInfo[key] as
-                | MemberDecoratorProcessor
+                | MemberDecoratorProcessor<unknown>
                 | undefined;
             if (
                 markData == null ||
@@ -114,7 +114,7 @@ function initMemberDecoratorProcessorsSet<T>(constructor: Newable<T>) {
     allMemberDecoratorProcessors.forEach((processors, member) => {
         processors.forEach(processor => {
             if (processor.beforeInstantiation) {
-                processor.beforeInstantiation<T>(constructor, member, metadata);
+                processor.beforeInstantiation(constructor, member, metadata);
             }
         });
     });

@@ -5,6 +5,10 @@ import {
     SETTER_INTERCEPTOR_MAP_KEY,
     SetterInterceptorTarget
 } from './appendSetterInterceptor';
+import {
+    SetterInterceptorFunction,
+    combineSetterInterceptor
+} from '../common/interceptor';
 
 const signalMap = new SignalMap();
 
@@ -13,7 +17,11 @@ const IS_SIGNAL_MEMBER_METADATA_KEY = 'is_signal_member_metadata_key';
 export function defineSignalMember<T>(
     target: T,
     member: MemberKey,
-    defaultValue?: unknown
+    defaultValue?: unknown,
+    interceptors?: {
+        getter?: (this: T, value: unknown) => unknown;
+        setter?: (this: T, oldValue?: unknown, newValue?: unknown) => unknown;
+    }
 ) {
     const descriptor = Object.getOwnPropertyDescriptor(target, member);
     const hasGetter = !!descriptor?.get;
@@ -33,6 +41,9 @@ export function defineSignalMember<T>(
     Object.defineProperty(target, member, {
         get: function () {
             const [get] = signalMap.get(this, member, defaultValue);
+            if (interceptors?.getter) {
+                return interceptors.getter.call(this, get());
+            }
             return get();
         },
         set: function (newValue) {
@@ -40,7 +51,16 @@ export function defineSignalMember<T>(
             const interceptorMap = (target as SetterInterceptorTarget<T>)[
                 SETTER_INTERCEPTOR_MAP_KEY
             ];
-            const interceptor = interceptorMap?.get(member);
+            let interceptor: SetterInterceptorFunction<T> | undefined;
+            const setterInterceptor = interceptorMap?.get(member);
+            if (setterInterceptor && interceptors?.setter) {
+                interceptor = combineSetterInterceptor(
+                    setterInterceptor,
+                    interceptors.setter
+                );
+            } else {
+                interceptor = setterInterceptor || interceptors?.setter;
+            }
             return set(
                 interceptor ? interceptor.call(this, get(), newValue) : newValue
             );
