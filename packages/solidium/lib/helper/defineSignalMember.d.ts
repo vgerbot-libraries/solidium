@@ -4,3 +4,4 @@ export declare function defineSignalMember<T>(target: T, member: MemberKey, defa
     setter?: (this: T, oldValue?: unknown, newValue?: unknown) => unknown;
 }): void;
 export declare function isSignalMember<T>(target: T, member: MemberKey): boolean;
+export declare function getSignal<T>(instance: T, member: MemberKey): import("solid-js").Signal<unknown>;

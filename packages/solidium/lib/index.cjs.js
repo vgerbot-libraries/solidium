@@ -432,6 +432,9 @@ function isSignalMember(target, member) {
   var extraDataOfMember = extraDataOf(target, member);
   return !!(extraDataOfMember === null || extraDataOfMember === void 0 ? void 0 : extraDataOfMember.get(IS_SIGNAL_MEMBER_METADATA_KEY));
 }
+function getSignal(instance, member) {
+  return signalMap.get(instance, member);
+}
 
 function defineMemberDecoratorProcessor(key, processor) {
   var _a;
@@ -646,6 +649,7 @@ exports.appendSetterInterceptor = appendSetterInterceptor;
 exports.defineClassDecoratorProcessor = defineClassDecoratorProcessor;
 exports.defineMemberDecoratorProcessor = defineMemberDecoratorProcessor;
 exports.defineSignalMember = defineSignalMember;
+exports.getSignal = getSignal;
 exports.isSignalMember = isSignalMember;
 exports.resultOf = resultOf;
 exports.useApplicationContext = useApplicationContext;

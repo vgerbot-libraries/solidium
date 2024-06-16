@@ -358,6 +358,9 @@ function isSignalMember(target, member) {
   const extraDataOfMember = extraDataOf(target, member);
   return !!(extraDataOfMember === null || extraDataOfMember === void 0 ? void 0 : extraDataOfMember.get(IS_SIGNAL_MEMBER_METADATA_KEY));
 }
+function getSignal(instance, member) {
+  return signalMap.get(instance, member);
+}
 
 function defineMemberDecoratorProcessor(key, processor) {
   return Mark(key, Object.assign({
@@ -545,5 +548,5 @@ function useService(cls) {
   return instance;
 }
 
-export { Auto, Batch, Computed, IS_CLASS_DECORATOR_PROCESSOR, IS_MEMBER_DECORATOR_PROCESSOR, Observe, SETTER_INTERCEPTOR_MAP_KEY, Signal, Solidium, Track, appendSetterInterceptor, defineClassDecoratorProcessor, defineMemberDecoratorProcessor, defineSignalMember, isSignalMember, resultOf, useApplicationContext, useComputed, useService };
+export { Auto, Batch, Computed, IS_CLASS_DECORATOR_PROCESSOR, IS_MEMBER_DECORATOR_PROCESSOR, Observe, SETTER_INTERCEPTOR_MAP_KEY, Signal, Solidium, Track, appendSetterInterceptor, defineClassDecoratorProcessor, defineMemberDecoratorProcessor, defineSignalMember, getSignal, isSignalMember, resultOf, useApplicationContext, useComputed, useService };
 //# sourceMappingURL=index.es.js.map
