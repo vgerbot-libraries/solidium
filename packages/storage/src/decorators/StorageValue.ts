@@ -1,7 +1,5 @@
-import {
-    defineMemberDecoratorProcessor,
-    defineSignalMember
-} from '@vgerbot/solidium';
+import { defineMemberDecoratorProcessor, getSignal } from '@vgerbot/solidium';
+import { createEffect, on } from 'solid-js';
 import { MemberKey } from '@vgerbot/ioc';
 import { Storage } from '../core/Storage';
 import { Data } from '../types/Data';
@@ -13,34 +11,32 @@ export interface StoreValueOptions {
 
 export const StorageValue = (options: StoreValueOptions) => {
     return defineMemberDecoratorProcessor('storage', {
-        afterInstantiation<T>(instance: T, member: MemberKey) {
+        afterInstantiation<T extends Record<MemberKey, unknown>>(
+            instance: T,
+            member: MemberKey
+        ) {
+            const [, set] = getSignal(instance, member);
             const key = options.key || member.toString();
             const store = options.store;
-            let isManual = true;
             const observe = () => {
                 return store.observe(key, newValue => {
-                    isManual = false;
-                    try {
-                        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                        // @ts-ignore
-                        instance[member] = newValue;
-                    } finally {
-                        isManual = true;
-                    }
+                    set(newValue);
                 });
             };
             let unobserve = observe();
-            defineSignalMember<T>(instance, member, undefined, {
-                setter(_oldValue, newValue) {
-                    if (isManual) {
+            createEffect(
+                on(
+                    () => {
+                        return instance[member];
+                    },
+                    newValue => {
                         unobserve();
                         store.setItem(key, newValue as Data).finally(() => {
                             unobserve = observe();
                         });
                     }
-                    return newValue;
-                }
-            });
+                )
+            );
         }
     });
 };

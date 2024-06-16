@@ -42,9 +42,11 @@
       "@vgerbot/ioc": "^1.1.2",
       "@vgerbot/lazy": "^1.0.6",
       "@vgerbot/solidium": "1.0.0",
-      "reflect-metadata": "^0.2.1"
+      "reflect-metadata": "^0.2.1",
+      "solid-js": "^1.8.7"
     },
     "peerDependencies": {
+      "solid-js": ">=1.0.0",
       "@vgerbot/ioc": ">=1.1.2",
       "@vgerbot/solidium": ">=1.0.0"
     },

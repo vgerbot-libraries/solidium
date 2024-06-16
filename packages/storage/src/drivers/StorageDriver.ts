@@ -1,8 +1,8 @@
-import { StorageOptions } from '../types/StorageOptions';
+import { StorageDriverOptions } from './StorageDriverOptions';
 
 export interface StorageDriverConstructor {
     driver: string;
-    new (options: StorageOptions): StorageDriver;
+    new (options: StorageDriverOptions): StorageDriver;
 }
 
 export interface StorageDriver {
@@ -10,11 +10,11 @@ export interface StorageDriver {
     supports(): Promise<boolean>;
     iterate(): AsyncGenerator<{
         key: string;
-        value: string | Blob;
+        value: Blob;
     }>;
-    getItem(key: string): Promise<undefined | string | Blob>;
+    getItem(key: string): Promise<undefined | Blob>;
     removeItem(key: string): Promise<void>;
-    setItem(key: string, value: string | Blob): Promise<void>;
+    setItem(key: string, value: Blob): Promise<void>;
     length(): Promise<number>;
     keyAt(index: number): Promise<string>;
     keys(): AsyncGenerator<string>;
