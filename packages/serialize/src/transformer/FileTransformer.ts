@@ -1,9 +1,21 @@
 import { Serializable } from '../core/Serializable';
 import { Tags } from '../core/Tags';
-import { transformer } from '../core/Transformer';
+import { Transformer } from '../core/Transformer';
 
-export class FileTransformer extends transformer<File>(Tags.File) {
-    toSerializable(
+export class FileTransformer
+    implements
+        Transformer<File, [Tags.File, Serializable, [string, FilePropertyBag]]>
+{
+    getTag(): number {
+        return Tags.File;
+    }
+    accept(object: File): boolean {
+        if (typeof File !== 'function') {
+            return false;
+        }
+        return object instanceof File;
+    }
+    encode(
         object: File
     ): Promise<[Tags.File, Serializable, [string, FilePropertyBag]]> {
         return object.arrayBuffer().then(buffer => {
@@ -19,7 +31,7 @@ export class FileTransformer extends transformer<File>(Tags.File) {
             ];
         });
     }
-    fromSerializable(
+    decode(
         data: [Tags.File, Serializable, [string, FilePropertyBag]]
     ): Promise<File> {
         return Promise.resolve(

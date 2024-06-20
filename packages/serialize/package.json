@@ -37,6 +37,7 @@
     "url": "https://github.com/vgerbot-libraries/solidium/issues"
   },
   "dependencies": {
+    "is-plain-object": "^5.0.0",
     "messagepack": "^1.1.12",
     "reflect-metadata": "^0.2.2",
     "tslib": "^2.6.3"

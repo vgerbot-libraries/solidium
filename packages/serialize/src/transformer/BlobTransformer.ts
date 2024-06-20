@@ -1,18 +1,25 @@
 import { Serializable } from '../core/Serializable';
 import { Tags } from '../core/Tags';
-import { transformer } from '../core/Transformer';
+import { Transformer } from '../core/Transformer';
 
-export class BlobTransformer extends transformer<Blob>(Tags.Blob) {
-    toSerializable(
-        object: Blob
-    ): Promise<[Tags.Blob, Serializable, BlobPropertyBag]> {
+export class BlobTransformer
+    implements Transformer<Blob, [Tags.Blob, Serializable, BlobPropertyBag]>
+{
+    getTag(): number {
+        return Tags.Blob;
+    }
+    accept(object: Blob): boolean {
+        if (typeof File === 'function' && object instanceof File) {
+            return false;
+        }
+        return object instanceof Blob;
+    }
+    encode(object: Blob): Promise<[Tags.Blob, Serializable, BlobPropertyBag]> {
         return object.arrayBuffer().then(buffer => {
             return [Tags.Blob, buffer, { type: object.type }];
         });
     }
-    fromSerializable(
-        data: [Tags.Blob, Serializable, BlobPropertyBag]
-    ): Promise<Blob> {
+    decode(data: [Tags.Blob, Serializable, BlobPropertyBag]): Promise<Blob> {
         return Promise.resolve(new Blob([data[1] as BlobPart], data[2]));
     }
 }

@@ -1,31 +1,27 @@
+import { ObjectPath } from './ObjectPath';
 import { Serializable } from './Serializable';
+import { SerializeContext } from './EncodeContext';
 
 export interface Transformer<
     Target,
-    Tag extends number,
-    Data extends Target | [Tag, Serializable] | [Tag, Serializable, unknown] =
-        | [Tag, Serializable]
-        | [Tag, Serializable, unknown]
+    Data extends
+        | Target
+        | [number, Serializable]
+        | [number, Serializable, unknown] =
+        | [number, Serializable]
+        | [number, Serializable, unknown]
 > {
-    getTag(): Tag;
-    toSerializable(object: Target): Promise<Data>;
-    fromSerializable(data: Data): Promise<Target>;
-}
-export function transformer<
-    Target,
-    Tag extends number = number,
-    Data extends Target | [Tag, Serializable] | [Tag, Serializable, unknown] =
-        | [Tag, Serializable]
-        | [Tag, Serializable, unknown]
->(tag: Tag) {
-    abstract class AbstractTransformer
-        implements Transformer<Target, Tag, Data>
-    {
-        getTag(): Tag {
-            return tag;
-        }
-        abstract toSerializable(object: Target): Promise<Data>;
-        abstract fromSerializable(data: Data): Promise<Target>;
-    }
-    return AbstractTransformer;
+    getTag(): number;
+    accept(object: Target): boolean;
+    preEncode?(
+        Object: Target,
+        context: SerializeContext,
+        path: ObjectPath
+    ): void;
+    encode(
+        object: Target,
+        context: SerializeContext,
+        path: ObjectPath
+    ): Promise<Data>;
+    decode(data: Data): Promise<Target>;
 }

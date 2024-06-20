@@ -2,9 +2,9 @@ export enum Tags {
     Ref = 0,
     Blob = 1,
     File = 2,
-    Set = 3,
-    Map = 4,
-    RegExp = 5,
+    RegExp = 3,
+    Set = 4,
+    Map = 5,
     Uint8Array = 6,
     Uint16Array = 7,
     Uint32Array = 8,
@@ -15,5 +15,8 @@ export enum Tags {
     Float64Array = 13,
     BigInt64Array = 14,
     BigUint64Array = 15,
-    DataView = 16
+    DataView = 16,
+    Object = -1,
+    Array = -2,
+    Primary = -3
 }
