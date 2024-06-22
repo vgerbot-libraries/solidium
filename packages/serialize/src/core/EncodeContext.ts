@@ -28,30 +28,26 @@ export class EncodeContext {
     getObject(path: ObjectPath) {
         return this.pathObjectMap.get(path);
     }
-    getReference(path: ObjectPath) {
-        if (!this.pathObjectMap.has(path)) {
-            return undefined;
-        }
-        const object = this.pathObjectMap.get(path);
+    getReference(object: unknown) {
         const paths = this.objectPathMap.get(object);
         if (!paths) {
-            return undefined;
+            return;
         }
-        return paths[0] !== path ? paths[0] : undefined;
+        return paths[0];
     }
-    isReference(path: ObjectPath) {
-        return this.getReference(path) !== undefined;
+    isReference(object: unknown) {
+        return this.getReference(object) !== undefined;
     }
-    transformerOf(
-        object: unknown,
-        path: ObjectPath
-    ): Transformer<unknown, unknown> {
-        if (this.isReference(path)) {
+    transformerOf(object: unknown): Transformer<unknown, unknown> {
+        if (this.isReference(object)) {
             return new ReferenceTransformer();
         }
         let transformer = this.transformerMap.get(object);
         if (!transformer) {
             transformer = transformerOfObject(object);
+        }
+        if (!transformer) {
+            throw new TypeError(`Cannot serialize value: ${object}`);
         }
         this.transformerMap.set(object, transformer);
         return transformer;

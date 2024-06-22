@@ -1,7 +1,8 @@
-import { encode } from 'messagepack';
+import { decode, encode } from 'messagepack';
 import { ObjectPath } from './core/ObjectPath';
 import { EncodeContext } from './core/EncodeContext';
 import './transformer';
+import { DecodeContext } from './core/DecodeContext';
 
 export interface SerializeOptions {
     circular?: boolean;
@@ -26,4 +27,15 @@ export function serialize(
             return encode(serializable);
         }
     );
+}
+
+export function deserialize(data: Uint8Array) {
+    const context = new DecodeContext();
+    const object = decode(data);
+    const path = new ObjectPath([]);
+    const transformer = context.transformerOf(object);
+    if (!transformer) {
+        return object;
+    }
+    return transformer.decode(object, context, path);
 }

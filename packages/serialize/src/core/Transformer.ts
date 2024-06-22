@@ -1,6 +1,7 @@
 import { ObjectPath } from './ObjectPath';
 import { Serializable } from './Serializable';
 import { EncodeContext } from './EncodeContext';
+import { DecodeContext } from './DecodeContext';
 
 export interface Transformer<
     Target,
@@ -19,5 +20,9 @@ export interface Transformer<
         context: EncodeContext,
         path: ObjectPath
     ): Data | Promise<Data>;
-    decode(data: Data): Target | Promise<Target>;
+    decode(
+        data: Data,
+        context: DecodeContext,
+        path: ObjectPath
+    ): Target | Promise<Target>;
 }

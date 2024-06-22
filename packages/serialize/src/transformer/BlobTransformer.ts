@@ -20,6 +20,7 @@ export class BlobTransformer
         });
     }
     decode(data: [Tags.Blob, Serializable, BlobPropertyBag]): Blob {
-        return new Blob([data[1] as BlobPart], data[2]);
+        const blob = new Blob([data[1] as BlobPart], data[2]);
+        return blob;
     }
 }

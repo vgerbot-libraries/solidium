@@ -20,3 +20,6 @@ export enum Tags {
     Array = -2,
     Primary = -3
 }
+export function isValidTag(num: number): num is Tags {
+    return Tags[num] in Tags;
+}

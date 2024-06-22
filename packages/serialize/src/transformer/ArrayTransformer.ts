@@ -2,6 +2,7 @@ import { ObjectPath } from '../core/ObjectPath';
 import { EncodeContext } from '../core/EncodeContext';
 import { Tags } from '../core/Tags';
 import { Transformer } from '../core/Transformer';
+import { DecodeContext } from '../core/DecodeContext';
 
 export class ArrayTransformer
     implements Transformer<Array<unknown>, Array<unknown>>
@@ -19,8 +20,11 @@ export class ArrayTransformer
     ): void {
         context.recording(object, path);
         object.forEach((it, index) => {
+            if (context.isHandled(it)) {
+                return;
+            }
             const childPath = path.child(index + '');
-            const transformer = context.transformerOf(it, childPath);
+            const transformer = context.transformerOf(it);
             if (transformer.preEncode) {
                 transformer.preEncode(it, context, childPath);
             } else {
@@ -35,13 +39,29 @@ export class ArrayTransformer
     ): Promise<unknown[]> {
         return Promise.all(
             object.map((it, index) => {
-                const childPath = path.child(index + '');
-                const transformer = context.transformerOf(it, childPath);
-                return transformer.encode(it, context, path);
+                const childPath = path.child(index);
+                const transformer = context.transformerOf(it);
+                return transformer.encode(it, context, childPath);
             })
         );
     }
-    decode(data: unknown[]): Promise<unknown[]> {
-        throw new Error('Method not implemented.');
+    decode(
+        data: unknown[],
+        context: DecodeContext,
+        path: ObjectPath
+    ): unknown[] {
+        const result: unknown[] = [];
+        context.recording(result, path);
+        data.forEach((value, index) => {
+            const transformer = context.transformerOf(value);
+            if (!transformer) {
+                return value;
+            }
+            const childPath = path.child(index);
+            const item = transformer.decode(value, context, childPath);
+            context.recording(item, childPath);
+            result.push(item);
+        });
+        return result;
     }
 }

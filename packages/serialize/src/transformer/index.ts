@@ -5,6 +5,7 @@ import { PrimaryTransformer } from './PrimaryTransformer';
 import { ArrayTransformer } from './ArrayTransformer';
 
 import { Transformer } from '../core/Transformer';
+import { ReferenceTransformer } from './ReferanceTransformer';
 
 const transformers: Array<Transformer<unknown, unknown>> = [];
 
@@ -19,16 +20,10 @@ export function registerTransformer(
 
 export function transformerOfObject(object: unknown) {
     const transformer = transformers.find(it => it.accept(object));
-    if (!transformer) {
-        throw new TypeError(`Cannot serialize value: ${object}`);
-    }
     return transformer;
 }
 export function transformerOfTag(tag: number) {
     const transformer = transformers.find(it => it.getTag() === tag);
-    if (!transformer) {
-        throw new Error(`Cannot deserialize data with an unknown tag: ${tag}`);
-    }
     return transformer;
 }
 
@@ -37,3 +32,4 @@ registerTransformer(new BlobTransformer());
 registerTransformer(new FileTransformer());
 registerTransformer(new PrimaryTransformer());
 registerTransformer(new ArrayTransformer());
+registerTransformer(new ReferenceTransformer());
