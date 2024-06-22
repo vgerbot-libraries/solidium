@@ -19,10 +19,10 @@ export class PrimaryTransformer implements Transformer<Primary, Primary> {
         }
         return false;
     }
-    encode(object: Primary): Promise<Primary> {
-        return Promise.resolve(object);
+    encode(object: Primary): Primary {
+        return object;
     }
-    decode(data: Primary): Promise<Primary> {
-        return Promise.resolve(data);
+    decode(data: Primary): Primary {
+        return data;
     }
 }

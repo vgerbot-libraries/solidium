@@ -1,6 +1,6 @@
 import { isPlainObject } from 'is-plain-object';
 import { ObjectPath } from '../core/ObjectPath';
-import { SerializeContext } from '../core/EncodeContext';
+import { EncodeContext } from '../core/EncodeContext';
 import { Transformer } from '../core/Transformer';
 import { Tags } from '../core/Tags';
 
@@ -11,11 +11,7 @@ export class ObjectTransformer implements Transformer<Object, Object> {
     accept(object: Object): boolean {
         return !!object && isPlainObject(object);
     }
-    preEncode(
-        object: Object,
-        context: SerializeContext,
-        path: ObjectPath
-    ): void {
+    preEncode(object: Object, context: EncodeContext, path: ObjectPath): void {
         context.recording(object, path);
         for (const key in object) {
             const childPath = path.child(key);
@@ -30,7 +26,7 @@ export class ObjectTransformer implements Transformer<Object, Object> {
     }
     async encode(
         object: Object,
-        context: SerializeContext,
+        context: EncodeContext,
         path: ObjectPath
     ): Promise<Object> {
         const result: Object = {};

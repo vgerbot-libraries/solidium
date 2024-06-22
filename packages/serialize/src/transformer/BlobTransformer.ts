@@ -19,7 +19,7 @@ export class BlobTransformer
             return [Tags.Blob, buffer, { type: object.type }];
         });
     }
-    decode(data: [Tags.Blob, Serializable, BlobPropertyBag]): Promise<Blob> {
-        return Promise.resolve(new Blob([data[1] as BlobPart], data[2]));
+    decode(data: [Tags.Blob, Serializable, BlobPropertyBag]): Blob {
+        return new Blob([data[1] as BlobPart], data[2]);
     }
 }

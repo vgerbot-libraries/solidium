@@ -1,19 +1,19 @@
 import { encode } from 'messagepack';
 import { ObjectPath } from './core/ObjectPath';
-import { SerializeContext } from './core/EncodeContext';
+import { EncodeContext } from './core/EncodeContext';
 import './transformer';
 
 export interface SerializeOptions {
     circular?: boolean;
 }
 
-export async function serialize(
+export function serialize(
     object: unknown,
     options: SerializeOptions = {
         circular: false
     }
-) {
-    const context = new SerializeContext();
+): Promise<Uint8Array> {
+    const context = new EncodeContext();
     const path = new ObjectPath([]);
     const transformer = context.transformerOf(object, path);
     if (options.circular) {
@@ -21,6 +21,9 @@ export async function serialize(
             transformer.preEncode(object, context, path);
         }
     }
-    const serializable = await transformer.encode(object, context, path);
-    return encode(serializable);
+    return Promise.resolve(transformer.encode(object, context, path)).then(
+        serializable => {
+            return encode(serializable);
+        }
+    );
 }

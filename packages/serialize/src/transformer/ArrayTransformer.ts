@@ -1,5 +1,5 @@
 import { ObjectPath } from '../core/ObjectPath';
-import { SerializeContext } from '../core/EncodeContext';
+import { EncodeContext } from '../core/EncodeContext';
 import { Tags } from '../core/Tags';
 import { Transformer } from '../core/Transformer';
 
@@ -14,7 +14,7 @@ export class ArrayTransformer
     }
     preEncode?(
         object: unknown[],
-        context: SerializeContext,
+        context: EncodeContext,
         path: ObjectPath
     ): void {
         context.recording(object, path);
@@ -30,7 +30,7 @@ export class ArrayTransformer
     }
     encode(
         object: unknown[],
-        context: SerializeContext,
+        context: EncodeContext,
         path: ObjectPath
     ): Promise<unknown[]> {
         return Promise.all(

@@ -1,6 +1,6 @@
 import { ObjectPath } from './ObjectPath';
 import { Serializable } from './Serializable';
-import { SerializeContext } from './EncodeContext';
+import { EncodeContext } from './EncodeContext';
 
 export interface Transformer<
     Target,
@@ -13,15 +13,11 @@ export interface Transformer<
 > {
     getTag(): number;
     accept(object: Target): boolean;
-    preEncode?(
-        Object: Target,
-        context: SerializeContext,
-        path: ObjectPath
-    ): void;
+    preEncode?(Object: Target, context: EncodeContext, path: ObjectPath): void;
     encode(
         object: Target,
-        context: SerializeContext,
+        context: EncodeContext,
         path: ObjectPath
-    ): Promise<Data>;
-    decode(data: Data): Promise<Target>;
+    ): Data | Promise<Data>;
+    decode(data: Data): Target | Promise<Target>;
 }

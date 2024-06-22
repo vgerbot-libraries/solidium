@@ -31,11 +31,7 @@ export class FileTransformer
             ];
         });
     }
-    decode(
-        data: [Tags.File, Serializable, [string, FilePropertyBag]]
-    ): Promise<File> {
-        return Promise.resolve(
-            new File([data[1] as BlobPart], data[2][0], data[2][1])
-        );
+    decode(data: [Tags.File, Serializable, [string, FilePropertyBag]]): File {
+        return new File([data[1] as BlobPart], data[2][0], data[2][1]);
     }
 }

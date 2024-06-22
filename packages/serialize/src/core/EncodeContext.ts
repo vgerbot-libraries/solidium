@@ -1,9 +1,9 @@
 import { ReferenceTransformer } from '../transformer/ReferanceTransformer';
 import { ObjectPath } from './ObjectPath';
 import { Transformer } from './Transformer';
-import { transformerOfObject } from './TransformerRegistry';
+import { transformerOfObject } from '../transformer';
 
-export class SerializeContext {
+export class EncodeContext {
     private objectPathMap = new Map<unknown, ObjectPath[]>();
     private pathObjectMap = new Map<ObjectPath, unknown>();
     private transformerMap = new Map<unknown, Transformer<unknown, unknown>>();

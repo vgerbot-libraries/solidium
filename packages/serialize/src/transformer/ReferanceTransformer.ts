@@ -1,5 +1,5 @@
 import { ObjectPath } from '../core/ObjectPath';
-import { SerializeContext } from '../core/EncodeContext';
+import { EncodeContext } from '../core/EncodeContext';
 import { Tags } from '../core/Tags';
 import { Transformer } from '../core/Transformer';
 
@@ -14,14 +14,14 @@ export class ReferenceTransformer
     }
     encode(
         object: unknown,
-        context: SerializeContext,
+        context: EncodeContext,
         path: ObjectPath
-    ): Promise<[Tags.Ref, string] | unknown> {
+    ): [Tags.Ref, string] | unknown {
         const referencePath = context.getReference(path);
         if (!referencePath) {
-            return Promise.resolve(object);
+            return object;
         }
-        return Promise.resolve([Tags.Ref, referencePath.toString()]);
+        return [Tags.Ref, referencePath.toString()];
     }
     decode(data: [Tags.Ref, string] | unknown): Promise<unknown> {
         if (Array.isArray(data) && data[0] === Tags.Ref) {
