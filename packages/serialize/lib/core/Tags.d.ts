@@ -1,4 +1,4 @@
-export enum Tags {
+export declare enum Tags {
     Ref = 0,
     Blob = 1,
     File = 2,
@@ -21,6 +21,4 @@ export enum Tags {
     Array = 19,
     Primary = 20
 }
-export function isValidTag(num: number): num is Tags {
-    return Tags[num] in Tags;
-}
+export declare function isValidTag(num: number): num is Tags;

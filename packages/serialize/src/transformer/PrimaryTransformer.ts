@@ -1,7 +1,7 @@
 import { Tags } from '../core/Tags';
 import { Transformer } from '../core/Transformer';
 
-type Primary = null | number | string | boolean | Date;
+type Primary = null | number | string | boolean | Date | ArrayBuffer;
 
 export class PrimaryTransformer implements Transformer<Primary, Primary> {
     getTag(): number {
@@ -17,12 +17,15 @@ export class PrimaryTransformer implements Transformer<Primary, Primary> {
         if (object instanceof Date || object === null) {
             return true;
         }
+        if (object instanceof ArrayBuffer) {
+            return true;
+        }
         return false;
     }
-    encode(object: Primary): Primary {
+    transform(object: Primary): Primary {
         return object;
     }
-    decode(data: Primary): Primary {
+    revive(data: Primary): Primary {
         return data;
     }
 }

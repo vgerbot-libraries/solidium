@@ -1,18 +1,24 @@
 import { isPlainObject } from 'is-plain-object';
 import { ObjectPath } from '../core/ObjectPath';
-import { EncodeContext } from '../core/EncodeContext';
+import { EncodeContext } from '../core/TransformContext';
 import { Transformer } from '../core/Transformer';
 import { Tags } from '../core/Tags';
-import { DecodeContext } from '../core/DecodeContext';
+import { ReviveContext } from '../core/ReviveContext';
 
-export class ObjectTransformer implements Transformer<Object, Object> {
+export class ObjectTransformer
+    implements Transformer<Record<string, unknown>, Record<string, unknown>>
+{
     getTag(): number {
         return Tags.Object;
     }
     accept(object: Object): boolean {
         return !!object && isPlainObject(object);
     }
-    preEncode(object: Object, context: EncodeContext, path: ObjectPath): void {
+    pretransform(
+        object: Object,
+        context: EncodeContext,
+        path: ObjectPath
+    ): void {
         context.recording(object, path);
         for (const key in object) {
             const value = Reflect.get(object, key);
@@ -21,47 +27,51 @@ export class ObjectTransformer implements Transformer<Object, Object> {
             }
             const childPath = path.child(key);
             const transformer = context.transformerOf(value);
-            if (transformer.preEncode) {
-                transformer.preEncode(value, context, childPath);
+            if (transformer.pretransform) {
+                transformer.pretransform(value, context, childPath);
             } else {
                 context.recording(value, childPath);
             }
         }
     }
-    async encode(
-        object: Object,
+    async transform(
+        object: Record<string, unknown>,
         context: EncodeContext,
         path: ObjectPath
-    ): Promise<Object> {
-        const result: Object = {};
+    ): Promise<Record<string, unknown>> {
+        const result: Record<string, unknown> = {};
         context.recording(result, path);
         for (const key in object) {
             const childPath = path.child(key);
-            const value: unknown = Reflect.get(object, key);
+            const value: unknown = object[key];
             const transformer = context.transformerOf(value);
-            const transformed = await transformer.encode(
+            const transformed = await transformer.transform(
                 value,
                 context,
                 childPath
             );
-            Reflect.set(result, key, transformed);
+            result[key] = transformed;
         }
         return Promise.resolve(result);
     }
-    decode(data: Object, context: DecodeContext, path: ObjectPath): Object {
-        const result: Object = {};
+    revive(
+        data: Record<string, unknown>,
+        context: ReviveContext,
+        path: ObjectPath
+    ): Record<string, unknown> {
+        const result: Record<string, unknown> = {};
         context.recording(result, path);
         for (const key in data) {
-            const value = Reflect.get(data, key);
+            const value = data[key];
             const childPath = path.child(key);
-            const transformer = context.transformerOf(value);
-            if (!transformer) {
-                Reflect.set(result, key, value);
+            const reviver = context.reviverOf(value);
+            if (!reviver) {
+                result[key] = value;
                 continue;
             }
-            const transformed = transformer.decode(value, context, childPath);
-            context.recording(transformed, childPath);
-            Reflect.set(result, key, transformed);
+            const revived = reviver.revive(value, context, childPath);
+            context.recording(revived, childPath);
+            result[key] = revived;
         }
         return result;
     }

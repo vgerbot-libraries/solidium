@@ -1,9 +1,9 @@
-import { Serializable } from '../core/Serializable';
 import { Tags } from '../core/Tags';
-import { Transformer } from '../core/Transformer';
+import { TransformedData, Transformer } from '../core/Transformer';
 
 export class BlobTransformer
-    implements Transformer<Blob, [Tags.Blob, Serializable, BlobPropertyBag]>
+    implements
+        Transformer<Blob, TransformedData<[ArrayBuffer, BlobPropertyBag]>>
 {
     getTag(): number {
         return Tags.Blob;
@@ -14,13 +14,18 @@ export class BlobTransformer
         }
         return object instanceof Blob;
     }
-    encode(object: Blob): Promise<[Tags.Blob, Serializable, BlobPropertyBag]> {
+    transform(
+        object: Blob
+    ): Promise<TransformedData<[ArrayBuffer, BlobPropertyBag]>> {
         return object.arrayBuffer().then(buffer => {
-            return [Tags.Blob, buffer, { type: object.type }];
+            return {
+                $: Tags.Blob,
+                _: [buffer, { type: object.type }]
+            };
         });
     }
-    decode(data: [Tags.Blob, Serializable, BlobPropertyBag]): Blob {
-        const blob = new Blob([data[1] as BlobPart], data[2]);
+    revive(data: TransformedData<[ArrayBuffer, BlobPropertyBag]>): Blob {
+        const blob = new Blob([data._[0]], data._[1]);
         return blob;
     }
 }

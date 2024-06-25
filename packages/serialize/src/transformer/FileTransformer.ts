@@ -1,10 +1,12 @@
-import { Serializable } from '../core/Serializable';
 import { Tags } from '../core/Tags';
-import { Transformer } from '../core/Transformer';
+import { TransformedData, Transformer } from '../core/Transformer';
 
 export class FileTransformer
     implements
-        Transformer<File, [Tags.File, Serializable, [string, FilePropertyBag]]>
+        Transformer<
+            File,
+            TransformedData<[ArrayBuffer, string, FilePropertyBag]>
+        >
 {
     getTag(): number {
         return Tags.File;
@@ -15,23 +17,25 @@ export class FileTransformer
         }
         return object instanceof File;
     }
-    encode(
+    transform(
         object: File
-    ): Promise<[Tags.File, Serializable, [string, FilePropertyBag]]> {
+    ): Promise<TransformedData<[ArrayBuffer, string, FilePropertyBag]>> {
         return object.arrayBuffer().then(buffer => {
-            return [
-                Tags.File,
-                buffer,
-                [
+            return {
+                $: Tags.File,
+                _: [
+                    buffer,
                     object.name,
                     {
                         type: object.type
                     }
                 ]
-            ];
+            };
         });
     }
-    decode(data: [Tags.File, Serializable, [string, FilePropertyBag]]): File {
-        return new File([data[1] as BlobPart], data[2][0], data[2][1]);
+    revive(
+        data: TransformedData<[ArrayBuffer, string, FilePropertyBag]>
+    ): File {
+        return new File([data._[0]], data._[1], data._[2]);
     }
 }

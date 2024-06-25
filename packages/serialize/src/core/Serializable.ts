@@ -1,4 +1,5 @@
 export type Serializable =
+    | null
     | ArrayBuffer
     | ArrayBufferView
     | string

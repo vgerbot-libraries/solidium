@@ -1,19 +1,17 @@
 import { ObjectPath } from '../core/ObjectPath';
-import { EncodeContext } from '../core/EncodeContext';
+import { EncodeContext } from '../core/TransformContext';
 import { Tags } from '../core/Tags';
 import { Transformer } from '../core/Transformer';
-import { DecodeContext } from '../core/DecodeContext';
+import { ReviveContext } from '../core/ReviveContext';
 
-export class ArrayTransformer
-    implements Transformer<Array<unknown>, Array<unknown>>
-{
+export class ArrayTransformer implements Transformer<unknown[], unknown[]> {
     getTag(): number {
         return Tags.Array;
     }
     accept(object: unknown[]): boolean {
         return Array.isArray(object);
     }
-    preEncode?(
+    pretransform?(
         object: unknown[],
         context: EncodeContext,
         path: ObjectPath
@@ -25,14 +23,14 @@ export class ArrayTransformer
             }
             const childPath = path.child(index + '');
             const transformer = context.transformerOf(it);
-            if (transformer.preEncode) {
-                transformer.preEncode(it, context, childPath);
+            if (transformer.pretransform) {
+                transformer.pretransform(it, context, childPath);
             } else {
                 context.recording(it, childPath);
             }
         });
     }
-    encode(
+    transform(
         object: unknown[],
         context: EncodeContext,
         path: ObjectPath
@@ -41,27 +39,26 @@ export class ArrayTransformer
             object.map((it, index) => {
                 const childPath = path.child(index);
                 const transformer = context.transformerOf(it);
-                return transformer.encode(it, context, childPath);
+                return transformer.transform(it, context, childPath);
             })
         );
     }
-    decode(
-        data: unknown[],
-        context: DecodeContext,
+    revive(
+        transformedData: unknown[],
+        context: ReviveContext,
         path: ObjectPath
     ): unknown[] {
-        const result: unknown[] = [];
-        context.recording(result, path);
-        data.forEach((value, index) => {
-            const transformer = context.transformerOf(value);
+        context.recording(transformedData, path);
+        transformedData.forEach((value, index) => {
+            const transformer = context.reviverOf(value);
             if (!transformer) {
                 return value;
             }
             const childPath = path.child(index);
-            const item = transformer.decode(value, context, childPath);
-            context.recording(item, childPath);
-            result.push(item);
+            const revivedValue = transformer.revive(value, context, childPath);
+            context.recording(revivedValue, childPath);
+            transformedData[index] = revivedValue;
         });
-        return result;
+        return transformedData;
     }
 }

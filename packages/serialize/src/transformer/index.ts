@@ -4,8 +4,10 @@ import { FileTransformer } from './FileTransformer';
 import { PrimaryTransformer } from './PrimaryTransformer';
 import { ArrayTransformer } from './ArrayTransformer';
 
-import { Transformer } from '../core/Transformer';
+import { TransformedData, Transformer } from '../core/Transformer';
 import { ReferenceTransformer } from './ReferanceTransformer';
+import { UndefinedTransformer } from './UndefinedTransformer';
+import { isPlainObject } from 'is-plain-object';
 
 const transformers: Array<Transformer<unknown, unknown>> = [];
 
@@ -26,10 +28,16 @@ export function transformerOfTag(tag: number) {
     const transformer = transformers.find(it => it.getTag() === tag);
     return transformer;
 }
+export function isTransformedObject(
+    obj: unknown
+): obj is TransformedData<unknown> {
+    return isPlainObject(obj) && '$' in obj && '_' in obj;
+}
 
 registerTransformer(new ObjectTransformer());
+registerTransformer(new ArrayTransformer());
+registerTransformer(new UndefinedTransformer());
 registerTransformer(new BlobTransformer());
 registerTransformer(new FileTransformer());
 registerTransformer(new PrimaryTransformer());
-registerTransformer(new ArrayTransformer());
 registerTransformer(new ReferenceTransformer());
