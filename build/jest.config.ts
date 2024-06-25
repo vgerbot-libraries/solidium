@@ -33,5 +33,6 @@ export default {
                 outputPath: './report/test-report.html'
             }
         ]
-    ]
+    ],
+    setupFiles: ['<rootDir>/__tests__/setup.jest.ts']
 };

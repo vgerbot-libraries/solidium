@@ -17,7 +17,7 @@ const rollupConfig: RollupOptions = {
             sourceMap: false
         }),
         typescript({
-            tsconfig: 'tsconfig.test.json'
+            tsconfig: '__tests__/tsconfig.json'
         })
     ]
 };
