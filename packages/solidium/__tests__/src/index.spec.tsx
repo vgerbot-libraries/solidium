@@ -1,5 +1,5 @@
 import { ClassMetadata } from '@vgerbot/ioc';
-import { Signal } from '../../src/annotations';
+import { Signal } from '../../src/decorators';
 
 describe('hello', () => {
     it('casual', () => {
