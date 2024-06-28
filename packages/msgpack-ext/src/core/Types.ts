@@ -1,1 +1,3 @@
-export enum Types {}
+export enum Types {
+    Reference = 0
+}
