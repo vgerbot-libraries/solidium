@@ -1,11 +1,28 @@
 import { CodecContext } from '../core/CodecContext';
 import { ObjectPath } from '../core/ObjectPath';
-import { VgerbotExtensionCodec } from '../core/VgerbotExtensionCodec';
+import { ReferenceHandler } from '../core/ReferenceHandler';
+import { Reference } from '../types/Reference';
 
 export class EncodeContext extends CodecContext {
     private readonly objectPathMap = new Map<unknown, ObjectPath[]>();
-    // private readonly codecMap = new Map<unknown, VgerbotExtensionCodecType>();
-    constructor(private readonly extensionCodec: VgerbotExtensionCodec) {
+    private readonly referenceHandlers: Array<ReferenceHandler> = [];
+    private readonly defaultReferenceHandler: ReferenceHandler = {
+        accept() {
+            return true;
+        },
+        traverse(object, context, path) {
+            context.recording(object, path);
+        },
+        transform(object, context, path) {
+            const referencePath = context.getReference(object, path);
+            if (referencePath) {
+                return new Reference(path.path);
+            }
+            return object;
+        }
+    };
+
+    constructor() {
         super();
     }
 
@@ -27,21 +44,26 @@ export class EncodeContext extends CodecContext {
     isHandled(object: unknown) {
         return this.objectPathMap.has(object);
     }
-    getReference(object: unknown) {
+    getReference(object: unknown, path: ObjectPath) {
         const paths = this.objectPathMap.get(object);
         if (!paths) {
             return;
         }
-        return paths[0];
+        return paths[0] !== path ? paths[0] : undefined;
     }
-    isReference(object: unknown) {
-        return this.getReference(object) !== undefined;
-    }
-    prepare(object: unknown) {
+    handleReference(object: unknown) {
         const handler = this.getReferenceHandler(object);
-        handler.traverse(object, this, new ObjectPath([]));
+        const path = this.getRootPath();
+        handler.traverse(object, this, path);
+        return handler.transform(object, this, path);
     }
     getReferenceHandler(object: unknown) {
-        return this.extensionCodec.getReferenceHandler(object);
+        return (
+            this.referenceHandlers.find(it => it.accept(object)) ||
+            this.defaultReferenceHandler
+        );
+    }
+    registerReferenceHandler(referenceHandler: ReferenceHandler) {
+        this.referenceHandlers.push(referenceHandler);
     }
 }
