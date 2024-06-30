@@ -1,24 +1,8 @@
 import { CodecContext } from '../core/CodecContext';
 import { ObjectPath } from '../core/ObjectPath';
-import { ObjectMapper } from '../core/ObjectMapper';
-import { Reference } from '../types/Reference';
 
 export class EncodeContext extends CodecContext {
     private readonly objectPathMap = new Map<unknown, ObjectPath[]>();
-    private readonly objectMappers: Array<ObjectMapper> = [];
-    private readonly defaultObjectMapper: ObjectMapper = {
-        canTransform() {
-            return true;
-        },
-        transform(object, context, path) {
-            context.recording(object, path);
-            const referencePath = context.getReference(object, path);
-            if (referencePath) {
-                return new Reference(path.path);
-            }
-            return object;
-        }
-    };
 
     constructor() {
         super();
@@ -59,8 +43,5 @@ export class EncodeContext extends CodecContext {
             this.objectMappers.find(it => it.canTransform(object)) ||
             this.defaultObjectMapper
         );
-    }
-    registerObjectMapper(objectMapper: ObjectMapper) {
-        this.objectMappers.push(objectMapper);
     }
 }
