@@ -116,10 +116,8 @@ var EncodeContext = /** @class */function (_super) {
       accept: function () {
         return true;
       },
-      traverse: function (object, context, path) {
-        context.recording(object, path);
-      },
       transform: function (object, context, path) {
+        context.recording(object, path);
         var referencePath = context.getReference(object, path);
         if (referencePath) {
           return new Reference(path.path);
@@ -157,7 +155,6 @@ var EncodeContext = /** @class */function (_super) {
   EncodeContext.prototype.handleReference = function (object) {
     var handler = this.getReferenceHandler(object);
     var path = this.getRootPath();
-    handler.traverse(object, this, path);
     return handler.transform(object, this, path);
   };
   EncodeContext.prototype.getReferenceHandler = function (object) {
@@ -198,20 +195,8 @@ var ObjectReferenceHandler = /** @class */function () {
   ObjectReferenceHandler.prototype.accept = function (object) {
     return isPlainObject.isPlainObject(object);
   };
-  ObjectReferenceHandler.prototype.traverse = function (object, context, path) {
-    context.recording(object, path);
-    for (var key in object) {
-      var value = object[key];
-      var childPath = path.child(key);
-      if (context.isHandled(value)) {
-        context.recording(object, childPath);
-        continue;
-      }
-      var handler = context.getReferenceHandler(value);
-      handler.traverse(value, context, childPath);
-    }
-  };
   ObjectReferenceHandler.prototype.transform = function (object, context, path) {
+    context.recording(object, path);
     var referencePath = context.getReference(object, path);
     if (referencePath) {
       return new Reference(referencePath.path);
@@ -220,6 +205,7 @@ var ObjectReferenceHandler = /** @class */function () {
     for (var key in object) {
       var value = object[key];
       var childPath = path.child(key);
+      context.recording(value, childPath);
       var handler = context.getReferenceHandler(value);
       result[key] = handler.transform(value, context, childPath);
     }
@@ -233,26 +219,15 @@ var ArrayReferenceHandler = /** @class */function () {
   ArrayReferenceHandler.prototype.accept = function (object) {
     return Array.isArray(object);
   };
-  ArrayReferenceHandler.prototype.traverse = function (object, context, path) {
-    context.recording(object, path);
-    for (var i = 0; i < object.length; i++) {
-      var value = object[i];
-      var childPath = path.child(i);
-      if (context.isHandled(value)) {
-        context.recording(object, childPath);
-        continue;
-      }
-      var handler = context.getReferenceHandler(value);
-      handler.traverse(value, context, childPath);
-    }
-  };
   ArrayReferenceHandler.prototype.transform = function (object, context, path) {
+    context.recording(object, path);
     var referencePath = context.getReference(object, path);
     if (referencePath) {
       return new Reference(referencePath.path);
     }
     return object.map(function (it, i) {
       var childPath = path.child(i);
+      context.recording(it, childPath);
       var handler = context.getReferenceHandler(childPath);
       return handler.transform(it, context, childPath);
     });

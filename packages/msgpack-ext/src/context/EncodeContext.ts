@@ -10,10 +10,8 @@ export class EncodeContext extends CodecContext {
         accept() {
             return true;
         },
-        traverse(object, context, path) {
-            context.recording(object, path);
-        },
         transform(object, context, path) {
+            context.recording(object, path);
             const referencePath = context.getReference(object, path);
             if (referencePath) {
                 return new Reference(path.path);
@@ -54,7 +52,6 @@ export class EncodeContext extends CodecContext {
     handleReference(object: unknown) {
         const handler = this.getReferenceHandler(object);
         const path = this.getRootPath();
-        handler.traverse(object, this, path);
         return handler.transform(object, this, path);
     }
     getReferenceHandler(object: unknown) {

@@ -3,6 +3,5 @@ import { ObjectPath } from '../core/ObjectPath';
 import { ReferenceHandler } from '../core/ReferenceHandler';
 export declare class ArrayReferenceHandler implements ReferenceHandler {
     accept(object: unknown): boolean;
-    traverse(object: unknown[], context: EncodeContext, path: ObjectPath): void;
     transform(object: unknown[], context: EncodeContext, path: ObjectPath): unknown;
 }

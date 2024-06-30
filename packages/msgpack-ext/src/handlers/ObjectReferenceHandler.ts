@@ -8,28 +8,12 @@ export class ObjectReferenceHandler implements ReferenceHandler {
     accept(object: unknown): boolean {
         return isPlainObject(object);
     }
-    traverse(
-        object: Record<string, unknown>,
-        context: EncodeContext,
-        path: ObjectPath
-    ): void {
-        context.recording(object, path);
-        for (const key in object) {
-            const value = object[key];
-            const childPath = path.child(key);
-            if (context.isHandled(value)) {
-                context.recording(object, childPath);
-                continue;
-            }
-            const handler = context.getReferenceHandler(value);
-            handler.traverse(value, context, childPath);
-        }
-    }
     transform(
         object: Record<string, unknown>,
         context: EncodeContext,
         path: ObjectPath
     ): unknown {
+        context.recording(object, path);
         const referencePath = context.getReference(object, path);
         if (referencePath) {
             return new Reference(referencePath.path);
@@ -38,6 +22,7 @@ export class ObjectReferenceHandler implements ReferenceHandler {
         for (const key in object) {
             const value = object[key];
             const childPath = path.child(key);
+            context.recording(value, childPath);
             const handler = context.getReferenceHandler(value);
             result[key] = handler.transform(value, context, childPath);
         }

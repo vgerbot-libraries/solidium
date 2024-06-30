@@ -68,10 +68,8 @@ class EncodeContext extends CodecContext {
       accept() {
         return true;
       },
-      traverse(object, context, path) {
-        context.recording(object, path);
-      },
       transform(object, context, path) {
+        context.recording(object, path);
         const referencePath = context.getReference(object, path);
         if (referencePath) {
           return new Reference(path.path);
@@ -108,7 +106,6 @@ class EncodeContext extends CodecContext {
   handleReference(object) {
     const handler = this.getReferenceHandler(object);
     const path = this.getRootPath();
-    handler.traverse(object, this, path);
     return handler.transform(object, this, path);
   }
   getReferenceHandler(object) {
@@ -144,20 +141,8 @@ class ObjectReferenceHandler {
   accept(object) {
     return isPlainObject(object);
   }
-  traverse(object, context, path) {
-    context.recording(object, path);
-    for (const key in object) {
-      const value = object[key];
-      const childPath = path.child(key);
-      if (context.isHandled(value)) {
-        context.recording(object, childPath);
-        continue;
-      }
-      const handler = context.getReferenceHandler(value);
-      handler.traverse(value, context, childPath);
-    }
-  }
   transform(object, context, path) {
+    context.recording(object, path);
     const referencePath = context.getReference(object, path);
     if (referencePath) {
       return new Reference(referencePath.path);
@@ -166,6 +151,7 @@ class ObjectReferenceHandler {
     for (const key in object) {
       const value = object[key];
       const childPath = path.child(key);
+      context.recording(value, childPath);
       const handler = context.getReferenceHandler(value);
       result[key] = handler.transform(value, context, childPath);
     }
@@ -177,26 +163,15 @@ class ArrayReferenceHandler {
   accept(object) {
     return Array.isArray(object);
   }
-  traverse(object, context, path) {
-    context.recording(object, path);
-    for (let i = 0; i < object.length; i++) {
-      const value = object[i];
-      const childPath = path.child(i);
-      if (context.isHandled(value)) {
-        context.recording(object, childPath);
-        continue;
-      }
-      const handler = context.getReferenceHandler(value);
-      handler.traverse(value, context, childPath);
-    }
-  }
   transform(object, context, path) {
+    context.recording(object, path);
     const referencePath = context.getReference(object, path);
     if (referencePath) {
       return new Reference(referencePath.path);
     }
     return object.map((it, i) => {
       const childPath = path.child(i);
+      context.recording(it, childPath);
       const handler = context.getReferenceHandler(childPath);
       return handler.transform(it, context, childPath);
     });
