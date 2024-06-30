@@ -3,16 +3,16 @@ import { CodecContext } from './CodecContext';
 import { EncodeContext } from '../context/EncodeContext';
 import { DecodeContext } from '../context/DecodeContext';
 import { ReferenceCodec } from '../codecs/ReferenceCodec';
-import { ObjectReferenceHandler } from '../handlers/ObjectReferenceHandler';
-import { ArrayReferenceHandler } from '../handlers/ArrayReferenceHandler';
+import { PlainObjectMapper } from '../handlers/PlainObjectMapper';
+import { ArrayMapper } from '../handlers/ArrayMapper';
 
 export function encode(input: unknown) {
     const extensionCodec = new ExtensionCodec<EncodeContext | DecodeContext>();
     extensionCodec.register(new ReferenceCodec());
     const context = new EncodeContext();
-    context.registerReferenceHandler(new ObjectReferenceHandler());
-    context.registerReferenceHandler(new ArrayReferenceHandler());
-    const transformed = context.handleReference(input);
+    context.registerObjectMapper(new PlainObjectMapper());
+    context.registerObjectMapper(new ArrayMapper());
+    const transformed = context.transformObject(input);
 
     return msgPackEncode<CodecContext>(transformed, {
         context,

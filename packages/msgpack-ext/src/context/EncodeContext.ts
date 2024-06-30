@@ -1,13 +1,13 @@
 import { CodecContext } from '../core/CodecContext';
 import { ObjectPath } from '../core/ObjectPath';
-import { ReferenceHandler } from '../core/ReferenceHandler';
+import { ObjectMapper } from '../core/ObjectMapper';
 import { Reference } from '../types/Reference';
 
 export class EncodeContext extends CodecContext {
     private readonly objectPathMap = new Map<unknown, ObjectPath[]>();
-    private readonly referenceHandlers: Array<ReferenceHandler> = [];
-    private readonly defaultReferenceHandler: ReferenceHandler = {
-        accept() {
+    private readonly objectMappers: Array<ObjectMapper> = [];
+    private readonly defaultObjectMapper: ObjectMapper = {
+        canTransform() {
             return true;
         },
         transform(object, context, path) {
@@ -49,18 +49,18 @@ export class EncodeContext extends CodecContext {
         }
         return paths[0] !== path ? paths[0] : undefined;
     }
-    handleReference(object: unknown) {
-        const handler = this.getReferenceHandler(object);
+    transformObject(object: unknown) {
+        const handler = this.getObjectMapper(object);
         const path = this.getRootPath();
         return handler.transform(object, this, path);
     }
-    getReferenceHandler(object: unknown) {
+    getObjectMapper(object: unknown) {
         return (
-            this.referenceHandlers.find(it => it.accept(object)) ||
-            this.defaultReferenceHandler
+            this.objectMappers.find(it => it.canTransform(object)) ||
+            this.defaultObjectMapper
         );
     }
-    registerReferenceHandler(referenceHandler: ReferenceHandler) {
-        this.referenceHandlers.push(referenceHandler);
+    registerObjectMapper(objectMapper: ObjectMapper) {
+        this.objectMappers.push(objectMapper);
     }
 }

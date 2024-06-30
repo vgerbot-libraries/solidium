@@ -1,11 +1,12 @@
 import { isPlainObject } from 'is-plain-object';
 import { EncodeContext } from '../context/EncodeContext';
 import { ObjectPath } from '../core/ObjectPath';
-import { ReferenceHandler } from '../core/ReferenceHandler';
+import { ObjectMapper } from '../core/ObjectMapper';
 import { Reference } from '../types/Reference';
+import { DecodeContext } from '../context/DecodeContext';
 
-export class ObjectReferenceHandler implements ReferenceHandler {
-    accept(object: unknown): boolean {
+export class PlainObjectMapper implements ObjectMapper {
+    canTransform(object: unknown): boolean {
         return isPlainObject(object);
     }
     transform(
@@ -23,9 +24,12 @@ export class ObjectReferenceHandler implements ReferenceHandler {
             const value = object[key];
             const childPath = path.child(key);
             context.recording(value, childPath);
-            const handler = context.getReferenceHandler(value);
+            const handler = context.getObjectMapper(value);
             result[key] = handler.transform(value, context, childPath);
         }
         return result;
+    }
+    revive(object: unknown, context: DecodeContext, path: ObjectPath): unknown {
+        return object;
     }
 }
