@@ -16,7 +16,7 @@ export interface StorageDriver {
     removeItem(key: string): Promise<void>;
     setItem(key: string, value: Blob): Promise<void>;
     length(): Promise<number>;
-    keyAt(index: number): Promise<string>;
+    keyAt(index: number): Promise<string | undefined>;
     keys(): AsyncGenerator<string>;
     clear(): Promise<void>;
     drop(): Promise<void>;

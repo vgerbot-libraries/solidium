@@ -43,22 +43,50 @@ export class LocalStorageDriver implements StorageDriver {
         if (!value) {
             return Promise.resolve(new Blob());
         }
-        return Promise.resolve(new Blob());
+        return Promise.resolve(this.deserialize(value));
     }
     removeItem(key: string): Promise<void> {
-        throw new Error('Method not implemented.');
+        const nk = this.normalizeKey(key);
+        localStorage.removeItem(nk);
+        return Promise.resolve();
     }
-    setItem(key: string, value: Blob): Promise<void> {
-        throw new Error('Method not implemented.');
+    async setItem(key: string, value: Blob): Promise<void> {
+        const normalizeKey = this.normalizeKey(key);
+        const serialized = await this.serialize(value);
+        localStorage.setItem(normalizeKey, serialized);
     }
-    length(): Promise<number> {
-        throw new Error('Method not implemented.');
+    async length(): Promise<number> {
+        let len = 0;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        for await (const _ of this.keys()) {
+            len++;
+        }
+        return len;
     }
-    keyAt(index: number): Promise<string> {
-        throw new Error('Method not implemented.');
+    async keyAt(index: number): Promise<string | undefined> {
+        let i = 0;
+        for await (const key of this.keys()) {
+            if (i === index) {
+                return key;
+            }
+            i++;
+        }
+        return;
     }
     private deserialize(str: string): Blob {
-        throw new Error('Method not implemented.');
+        try {
+            if (str[0] === '{') {
+                const { type, data } = JSON.parse(str);
+                return createBlob([data], { type });
+            }
+        } catch (error) {}
+        const len = str.length / 2;
+        const u8a = new Uint8Array(len);
+        for (let i = 0; i < len; i += 2) {
+            const hex = str.substring(i * 2, i * 2 + 2);
+            u8a[i] = parseInt(hex, 16);
+        }
+        return createBlob([u8a], {});
     }
     private async serialize(blob: Blob): Promise<string> {
         if (blob.type.indexOf('text/') > -1) {
@@ -67,9 +95,15 @@ export class LocalStorageDriver implements StorageDriver {
                 type: blob.type,
                 data: text
             });
+        } else {
+            const buffer = await blob.arrayBuffer();
+            const u8a = new Uint8Array(buffer);
+            let hex = '';
+            u8a.forEach(v => {
+                hex += v.toString(16).padStart(2, '0');
+            });
+            return hex;
         }
-        // TODO:
-        throw new Error('not implemented');
     }
     async *keys(): AsyncGenerator<string> {
         const len = localStorage.length;
