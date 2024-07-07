@@ -19,7 +19,6 @@ export interface StorageDriver {
     keyAt(index: number): Promise<string | undefined>;
     keys(): AsyncGenerator<string>;
     clear(): Promise<void>;
-    drop(): Promise<void>;
     observe(
         key: string,
         onChange: (newValue?: Blob, oldValue?: Blob) => void

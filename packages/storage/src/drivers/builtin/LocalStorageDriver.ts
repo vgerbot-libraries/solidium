@@ -74,26 +74,24 @@ export class LocalStorageDriver implements StorageDriver {
         return;
     }
     private deserialize(str: string): Blob {
-        try {
-            if (str[0] === '{') {
-                const { type, data } = JSON.parse(str);
-                return createBlob([data], { type });
-            }
-        } catch (error) {}
-        const len = str.length / 2;
+        const { type, text, hex: hexData } = JSON.parse(str);
+        if (text) {
+            return createBlob([text], { type });
+        }
+        const len = hexData.length / 2;
         const u8a = new Uint8Array(len);
         for (let i = 0; i < len; i += 2) {
-            const hex = str.substring(i * 2, i * 2 + 2);
+            const hex = hexData.substring(i * 2, i * 2 + 2);
             u8a[i] = parseInt(hex, 16);
         }
-        return createBlob([u8a], {});
+        return createBlob([u8a], { type });
     }
     private async serialize(blob: Blob): Promise<string> {
         if (blob.type.indexOf('text/') > -1) {
             const text = await blob.text();
             return JSON.stringify({
                 type: blob.type,
-                data: text
+                text: text
             });
         } else {
             const buffer = await blob.arrayBuffer();
@@ -102,25 +100,26 @@ export class LocalStorageDriver implements StorageDriver {
             u8a.forEach(v => {
                 hex += v.toString(16).padStart(2, '0');
             });
-            return hex;
+            return JSON.stringify({
+                type: blob.type,
+                hex
+            });
         }
     }
     async *keys(): AsyncGenerator<string> {
         const len = localStorage.length;
         const prefix = this.getKeyPrefix();
-        const regex = new RegExp('^' + prefix + '.');
         for (let i = 0; i < len; i++) {
             const key = localStorage.key(i);
-            if (key?.match(regex)) {
+            if (key?.indexOf(prefix) === 0) {
                 yield key;
             }
         }
     }
-    clear(): Promise<void> {
-        throw new Error('Method not implemented.');
-    }
-    drop(): Promise<void> {
-        throw new Error('Method not implemented.');
+    async clear(): Promise<void> {
+        for await (const key of this.keys()) {
+            localStorage.removeItem(key);
+        }
     }
     observe(
         key: string,
