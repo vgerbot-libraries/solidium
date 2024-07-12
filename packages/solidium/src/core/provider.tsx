@@ -53,8 +53,17 @@ export function Solidium(props: SolidiumProps) {
         });
         return instance as T;
     };
-    appCtx.registerBeforeInstantiationProcessor(beforeInstantiation);
-    appCtx.registerAfterInstantiationProcessor(afterInstantiation);
+
+    appCtx.registerBeforeInstantiationProcessor(function <T>(
+        constructor: Newable<T>
+    ) {
+        return beforeInstantiation(constructor, appCtx);
+    });
+    appCtx.registerAfterInstantiationProcessor(function <T extends object>(
+        instance: T
+    ) {
+        return afterInstantiation(instance, appCtx);
+    });
     appCtx.registerInstanceScopeResolution(
         COMPONENT_TREE_SCOPE,
         ComponentTreeScopeInstanceResolution

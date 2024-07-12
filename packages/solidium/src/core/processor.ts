@@ -1,4 +1,9 @@
-import { ClassMetadata, MemberKey, Newable } from '@vgerbot/ioc';
+import {
+    ApplicationContext,
+    ClassMetadata,
+    MemberKey,
+    Newable
+} from '@vgerbot/ioc';
 import {
     MemberDecoratorProcessor,
     IS_MEMBER_DECORATOR_PROCESSOR,
@@ -20,7 +25,10 @@ type ConstructorWithDecoratorProcessor<T> = Newable<T> & {
 
 type AllProcessorsMap = Map<MemberKey, Set<MemberDecoratorProcessor<unknown>>>;
 
-function initClassDecoratorProcessorsSet<T>(constructor: Newable<T>) {
+function initClassDecoratorProcessorsSet<T>(
+    constructor: Newable<T>,
+    container: ApplicationContext
+) {
     if (constructor.hasOwnProperty(SOLIDIUM_CLASS_DECORATOR_PROCESSOR_KEY)) {
         return;
     }
@@ -56,11 +64,14 @@ function initClassDecoratorProcessorsSet<T>(constructor: Newable<T>) {
     });
     allClassDecoratorProcessor.forEach(processor => {
         processor.beforeInstantiation &&
-            processor.beforeInstantiation(constructor, metadata);
+            processor.beforeInstantiation(constructor, metadata, container);
     });
 }
 
-function initMemberDecoratorProcessorsSet<T>(constructor: Newable<T>) {
+function initMemberDecoratorProcessorsSet<T>(
+    constructor: Newable<T>,
+    container: ApplicationContext
+) {
     if (constructor.hasOwnProperty(SOLIDIUM_MEMBER_DECORATOR_PROCESSOR_KEY)) {
         return;
     }
@@ -114,18 +125,29 @@ function initMemberDecoratorProcessorsSet<T>(constructor: Newable<T>) {
     allMemberDecoratorProcessors.forEach((processors, member) => {
         processors.forEach(processor => {
             if (processor.beforeInstantiation) {
-                processor.beforeInstantiation(constructor, member, metadata);
+                processor.beforeInstantiation(
+                    constructor,
+                    member,
+                    metadata,
+                    container
+                );
             }
         });
     });
 }
 
-export function beforeInstantiation<T>(constructor: Newable<T>) {
-    initClassDecoratorProcessorsSet(constructor);
-    initMemberDecoratorProcessorsSet(constructor);
+export function beforeInstantiation<T>(
+    constructor: Newable<T>,
+    container: ApplicationContext
+) {
+    initClassDecoratorProcessorsSet(constructor, container);
+    initMemberDecoratorProcessorsSet(constructor, container);
 }
 
-export function afterInstantiation<T extends object>(instance: T): T {
+export function afterInstantiation<T extends object>(
+    instance: T,
+    container: ApplicationContext
+): T {
     const constructor =
         instance.constructor as ConstructorWithDecoratorProcessor<T>;
     const metadata = ClassMetadata.getInstance(constructor).reader();
@@ -136,7 +158,7 @@ export function afterInstantiation<T extends object>(instance: T): T {
         allClassProcessors.forEach(processor => {
             const newInstance =
                 processor.afterInstantiation &&
-                processor.afterInstantiation(instance, metadata);
+                processor.afterInstantiation(instance, metadata, container);
             if (newInstance instanceof constructor) {
                 instance = newInstance;
             }
@@ -148,7 +170,12 @@ export function afterInstantiation<T extends object>(instance: T): T {
         allMemberProcessors.forEach((processors, member) => {
             processors.forEach(processor => {
                 if (processor.afterInstantiation) {
-                    processor.afterInstantiation(instance, member, metadata);
+                    processor.afterInstantiation(
+                        instance,
+                        member,
+                        metadata,
+                        container
+                    );
                 }
             });
         });

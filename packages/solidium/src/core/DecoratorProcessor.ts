@@ -1,4 +1,9 @@
-import { ClassMetadataReader, MemberKey, Newable } from '@vgerbot/ioc';
+import {
+    ApplicationContext,
+    ClassMetadataReader,
+    MemberKey,
+    Newable
+} from '@vgerbot/ioc';
 
 export const IS_MEMBER_DECORATOR_PROCESSOR = Symbol(
     'solidium-is-member-decorator-processor'
@@ -12,12 +17,14 @@ export interface MemberDecoratorProcessor<T> {
     beforeInstantiation?: (
         constructor: Newable<T>,
         member: MemberKey,
-        metadata: ClassMetadataReader<T>
+        metadata: ClassMetadataReader<T>,
+        container: ApplicationContext
     ) => void;
     afterInstantiation?: (
         instance: T,
         member: MemberKey,
-        metadata: ClassMetadataReader<T>
+        metadata: ClassMetadataReader<T>,
+        container: ApplicationContext
     ) => void;
 }
 
@@ -25,7 +32,12 @@ export interface ClassDecoratorProcessor<T> {
     [IS_CLASS_DECORATOR_PROCESSOR]: true;
     beforeInstantiation?: (
         constructor: Newable<T>,
-        metadata: ClassMetadataReader<T>
+        metadata: ClassMetadataReader<T>,
+        container: ApplicationContext
     ) => void;
-    afterInstantiation?: (instance: T, metadata: ClassMetadataReader<T>) => T;
+    afterInstantiation?: (
+        instance: T,
+        metadata: ClassMetadataReader<T>,
+        container: ApplicationContext
+    ) => T;
 }
