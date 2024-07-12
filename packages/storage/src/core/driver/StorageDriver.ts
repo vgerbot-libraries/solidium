@@ -1,3 +1,4 @@
+import { DriverChangeEvent } from './ChangeEvent';
 import { StorageDriverOptions } from './StorageDriverOptions';
 
 export interface StorageDriverConstructor {
@@ -5,7 +6,12 @@ export interface StorageDriverConstructor {
     new (options: StorageDriverOptions): StorageDriver;
 }
 
+export type StorageDriverChangeEventListener = (
+    event: DriverChangeEvent
+) => void;
+
 export interface StorageDriver {
+    readonly name: string;
     prepare(): Promise<void>;
     supports(): Promise<boolean>;
     iterate(): AsyncGenerator<{
@@ -21,6 +27,6 @@ export interface StorageDriver {
     clear(): Promise<void>;
     observe(
         key: string,
-        onChange: (newValue?: Blob, oldValue?: Blob) => void
+        onChange: StorageDriverChangeEventListener
     ): () => void;
 }

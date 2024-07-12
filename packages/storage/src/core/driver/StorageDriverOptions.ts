@@ -1,5 +1,4 @@
 export interface StorageDriverOptions {
-    driverName: string;
-    storeName: string;
+    bucketName: string;
     version?: string;
 }

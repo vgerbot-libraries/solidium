@@ -1,26 +1,39 @@
 import { defineMemberDecoratorProcessor, getSignal } from '@vgerbot/solidium';
 import { createEffect, on } from 'solid-js';
-import { MemberKey } from '@vgerbot/ioc';
-import { Storage } from '../core/Storage';
+import {
+    ApplicationContext,
+    ClassMetadataReader,
+    MemberKey
+} from '@vgerbot/ioc';
 import { Data } from '../types/Data';
+import { Bucket } from '../core/bucket/Bucket';
+import { DEFAULT_BUCKET } from '../core/constants';
 
-export interface StoreValueOptions {
-    store: Storage;
+export interface StorageOptions {
+    bucket?: string | symbol | Bucket;
     key?: string;
 }
 
-export const StorageValue = (options: StoreValueOptions) => {
+export const Storage = (options: StorageOptions) => {
     return defineMemberDecoratorProcessor('storage', {
         afterInstantiation<T extends Record<MemberKey, unknown>>(
             instance: T,
-            member: MemberKey
+            member: MemberKey,
+            metadata: ClassMetadataReader<T>,
+            container: ApplicationContext
         ) {
             const [, set] = getSignal(instance, member);
             const key = options.key || member.toString();
-            const store = options.store;
+            const bucketOrName = options.bucket || DEFAULT_BUCKET;
+
+            const bucket =
+                typeof bucketOrName === 'string' ||
+                typeof bucketOrName === 'symbol'
+                    ? <Bucket>container.getInstance(bucketOrName)
+                    : bucketOrName;
             const observe = () => {
-                return store.observe(key, newValue => {
-                    set(newValue);
+                return bucket.observe(key, event => {
+                    set(event.newValue);
                 });
             };
             let unobserve = observe();
@@ -31,7 +44,7 @@ export const StorageValue = (options: StoreValueOptions) => {
                     },
                     newValue => {
                         unobserve();
-                        store.setItem(key, newValue as Data).finally(() => {
+                        bucket.setItem(key, newValue as Data).finally(() => {
                             unobserve = observe();
                         });
                     }

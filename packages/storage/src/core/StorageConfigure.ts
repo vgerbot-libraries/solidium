@@ -1,15 +1,16 @@
 import { Factory, Inject, PostInject } from '@vgerbot/ioc';
-import { StorageConfiguration } from './StorageConfiguration';
-import { DEFAULT_STORAGE, DEFAULT_STORAGE_CONFIGURATION } from './constants';
+import { BucketConfiguration } from './bucket/BucketConfiguration';
+import { DEFAULT_BUCKET, DEFAULT_BUCKET_CONFIGURATION } from './constants';
 import { keep } from '../common/keep';
+import { Bucket } from './bucket/Bucket';
 /**
  * ```jsx
  * <Solidium autoRegisterClasses={[
-    StoragePlugin.default({
+    StorageConfigure.default({
         // default storage configuration
     }),
-    StoragePlugin.storage(
-        'custom-storage-name',
+    StorageConfigure.bucket(
+        'custom-bucket-name',
         {
             // custom storage configuration
         }
@@ -20,45 +21,45 @@ import { keep } from '../common/keep';
  * ```js
  class BizService {
     @Signal
-    @StorageValue() // use default storage
+    @Storage() // use default storage
     autoSaveToDefaultStorage: boolean;
     @Signal
-    @StorageValue({
-        store: 'custom-storage-name'
+    @Storage({
+        bucket: 'custom-bucket-name'
     }) // 
     autoSaveToCustomStorage: boolean;
  }
  * ```
  */
-export class StoragePlugin {
-    static default(configuration: StorageConfiguration) {
+export class StorageConfigure {
+    static default(configuration?: BucketConfiguration) {
         class StorageConfigurationFactory {
-            @Factory(DEFAULT_STORAGE_CONFIGURATION)
+            @Factory(DEFAULT_BUCKET_CONFIGURATION)
             getConfiguration() {
                 return configuration;
             }
         }
         keep(StorageConfigurationFactory);
-        return StoragePlugin;
+        return StorageConfigure;
     }
-    static storage(name: string, configuration: StorageConfiguration) {
+    static bucket(name: string, configuration: BucketConfiguration) {
         class StorageFactory {
             @Factory(name)
             createStorage() {
-                return null;
+                return new Bucket(configuration);
             }
         }
         return StorageFactory;
     }
-    @Inject(DEFAULT_STORAGE_CONFIGURATION)
-    private configuration: StorageConfiguration = {
+    @Inject(DEFAULT_BUCKET_CONFIGURATION)
+    private configuration: BucketConfiguration = {
         name: 'solidium-storage',
         version: '1.0'
     };
 
-    @Factory(DEFAULT_STORAGE)
-    getDefaultStorage() {
-        // TODO: CREATE DEFAULT STORAGE INSTANCE HERE
+    @Factory(DEFAULT_BUCKET)
+    getDefaultBucket() {
+        return new Bucket(this.configuration);
     }
 
     @PostInject()

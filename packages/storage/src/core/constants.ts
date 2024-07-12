@@ -1,5 +1,5 @@
-export const DEFAULT_STORAGE_CONFIGURATION = Symbol(
-    'solidium-default-storage-configuration'
+export const DEFAULT_BUCKET_CONFIGURATION = Symbol(
+    'solidium-default-bucket-configuration'
 );
 
-export const DEFAULT_STORAGE = Symbol('solidium-default-storage');
+export const DEFAULT_BUCKET = Symbol('solidium-default-bucket');
