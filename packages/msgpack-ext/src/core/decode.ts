@@ -2,9 +2,9 @@ import { ExtensionCodec, decode as msgpackDecode } from '@msgpack/msgpack';
 import { DecodeContext } from '../context/DecodeContext';
 import { ReferenceCodec } from '../codecs/ReferenceCodec';
 import { EncodeContext } from '../context/EncodeContext';
-import { PlainObjectMapper } from '../handlers/PlainObjectMapper';
-import { ArrayMapper } from '../handlers/ArrayMapper';
-import { ReferenceMapper } from '../handlers/ReferenceMapper';
+import { PlainObjectMapper } from '../mappers/PlainObjectMapper';
+import { ArrayMapper } from '../mappers/ArrayMapper';
+import { ReferenceMapper } from '../mappers/ReferenceMapper';
 
 export function decode(buffer: ArrayLike<number> | BufferSource) {
     const extensionCodec = new ExtensionCodec<EncodeContext | DecodeContext>();
