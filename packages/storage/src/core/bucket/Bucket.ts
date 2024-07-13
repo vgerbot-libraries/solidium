@@ -7,6 +7,7 @@ import { StorageDriver } from '../driver/StorageDriver';
 import { BucketConfiguration } from './BucketConfiguration';
 import { DefaultSerializer } from '../serializer/DefaultSerializer';
 import { ChangeEvent } from './ChangeEvent';
+import { SessionStorageDriver } from '../../drivers/SessionStorageDriver';
 
 type MethodKeysOf<T> = keyof {
     [key in keyof T]: T[key] extends Function ? T[key] : never;
@@ -50,10 +51,12 @@ export class Bucket {
         this.name = config.name;
         this.serializer = config.serializer || new DefaultSerializer();
         const driver = config.driver;
-        if (driver === DefaultDrivers.LOCALSTORAGE) {
+        if (driver === DefaultDrivers.LOCAL_STORAGE) {
             this.driver = LocalStorageDriver.createInstance(this.name);
         } else if (driver === DefaultDrivers.INDEXED_DB) {
             // TODO
+        } else if (driver === DefaultDrivers.SESSION_STORAGE) {
+            this.driver = SessionStorageDriver.createInstance(this.name);
         } else {
             this.driver =
                 driver || LocalStorageDriver.createInstance(this.name);

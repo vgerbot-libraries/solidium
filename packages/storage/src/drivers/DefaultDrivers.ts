@@ -1,4 +1,5 @@
 export enum DefaultDrivers {
-    LOCALSTORAGE = 'localStorage',
+    LOCAL_STORAGE = 'localStorage',
+    SESSION_STORAGE = 'sessionStorage',
     INDEXED_DB = 'indexedDB'
 }
