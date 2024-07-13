@@ -7,6 +7,125 @@ class Reference {
   }
 }
 
+class IterableMapper {
+  transform(object, context, path) {
+    context.recording(object, path);
+    const referencePath = context.getReference(object, path);
+    if (referencePath) {
+      return new Reference(referencePath.path);
+    }
+    const result = [];
+    context.recording(object, path);
+    let i = 0;
+    for (const value of object) {
+      const childPath = path.child(i);
+      context.recording(value, childPath);
+      const mapper = context.getObjectMapper(value);
+      const newValue = mapper.transform(value, context, childPath);
+      result.push(newValue);
+      i++;
+    }
+    return this.createTransformedResult(result);
+  }
+  revive(object, context, path) {
+    const receiver = this.createNewInstance();
+    context.recording(object, path);
+    this.forEachTransformedResult(object, path, (item, path) => {
+      context.recording(object, path);
+      const mapper = context.getObjectMapper(item);
+      const reviveValue = mapper.revive(item, context, path);
+      this.append(receiver, reviveValue);
+    });
+    return receiver;
+  }
+}
+
+class ArrayMapper extends IterableMapper {
+  createTransformedResult(resultArray) {
+    return resultArray;
+  }
+  forEachTransformedResult(target, path, callback) {
+    target.forEach((item, index) => {
+      callback(item, path.child(index));
+    });
+  }
+  canRevive(object) {
+    return Array.isArray(object);
+  }
+  canTransform(object) {
+    return Array.isArray(object);
+  }
+  createNewInstance(origin) {
+    return Array(origin ? origin.length : 0);
+  }
+  append(target, value) {
+    target.push(value);
+  }
+}
+
+class PlainObjectMapper {
+  canTransform(object) {
+    return isPlainObject(object);
+  }
+  transform(object, context, path) {
+    context.recording(object, path);
+    const referencePath = context.getReference(object, path);
+    if (referencePath) {
+      return new Reference(referencePath.path);
+    }
+    const result = {};
+    this.map(object, context, path, (key, value, path, mapper) => {
+      result[key] = mapper.transform(value, context, path);
+    });
+    return result;
+  }
+  canRevive(object) {
+    return isPlainObject(object);
+  }
+  revive(object, context, path) {
+    this.map(object, context, path, (key, value, path, mapper) => {
+      object[key] = mapper.revive(value, context, path);
+    });
+    return object;
+  }
+  map(object, context, path, handle) {
+    context.recording(object, path);
+    for (const key in object) {
+      const value = object[key];
+      const childPath = path.child(key);
+      context.recording(value, childPath);
+      const mapper = context.getObjectMapper(value);
+      handle(key, value, childPath, mapper);
+    }
+  }
+}
+
+class SetMapper extends IterableMapper {
+  createTransformedResult(resultArray) {
+    return {
+      $: 1,
+      _: resultArray
+    };
+  }
+  forEachTransformedResult(target, path, callback) {
+    target._.forEach((item, i) => {
+      callback(item, path.child(i));
+    });
+  }
+  canRevive(object) {
+    return isPlainObject(object) && '$' in object && '_' in object && object.$ === 1 && Array.isArray(object._);
+  }
+  append(target, value) {
+    target.add(value);
+  }
+  canTransform(object) {
+    return object instanceof Set;
+  }
+  createNewInstance() {
+    return new Set();
+  }
+}
+
 class ObjectPath {
   constructor(path, parent) {
     this.path = path;
@@ -47,7 +166,7 @@ class CodecContext {
   constructor() {
     this.pathObjectMap = new Map();
     this.rootPath = new ObjectPath([]);
-    this.objectMappers = [];
+    this.objectMappers = [new SetMapper(), new ArrayMapper(), new PlainObjectMapper()];
     this.defaultObjectMapper = {
       canTransform() {
         return true;
@@ -78,7 +197,7 @@ class CodecContext {
     return this.rootPath;
   }
   registerObjectMapper(objectMapper) {
-    this.objectMappers.push(objectMapper);
+    this.objectMappers.unshift(objectMapper);
   }
 }
 
@@ -143,104 +262,15 @@ class ReferenceCodec {
   }
 }
 
-class PlainObjectMapper {
-  canTransform(object) {
-    return isPlainObject(object);
-  }
-  transform(object, context, path) {
-    context.recording(object, path);
-    const referencePath = context.getReference(object, path);
-    if (referencePath) {
-      return new Reference(referencePath.path);
-    }
-    const result = {};
-    this.map(object, context, path, (key, value, path, mapper) => {
-      result[key] = mapper.transform(value, context, path);
-    });
-    return result;
-  }
-  canRevive(object) {
-    return isPlainObject(object);
-  }
-  revive(object, context, path) {
-    this.map(object, context, path, (key, value, path, mapper) => {
-      object[key] = mapper.revive(value, context, path);
-    });
-    return object;
-  }
-  map(object, context, path, handle) {
-    context.recording(object, path);
-    for (const key in object) {
-      const value = object[key];
-      const childPath = path.child(key);
-      context.recording(value, childPath);
-      const mapper = context.getObjectMapper(value);
-      handle(key, value, childPath, mapper);
-    }
-  }
-}
-
-class ArrayMapper {
-  canTransform(object) {
-    return object.length >= 0;
-  }
-  transform(object, context, path) {
-    context.recording(object, path);
-    const referencePath = context.getReference(object, path);
-    if (referencePath) {
-      return new Reference(referencePath.path);
-    }
-    const result = Array(object.length);
-    this.map(object, context, path, (index, item, path, mapper) => {
-      result[index] = mapper.transform(item, context, path);
-    });
-    return result;
-  }
-  canRevive(object) {
-    return this.canTransform(object);
-  }
-  revive(object, context, path) {
-    const isReadonly = Reflect.set(object, 0, object[0]);
-    const receiver = isReadonly ? [] : object;
-    this.map(object, context, path, (index, item, path, mapper) => {
-      receiver[index] = mapper.revive(item, context, path);
-    });
-    return receiver;
-  }
-  map(object, context, path, handle) {
-    context.recording(object, path);
-    for (let i = 0; i < object.length; i++) {
-      const value = object[i];
-      const childPath = path.child(i);
-      context.recording(value, childPath);
-      const mapper = context.getObjectMapper(value);
-      handle(i, value, childPath, mapper);
-    }
-    return object;
-  }
-}
-
 function encode(input) {
   const extensionCodec = new ExtensionCodec();
   extensionCodec.register(new ReferenceCodec());
   const context = new EncodeContext();
-  context.registerObjectMapper(new PlainObjectMapper());
-  context.registerObjectMapper(new ArrayMapper());
   const transformed = context.transformObject(input);
   return encode$1(transformed, {
     context,
     extensionCodec
   });
-}
-
-class DecodeContext extends CodecContext {
-  revive(decoded) {
-    const mapper = this.getObjectMapper(decoded);
-    return mapper.revive(decoded, this, this.getRootPath());
-  }
-  getObjectMapper(object) {
-    return this.objectMappers.find(it => it.canRevive(object)) || this.defaultObjectMapper;
-  }
 }
 
 class ReferenceMapper {
@@ -260,13 +290,24 @@ class ReferenceMapper {
   }
 }
 
+class DecodeContext extends CodecContext {
+  constructor() {
+    super();
+    this.registerObjectMapper(new ReferenceMapper());
+  }
+  revive(decoded) {
+    const mapper = this.getObjectMapper(decoded);
+    return mapper.revive(decoded, this, this.getRootPath());
+  }
+  getObjectMapper(object) {
+    return this.objectMappers.find(it => it.canRevive(object)) || this.defaultObjectMapper;
+  }
+}
+
 function decode(buffer) {
   const extensionCodec = new ExtensionCodec();
   extensionCodec.register(new ReferenceCodec());
   const context = new DecodeContext();
-  context.registerObjectMapper(new PlainObjectMapper());
-  context.registerObjectMapper(new ArrayMapper());
-  context.registerObjectMapper(new ReferenceMapper());
   const decoded = decode$1(buffer, {
     context,
     extensionCodec

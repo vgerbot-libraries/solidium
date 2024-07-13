@@ -36,6 +36,18 @@ function __extends(d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 }
 
+function __values(o) {
+    var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
+    if (m) return m.call(o);
+    if (o && typeof o.length === "number") return {
+        next: function () {
+            if (o && i >= o.length) o = void 0;
+            return { value: o && o[i++], done: !o };
+        }
+    };
+    throw new TypeError(s ? "Object is not iterable." : "Symbol.iterator is not defined.");
+}
+
 typeof SuppressedError === "function" ? SuppressedError : function (error, suppressed, message) {
     var e = new Error(message);
     return e.name = "SuppressedError", e.error = error, e.suppressed = suppressed, e;
@@ -47,6 +59,154 @@ var Reference = /** @class */function () {
   }
   return Reference;
 }();
+
+var IterableMapper = /** @class */function () {
+  function IterableMapper() {}
+  IterableMapper.prototype.transform = function (object, context, path) {
+    var e_1, _a;
+    context.recording(object, path);
+    var referencePath = context.getReference(object, path);
+    if (referencePath) {
+      return new Reference(referencePath.path);
+    }
+    var result = [];
+    context.recording(object, path);
+    var i = 0;
+    try {
+      for (var object_1 = __values(object), object_1_1 = object_1.next(); !object_1_1.done; object_1_1 = object_1.next()) {
+        var value = object_1_1.value;
+        var childPath = path.child(i);
+        context.recording(value, childPath);
+        var mapper = context.getObjectMapper(value);
+        var newValue = mapper.transform(value, context, childPath);
+        result.push(newValue);
+        i++;
+      }
+    } catch (e_1_1) {
+      e_1 = {
+        error: e_1_1
+      };
+    } finally {
+      try {
+        if (object_1_1 && !object_1_1.done && (_a = object_1.return)) _a.call(object_1);
+      } finally {
+        if (e_1) throw e_1.error;
+      }
+    }
+    return this.createTransformedResult(result);
+  };
+  IterableMapper.prototype.revive = function (object, context, path) {
+    var _this = this;
+    var receiver = this.createNewInstance();
+    context.recording(object, path);
+    this.forEachTransformedResult(object, path, function (item, path) {
+      context.recording(object, path);
+      var mapper = context.getObjectMapper(item);
+      var reviveValue = mapper.revive(item, context, path);
+      _this.append(receiver, reviveValue);
+    });
+    return receiver;
+  };
+  return IterableMapper;
+}();
+
+var ArrayMapper = /** @class */function (_super) {
+  __extends(ArrayMapper, _super);
+  function ArrayMapper() {
+    return _super !== null && _super.apply(this, arguments) || this;
+  }
+  ArrayMapper.prototype.createTransformedResult = function (resultArray) {
+    return resultArray;
+  };
+  ArrayMapper.prototype.forEachTransformedResult = function (target, path, callback) {
+    target.forEach(function (item, index) {
+      callback(item, path.child(index));
+    });
+  };
+  ArrayMapper.prototype.canRevive = function (object) {
+    return Array.isArray(object);
+  };
+  ArrayMapper.prototype.canTransform = function (object) {
+    return Array.isArray(object);
+  };
+  ArrayMapper.prototype.createNewInstance = function (origin) {
+    return Array(origin ? origin.length : 0);
+  };
+  ArrayMapper.prototype.append = function (target, value) {
+    target.push(value);
+  };
+  return ArrayMapper;
+}(IterableMapper);
+
+var PlainObjectMapper = /** @class */function () {
+  function PlainObjectMapper() {}
+  PlainObjectMapper.prototype.canTransform = function (object) {
+    return isPlainObject.isPlainObject(object);
+  };
+  PlainObjectMapper.prototype.transform = function (object, context, path) {
+    context.recording(object, path);
+    var referencePath = context.getReference(object, path);
+    if (referencePath) {
+      return new Reference(referencePath.path);
+    }
+    var result = {};
+    this.map(object, context, path, function (key, value, path, mapper) {
+      result[key] = mapper.transform(value, context, path);
+    });
+    return result;
+  };
+  PlainObjectMapper.prototype.canRevive = function (object) {
+    return isPlainObject.isPlainObject(object);
+  };
+  PlainObjectMapper.prototype.revive = function (object, context, path) {
+    this.map(object, context, path, function (key, value, path, mapper) {
+      object[key] = mapper.revive(value, context, path);
+    });
+    return object;
+  };
+  PlainObjectMapper.prototype.map = function (object, context, path, handle) {
+    context.recording(object, path);
+    for (var key in object) {
+      var value = object[key];
+      var childPath = path.child(key);
+      context.recording(value, childPath);
+      var mapper = context.getObjectMapper(value);
+      handle(key, value, childPath, mapper);
+    }
+  };
+  return PlainObjectMapper;
+}();
+
+var SetMapper = /** @class */function (_super) {
+  __extends(SetMapper, _super);
+  function SetMapper() {
+    return _super !== null && _super.apply(this, arguments) || this;
+  }
+  SetMapper.prototype.createTransformedResult = function (resultArray) {
+    return {
+      $: 1,
+      _: resultArray
+    };
+  };
+  SetMapper.prototype.forEachTransformedResult = function (target, path, callback) {
+    target._.forEach(function (item, i) {
+      callback(item, path.child(i));
+    });
+  };
+  SetMapper.prototype.canRevive = function (object) {
+    return isPlainObject.isPlainObject(object) && '$' in object && '_' in object && object.$ === 1 && Array.isArray(object._);
+  };
+  SetMapper.prototype.append = function (target, value) {
+    target.add(value);
+  };
+  SetMapper.prototype.canTransform = function (object) {
+    return object instanceof Set;
+  };
+  SetMapper.prototype.createNewInstance = function () {
+    return new Set();
+  };
+  return SetMapper;
+}(IterableMapper);
 
 var ObjectPath = /** @class */function () {
   function ObjectPath(path, parent) {
@@ -93,7 +253,7 @@ var CodecContext = /** @class */function () {
   function CodecContext() {
     this.pathObjectMap = new Map();
     this.rootPath = new ObjectPath([]);
-    this.objectMappers = [];
+    this.objectMappers = [new SetMapper(), new ArrayMapper(), new PlainObjectMapper()];
     this.defaultObjectMapper = {
       canTransform: function () {
         return true;
@@ -124,7 +284,7 @@ var CodecContext = /** @class */function () {
     return this.rootPath;
   };
   CodecContext.prototype.registerObjectMapper = function (objectMapper) {
-    this.objectMappers.push(objectMapper);
+    this.objectMappers.unshift(objectMapper);
   };
   return CodecContext;
 }();
@@ -196,116 +356,16 @@ var ReferenceCodec = /** @class */function () {
   return ReferenceCodec;
 }();
 
-var PlainObjectMapper = /** @class */function () {
-  function PlainObjectMapper() {}
-  PlainObjectMapper.prototype.canTransform = function (object) {
-    return isPlainObject.isPlainObject(object);
-  };
-  PlainObjectMapper.prototype.transform = function (object, context, path) {
-    context.recording(object, path);
-    var referencePath = context.getReference(object, path);
-    if (referencePath) {
-      return new Reference(referencePath.path);
-    }
-    var result = {};
-    this.map(object, context, path, function (key, value, path, mapper) {
-      result[key] = mapper.transform(value, context, path);
-    });
-    return result;
-  };
-  PlainObjectMapper.prototype.canRevive = function (object) {
-    return isPlainObject.isPlainObject(object);
-  };
-  PlainObjectMapper.prototype.revive = function (object, context, path) {
-    this.map(object, context, path, function (key, value, path, mapper) {
-      object[key] = mapper.revive(value, context, path);
-    });
-    return object;
-  };
-  PlainObjectMapper.prototype.map = function (object, context, path, handle) {
-    context.recording(object, path);
-    for (var key in object) {
-      var value = object[key];
-      var childPath = path.child(key);
-      context.recording(value, childPath);
-      var mapper = context.getObjectMapper(value);
-      handle(key, value, childPath, mapper);
-    }
-  };
-  return PlainObjectMapper;
-}();
-
-var ArrayMapper = /** @class */function () {
-  function ArrayMapper() {}
-  ArrayMapper.prototype.canTransform = function (object) {
-    return object.length >= 0;
-  };
-  ArrayMapper.prototype.transform = function (object, context, path) {
-    context.recording(object, path);
-    var referencePath = context.getReference(object, path);
-    if (referencePath) {
-      return new Reference(referencePath.path);
-    }
-    var result = Array(object.length);
-    this.map(object, context, path, function (index, item, path, mapper) {
-      result[index] = mapper.transform(item, context, path);
-    });
-    return result;
-  };
-  ArrayMapper.prototype.canRevive = function (object) {
-    return this.canTransform(object);
-  };
-  ArrayMapper.prototype.revive = function (object, context, path) {
-    var isReadonly = Reflect.set(object, 0, object[0]);
-    var receiver = isReadonly ? [] : object;
-    this.map(object, context, path, function (index, item, path, mapper) {
-      receiver[index] = mapper.revive(item, context, path);
-    });
-    return receiver;
-  };
-  ArrayMapper.prototype.map = function (object, context, path, handle) {
-    context.recording(object, path);
-    for (var i = 0; i < object.length; i++) {
-      var value = object[i];
-      var childPath = path.child(i);
-      context.recording(value, childPath);
-      var mapper = context.getObjectMapper(value);
-      handle(i, value, childPath, mapper);
-    }
-    return object;
-  };
-  return ArrayMapper;
-}();
-
 function encode(input) {
   var extensionCodec = new msgpack.ExtensionCodec();
   extensionCodec.register(new ReferenceCodec());
   var context = new EncodeContext();
-  context.registerObjectMapper(new PlainObjectMapper());
-  context.registerObjectMapper(new ArrayMapper());
   var transformed = context.transformObject(input);
   return msgpack.encode(transformed, {
     context: context,
     extensionCodec: extensionCodec
   });
 }
-
-var DecodeContext = /** @class */function (_super) {
-  __extends(DecodeContext, _super);
-  function DecodeContext() {
-    return _super !== null && _super.apply(this, arguments) || this;
-  }
-  DecodeContext.prototype.revive = function (decoded) {
-    var mapper = this.getObjectMapper(decoded);
-    return mapper.revive(decoded, this, this.getRootPath());
-  };
-  DecodeContext.prototype.getObjectMapper = function (object) {
-    return this.objectMappers.find(function (it) {
-      return it.canRevive(object);
-    }) || this.defaultObjectMapper;
-  };
-  return DecodeContext;
-}(CodecContext);
 
 var ReferenceMapper = /** @class */function () {
   function ReferenceMapper() {}
@@ -326,13 +386,29 @@ var ReferenceMapper = /** @class */function () {
   return ReferenceMapper;
 }();
 
+var DecodeContext = /** @class */function (_super) {
+  __extends(DecodeContext, _super);
+  function DecodeContext() {
+    var _this = _super.call(this) || this;
+    _this.registerObjectMapper(new ReferenceMapper());
+    return _this;
+  }
+  DecodeContext.prototype.revive = function (decoded) {
+    var mapper = this.getObjectMapper(decoded);
+    return mapper.revive(decoded, this, this.getRootPath());
+  };
+  DecodeContext.prototype.getObjectMapper = function (object) {
+    return this.objectMappers.find(function (it) {
+      return it.canRevive(object);
+    }) || this.defaultObjectMapper;
+  };
+  return DecodeContext;
+}(CodecContext);
+
 function decode(buffer) {
   var extensionCodec = new msgpack.ExtensionCodec();
   extensionCodec.register(new ReferenceCodec());
   var context = new DecodeContext();
-  context.registerObjectMapper(new PlainObjectMapper());
-  context.registerObjectMapper(new ArrayMapper());
-  context.registerObjectMapper(new ReferenceMapper());
   var decoded = msgpack.decode(buffer, {
     context: context,
     extensionCodec: extensionCodec

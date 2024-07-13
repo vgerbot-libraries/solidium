@@ -1,3 +1,6 @@
+import { ArrayMapper } from '../mappers/ArrayMapper';
+import { PlainObjectMapper } from '../mappers/PlainObjectMapper';
+import { SetMapper } from '../mappers/SetMapper';
 import { Reference } from '../types/Reference';
 import { ObjectMapper } from './ObjectMapper';
 import { ObjectPath } from './ObjectPath';
@@ -5,7 +8,11 @@ import { ObjectPath } from './ObjectPath';
 export abstract class CodecContext {
     protected readonly pathObjectMap = new Map<ObjectPath, unknown>();
     private readonly rootPath = new ObjectPath([]);
-    protected readonly objectMappers: Array<ObjectMapper> = [];
+    protected readonly objectMappers: Array<ObjectMapper> = [
+        new SetMapper(),
+        new ArrayMapper(),
+        new PlainObjectMapper()
+    ];
     protected readonly defaultObjectMapper: ObjectMapper = {
         canTransform() {
             return true;
@@ -35,7 +42,7 @@ export abstract class CodecContext {
         return this.rootPath;
     }
     registerObjectMapper(objectMapper: ObjectMapper) {
-        this.objectMappers.push(objectMapper);
+        this.objectMappers.unshift(objectMapper);
     }
     abstract getObjectMapper(object: unknown): ObjectMapper;
 }
