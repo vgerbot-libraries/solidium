@@ -13,7 +13,7 @@ export class LocalStorageDriver implements StorageDriver {
     static createInstance(bucketName: string) {
         return new LocalStorageDriver({ bucketName });
     }
-    private readonly changeListeners = new Map<
+    private readonly observers = new Map<
         string,
         StorageDriverChangeEventListener[]
     >();
@@ -170,7 +170,7 @@ export class LocalStorageDriver implements StorageDriver {
         }
     }
     private needDispatch(key: string) {
-        const length = this.changeListeners.get(key)?.length;
+        const length = this.observers.get(key)?.length;
         return length === undefined ? false : length > 0;
     }
     private dispatchChangeEvent(
@@ -180,7 +180,7 @@ export class LocalStorageDriver implements StorageDriver {
         newValue?: Blob,
         oldValue?: Blob
     ) {
-        const listeners = this.changeListeners.get(key);
+        const listeners = this.observers.get(key);
         listeners?.forEach(listener => {
             listener({
                 target: this,
@@ -213,9 +213,9 @@ export class LocalStorageDriver implements StorageDriver {
     ): () => void {
         const fullKey = this.normalizeKey(key);
         const changeListener = onChange.bind(this);
-        const listeners = this.changeListeners.get(fullKey) || [];
+        const listeners = this.observers.get(fullKey) || [];
         listeners.push(changeListener);
-        this.changeListeners.set(fullKey, listeners);
+        this.observers.set(fullKey, listeners);
 
         return () => {
             const index = listeners.indexOf(changeListener);
