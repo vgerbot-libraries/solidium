@@ -20,8 +20,8 @@ export class ArrayMapper extends IterableMapper<unknown[], unknown[]> {
     canTransform(object: unknown[]): boolean {
         return Array.isArray(object);
     }
-    createNewInstance(origin?: unknown[] | undefined): unknown[] {
-        return Array(origin ? origin.length : 0);
+    createNewInstance(): unknown[] {
+        return [];
     }
     append(target: unknown[], value: unknown): void {
         target.push(value);

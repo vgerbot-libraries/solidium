@@ -1,4 +1,5 @@
 import { ArrayMapper } from '../mappers/ArrayMapper';
+import { MapMapper } from '../mappers/MapMapper';
 import { PlainObjectMapper } from '../mappers/PlainObjectMapper';
 import { SetMapper } from '../mappers/SetMapper';
 import { Reference } from '../types/Reference';
@@ -10,6 +11,7 @@ export abstract class CodecContext {
     private readonly rootPath = new ObjectPath([]);
     protected readonly objectMappers: Array<ObjectMapper> = [
         new SetMapper(),
+        new MapMapper(),
         new ArrayMapper(),
         new PlainObjectMapper()
     ];

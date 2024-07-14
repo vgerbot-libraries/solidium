@@ -9,7 +9,7 @@ export type TransformedIterable<Tag extends number = number> = {
 };
 export declare abstract class IterableMapper<T extends Iterable<unknown>, R> implements ObjectMapper<T, R> {
     abstract canTransform(object: T): boolean;
-    abstract createNewInstance(origin?: T): T;
+    abstract createNewInstance(): T;
     abstract append(target: T, value: unknown): void;
     abstract createTransformedResult(resultArray: unknown[]): R;
     abstract forEachTransformedResult(target: R, path: ObjectPath, callback: (item: unknown, childPath: ObjectPath) => void): void;

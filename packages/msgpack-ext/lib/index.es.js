@@ -29,11 +29,11 @@ class IterableMapper {
   }
   revive(object, context, path) {
     const receiver = this.createNewInstance();
-    context.recording(object, path);
+    context.recording(receiver, path);
     this.forEachTransformedResult(object, path, (item, path) => {
-      context.recording(object, path);
       const mapper = context.getObjectMapper(item);
       const reviveValue = mapper.revive(item, context, path);
+      context.recording(reviveValue, path);
       this.append(receiver, reviveValue);
     });
     return receiver;
@@ -55,11 +55,38 @@ class ArrayMapper extends IterableMapper {
   canTransform(object) {
     return Array.isArray(object);
   }
-  createNewInstance(origin) {
-    return Array(origin ? origin.length : 0);
+  createNewInstance() {
+    return [];
   }
   append(target, value) {
     target.push(value);
+  }
+}
+
+class MapMapper extends IterableMapper {
+  canTransform(object) {
+    return object instanceof Map;
+  }
+  createNewInstance() {
+    return new Map();
+  }
+  append(target, value) {
+    target.set(value[0], value[1]);
+  }
+  createTransformedResult(resultArray) {
+    return {
+      $: 2,
+      _: resultArray
+    };
+  }
+  forEachTransformedResult(target, path, callback) {
+    target._.forEach((item, i) => {
+      const childPath = path.child(i);
+      callback(item, childPath);
+    });
+  }
+  canRevive(object) {
+    return isPlainObject(object) && '$' in object && '_' in object && object.$ === 2 && Array.isArray(object._);
   }
 }
 
@@ -166,7 +193,7 @@ class CodecContext {
   constructor() {
     this.pathObjectMap = new Map();
     this.rootPath = new ObjectPath([]);
-    this.objectMappers = [new SetMapper(), new ArrayMapper(), new PlainObjectMapper()];
+    this.objectMappers = [new SetMapper(), new MapMapper(), new ArrayMapper(), new PlainObjectMapper()];
     this.defaultObjectMapper = {
       canTransform() {
         return true;

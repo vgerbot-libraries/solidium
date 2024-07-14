@@ -13,7 +13,7 @@ export abstract class IterableMapper<T extends Iterable<unknown>, R>
     implements ObjectMapper<T, R>
 {
     abstract canTransform(object: T): boolean;
-    abstract createNewInstance(origin?: T): T;
+    abstract createNewInstance(): T;
     abstract append(target: T, value: unknown): void;
     abstract createTransformedResult(resultArray: unknown[]): R;
     abstract forEachTransformedResult(
@@ -47,11 +47,11 @@ export abstract class IterableMapper<T extends Iterable<unknown>, R>
     abstract canRevive(object: R): boolean;
     revive(object: R, context: DecodeContext, path: ObjectPath): T {
         const receiver = this.createNewInstance();
-        context.recording(object, path);
+        context.recording(receiver, path);
         this.forEachTransformedResult(object, path, (item, path) => {
-            context.recording(object, path);
             const mapper = context.getObjectMapper(item);
             const reviveValue = mapper.revive(item, context, path);
+            context.recording(reviveValue, path);
             this.append(receiver, reviveValue);
         });
         return receiver;

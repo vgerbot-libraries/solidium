@@ -5,6 +5,6 @@ export declare class ArrayMapper extends IterableMapper<unknown[], unknown[]> {
     forEachTransformedResult(target: unknown[], path: ObjectPath, callback: (item: unknown, path: ObjectPath) => void): void;
     canRevive(object: unknown[]): boolean;
     canTransform(object: unknown[]): boolean;
-    createNewInstance(origin?: unknown[] | undefined): unknown[];
+    createNewInstance(): unknown[];
     append(target: unknown[], value: unknown): void;
 }
