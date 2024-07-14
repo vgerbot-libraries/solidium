@@ -34,9 +34,9 @@ export class EncodeContext extends CodecContext {
         return paths[0] !== path ? paths[0] : undefined;
     }
     transformObject(object: unknown) {
-        const handler = this.getObjectMapper(object);
+        const mapper = this.getObjectMapper(object);
         const path = this.getRootPath();
-        return handler.transform(object, this, path);
+        return mapper.transform(object, this, path);
     }
     getObjectMapper(object: unknown) {
         return (
