@@ -7,7 +7,6 @@
         "node": ">=16"
     },
     "scripts": {
-        "pretest": "npm run clear -- ./report",
         "test": "zx ./scripts/run.mjs --script test --target",
         "posttest": "zx ./scripts/merge-coverage.mjs",
         "postinstall": "husky install",
