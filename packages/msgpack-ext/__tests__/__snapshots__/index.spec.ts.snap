@@ -1,0 +1,13 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`msgpack-ext encode should correctly encode a circular reference 1`] = `"[129,163,114,101,102,212,0,144]"`;
+
+exports[`msgpack-ext encode should correctly encode a circular reference inside Set/Map 1`] = `"[130,161,36,2,161,95,145,146,130,161,36,1,161,95,145,199,5,0,146,161,48,161,48,199,5,0,146,161,48,161,48]"`;
+
+exports[`msgpack-ext encode should correctly encode a non-empty Map 1`] = `"[130,161,36,2,161,95,145,146,1,2]"`;
+
+exports[`msgpack-ext encode should correctly encode a non-empty Set 1`] = `"[130,161,36,1,161,95,148,1,2,161,51,194]"`;
+
+exports[`msgpack-ext encode should correctly encode an empty Map 1`] = `"[130,161,36,2,161,95,144]"`;
+
+exports[`msgpack-ext encode should correctly encode an empty Set 1`] = `"[130,161,36,1,161,95,144]"`;
