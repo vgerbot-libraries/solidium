@@ -69,21 +69,21 @@ export abstract class BrowserStorageDriver implements StorageDriver {
             };
         }
     }
-    getItem(key: string): Promise<Blob> {
+    getItem(key: string): Promise<Blob | undefined> {
         const normalizedKey = this.normalizeKey(key);
         return Promise.resolve(this.getItemByNormalizedKey(normalizedKey));
     }
     private getItemByNormalizedKey(key: string) {
         const value = this.storage.getItem(key);
         if (!value) {
-            return new Blob();
+            return;
         }
         return this.deserialize(value);
     }
     removeItem(key: string): Promise<void> {
         const normalizedKey = this.normalizeKey(key);
         let oldValue: Blob | undefined;
-        const needDispatch = this.needDispatch(normalizedKey);
+        const needDispatch = this.needDispatch(key);
         if (needDispatch) {
             oldValue = this.getItemByNormalizedKey(normalizedKey);
         }
@@ -92,7 +92,7 @@ export abstract class BrowserStorageDriver implements StorageDriver {
             this.dispatchChangeEvent(
                 ChangeBy.SELF,
                 ActionType.REMOVE,
-                normalizedKey,
+                key,
                 undefined,
                 oldValue
             );
@@ -101,7 +101,7 @@ export abstract class BrowserStorageDriver implements StorageDriver {
     }
     async setItem(key: string, value: Blob): Promise<void> {
         const normalizeKey = this.normalizeKey(key);
-        const needDispatch = this.needDispatch(normalizeKey);
+        const needDispatch = this.needDispatch(key);
         let oldValue: Blob | undefined;
         if (needDispatch) {
             oldValue = this.getItemByNormalizedKey(normalizeKey);
@@ -112,7 +112,7 @@ export abstract class BrowserStorageDriver implements StorageDriver {
             this.dispatchChangeEvent(
                 ChangeBy.SELF,
                 ActionType.UPDATE,
-                normalizeKey,
+                key,
                 value,
                 oldValue
             );
@@ -170,8 +170,7 @@ export abstract class BrowserStorageDriver implements StorageDriver {
         }
     }
     private needDispatch(key: string) {
-        const length = this.observers.get(key)?.length;
-        return length === undefined ? false : length > 0;
+        return !!this.observers.get(key)?.length;
     }
     private dispatchChangeEvent(
         changeBy: ChangeBy,
@@ -211,11 +210,10 @@ export abstract class BrowserStorageDriver implements StorageDriver {
         key: string,
         onChange: (event: DriverChangeEvent) => void
     ): () => void {
-        const fullKey = this.normalizeKey(key);
         const changeListener = onChange.bind(this);
-        const listeners = this.observers.get(fullKey) || [];
+        const listeners = this.observers.get(key) || [];
         listeners.push(changeListener);
-        this.observers.set(fullKey, listeners);
+        this.observers.set(key, listeners);
 
         return () => {
             const index = listeners.indexOf(changeListener);
