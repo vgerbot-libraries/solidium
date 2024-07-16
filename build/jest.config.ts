@@ -17,7 +17,7 @@ export default {
         `${basedir}/__tests__/**/*.spec.ts`,
         `${basedir}/__tests__/**/*.spec.tsx`
     ],
-    moduleFileExtensions: ['ts', 'js'],
+    moduleFileExtensions: ['ts', 'js', 'tsx'],
     collectCoverage: true,
     collectCoverageFrom: [`${basedir}/src/**/*.ts`],
     coveragePathIgnorePatterns: ['/__tests__/', '/node_modules/'],

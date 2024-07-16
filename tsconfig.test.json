@@ -1,17 +1,17 @@
 {
     "extends": "./tsconfig.json",
     "compilerOptions": {
-        "target": "es2015",
+        "pretty": false,
         "baseUrl": "./",
         "paths": {
-            "@src": ["../../src"]
+            "@src/*": ["../src/*"]
         },
+        "target": "es2015",
         "types": [
             "jest"
         ],
         "jsx": "preserve",
         "jsxImportSource": "solid-js",
     },
-    "exclude": ["node_modules"],
-    "include": ["**/__tests__/**/*.ts", "**/__tests__/**/*.tsx"]
+    "exclude": ["node_modules"]
 }
