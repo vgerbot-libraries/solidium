@@ -48,6 +48,7 @@
         "@typescript-eslint/parser": "^5.38.1",
         "babel-preset-env": "^1.7.0",
         "babel-preset-solid": "^1.8.6",
+        "blob-polyfill": "^9.0.20240710",
         "codecov": "*",
         "cross-env": "^7.0.3",
         "eslint": "^8.24.0",

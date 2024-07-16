@@ -1,3 +1,4 @@
+import 'blob-polyfill';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import * as util from 'util';
