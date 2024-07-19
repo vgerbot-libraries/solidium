@@ -3,6 +3,7 @@ import { defineMemberDecoratorProcessor } from '@vgerbot/solidium';
 import { useData, useJSON } from '../hooks';
 import { CreateResourceOptions } from '../types/CreateResourceOptions';
 import { useSSE } from '../hooks/useSSE';
+import { DataResource } from '../resource/DataResource';
 
 export const HTTP_PROPERTY_MARK_KEY = Symbol('solidium-http-mark-key');
 

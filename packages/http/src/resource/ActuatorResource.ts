@@ -111,7 +111,9 @@ export class ActuatorResource implements Resource {
         };
         return {
             key: obtainProperty('key'),
-            url: obtainProperty('url'),
+            path: obtainProperty('path'),
+            params: obtainProperty('params'),
+            parameterEncoder: options.parameterEncoder,
             method: options.method || HttpMethod.GET,
             body: obtainProperty('body'),
             headers: options.headers,

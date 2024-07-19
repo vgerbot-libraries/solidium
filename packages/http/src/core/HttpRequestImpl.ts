@@ -10,6 +10,7 @@ import { HttpInterceptor } from '../types/HttpInterceptor';
 import { HttpMethod } from '../types/HttpMethod';
 import { HttpRequest } from '../types/HttpRequest';
 import { HttpRequestOptions } from '../types/HttpRequestOptions';
+import { ParameterEncoder } from '../types/ParameterEncoder';
 
 export class HttpRequestImpl implements HttpRequest {
     url: URL;
@@ -26,7 +27,12 @@ export class HttpRequestImpl implements HttpRequest {
         public readonly configuration: HttpConfiguration,
         private readonly requestOptions: HttpRequestOptions
     ) {
-        const url = resolveURL(configuration.baseUrl, requestOptions.url);
+        const path = resolvePath(
+            requestOptions.path,
+            requestOptions.params || {},
+            requestOptions.parameterEncoder || (value => value + '')
+        );
+        const url = resolveURL(configuration.baseUrl, path);
         const searchParams = {
             ...configuration.search,
             ...(requestOptions.search || {})
@@ -88,4 +94,45 @@ export class HttpRequestImpl implements HttpRequest {
             this.requestOptions.interceptors || []
         );
     }
+}
+const REGEXP_DYNAMIC_SEGMENT = /{([^}?]+)\??}/;
+const REGEXP_OPTIONAL_DYNAMIC_SEGMENT = /\/?{([^}?]+)\?}/g;
+
+function resolvePath(
+    path: string,
+    params: Record<string, unknown>,
+    parameterEncoder: ParameterEncoder
+): string {
+    const regexp = new RegExp(REGEXP_DYNAMIC_SEGMENT, 'g');
+
+    const dynamicSegmentKeys = new Set<string>();
+    let match;
+    while ((match = regexp.exec(path)) !== null) {
+        dynamicSegmentKeys.add(match[1]);
+    }
+    dynamicSegmentKeys.forEach(key => {
+        if (!(key in params)) {
+            return;
+        }
+        const pattern = new RegExp(`{${key}\\??}`, 'g');
+        const value = params[key];
+        path = path.replace(pattern, () => {
+            return parameterEncoder(value);
+        });
+    });
+
+    path = path.replace(REGEXP_OPTIONAL_DYNAMIC_SEGMENT, '');
+
+    const missingDynamicSegmentMatch = path.match(REGEXP_DYNAMIC_SEGMENT);
+    if (missingDynamicSegmentMatch) {
+        throw new Error(
+            // eslint-disable-next-line max-len
+            `[solidium-http-client] required parameter missing (${missingDynamicSegmentMatch[1]}), "${path}" cannot be resolved`
+        );
+    }
+    // https://www.rfc-editor.org/rfc/rfc1738#section-3.3
+    if (path[0] !== '/' && path.length > 0) {
+        path = `/${path}`;
+    }
+    return path;
 }

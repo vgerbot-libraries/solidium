@@ -6,10 +6,13 @@ import { HttpMethod } from './HttpMethod';
 import { HttpRequestTrigger } from './HttpRequestTrigger';
 import { HttpRequestTriggerOptions } from './HttpRequestTriggerOptions';
 import { JSONType } from './JSONType';
+import { ParameterEncoder } from './ParameterEncoder';
 
 export interface HttpRequestOptions {
     key?: string;
-    url: string | URL;
+    path: string;
+    params?: Record<string, unknown>;
+    parameterEncoder?: ParameterEncoder;
     method?: HttpMethod;
     body?: HttpEntity | BodyInit | JSONType;
     headers?: HttpHeaders;
