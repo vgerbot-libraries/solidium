@@ -19,6 +19,7 @@ import { HttpHeadersImpl } from './HttpHeadersImpl';
 import { HttpInterceptorRegistryImpl } from './HttpInterceptorRegistryImpl';
 import { internalValidateStatus } from './internalValidateStatus';
 import { builtinFetcher } from './builtinFetcher';
+import { mergeURLSearchParams } from '../common/mergeURLSearchParams';
 
 export class HttpClient {
     static configure(configuration: HttpConfigurationOptions) {
@@ -115,11 +116,10 @@ export class HttpClient {
                 }
             });
         }
-        if (search) {
-            for (const key in search) {
-                this.configuration.search[key] = search[key] + '';
-            }
-        }
+        this.configuration.search = mergeURLSearchParams(
+            this.configuration.search,
+            search
+        );
 
         this.configurers?.forEach(configurer => {
             configurer.configHeaders &&

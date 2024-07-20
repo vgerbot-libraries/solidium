@@ -6,5 +6,7 @@ type FunctionalProperties<T, K extends keyof T> = {
 
 export type CreateResourceOptions = FunctionalProperties<
     HttpRequestOptions,
-    'path' | 'body' | 'search' | 'key' | 'params'
+    'path' | 'body' | 'search' | 'key' | 'params' | 'method'
 >;
+
+export type RestfulResourceOptions = Omit<CreateResourceOptions, 'method'>;

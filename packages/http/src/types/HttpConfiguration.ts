@@ -12,7 +12,12 @@ import { HttpRequestTrigger } from './HttpRequestTrigger';
 export interface HttpConfigurationOptions {
     baseUrl?: string | URL;
     interceptors?: Array<HttpInterceptor | HttpInterceptor['intercept']>;
-    search?: Record<string, string | number | boolean>;
+    search?:
+        | URLSearchParams
+        | Record<
+              string,
+              string | number | boolean | Array<string | number | boolean>
+          >;
     headers?: Record<string, string | string[]>;
     fetcher?: Fetcher;
     validateStatus?(response: HttpResponse): Promise<boolean>;
@@ -27,7 +32,7 @@ export interface HttpConfigurationOptions {
 export interface HttpConfiguration extends Cloneable<HttpConfiguration> {
     baseUrl?: URL;
     interceptors: HttpInterceptor[];
-    search: Record<string, string>;
+    search: URLSearchParams | Record<string, string>;
     headers: HttpHeaders;
     fetcher: Fetcher;
     storageProvider: StorageProvider;

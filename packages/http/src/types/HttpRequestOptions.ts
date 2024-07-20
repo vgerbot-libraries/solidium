@@ -7,6 +7,7 @@ import { HttpRequestTrigger } from './HttpRequestTrigger';
 import { HttpRequestTriggerOptions } from './HttpRequestTriggerOptions';
 import { JSONType } from './JSONType';
 import { ParameterEncoder } from './ParameterEncoder';
+import { SearchParams } from './SearchParams';
 
 export interface HttpRequestOptions {
     key?: string;
@@ -16,7 +17,7 @@ export interface HttpRequestOptions {
     method?: HttpMethod;
     body?: HttpEntity | BodyInit | JSONType;
     headers?: HttpHeaders;
-    search?: Record<string, string | string[]>;
+    search?: SearchParams;
     /**
      * Configuration for triggering automatic requests.
      */

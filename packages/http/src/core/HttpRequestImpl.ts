@@ -1,4 +1,5 @@
 import { createEntity } from '../common/createEntity';
+import { mergeURLSearchParams } from '../common/mergeURLSearchParams';
 import { resolveURL } from '../common/resolveURL';
 import { HttpEvent } from '../events/HttpEvent';
 import { HttpEventMap, HttpEventType } from '../events/HttpEventMap';
@@ -33,18 +34,12 @@ export class HttpRequestImpl implements HttpRequest {
             requestOptions.parameterEncoder || (value => value + '')
         );
         const url = resolveURL(configuration.baseUrl, path);
-        const searchParams = {
-            ...configuration.search,
-            ...(requestOptions.search || {})
-        };
-        for (const key in searchParams) {
-            const value = searchParams[key];
-            if (Array.isArray(value)) {
-                value.forEach(it => url.searchParams.append(key, it));
-            } else {
-                url.searchParams.set(key, value);
-            }
-        }
+        const searchParams = mergeURLSearchParams(
+            configuration.search,
+            url.searchParams,
+            requestOptions.search
+        );
+        url.search = searchParams.toString();
         this.url = url;
         const body = createEntity(requestOptions.body);
         this.body = body;
