@@ -2,6 +2,7 @@ import { HttpEvent } from '../events/HttpEvent';
 import { HttpEventMap, HttpEventType } from '../events/HttpEventMap';
 import { Cloneable } from './Cloneable';
 import { Fetcher } from './Fetcher';
+import { FetchResourceOptions } from './FetchResourceOptions';
 import { HttpConfiguration } from './HttpConfiguration';
 import { HttpEntity } from './HttpEntity';
 import { HttpHeaders } from './HttpHeaders';

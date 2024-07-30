@@ -4,6 +4,7 @@ import { resolveURL } from '../common/resolveURL';
 import { HttpEvent } from '../events/HttpEvent';
 import { HttpEventMap, HttpEventType } from '../events/HttpEventMap';
 import { Fetcher } from '../types/Fetcher';
+import { FetchResourceOptions } from '../types/FetchResourceOptions';
 import { HttpConfiguration } from '../types/HttpConfiguration';
 import { HttpEntity } from '../types/HttpEntity';
 import { HttpHeaders } from '../types/HttpHeaders';

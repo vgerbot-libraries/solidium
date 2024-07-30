@@ -1,4 +1,5 @@
 import { HTTPError } from '../error/HTTPError';
+import { FetchResourceOptions } from '../types/FetchResourceOptions';
 import { HttpHeaders } from '../types/HttpHeaders';
 import { HttpRequest } from '../types/HttpRequest';
 import { HttpResponse } from '../types/HttpResponse';
@@ -42,9 +43,6 @@ export abstract class DelegateResource<T extends HttpResponse>
     get completed(): boolean {
         return this.target.completed;
     }
-    get request(): HttpRequest {
-        return this.target.request;
-    }
     get error(): HTTPError | undefined {
         return this.target.error;
     }
@@ -52,7 +50,7 @@ export abstract class DelegateResource<T extends HttpResponse>
     abstract get responsePromise(): Promise<T>;
     constructor(protected readonly target: Resource) {}
 
-    refetch(force?: boolean): Promise<void> {
-        return this.target.refetch(force);
+    fetch(options: FetchResourceOptions): Promise<void> {
+        return this.target.fetch(options);
     }
 }

@@ -6,14 +6,12 @@ import {
     Scope
 } from '@vgerbot/ioc';
 import { Signal } from '@vgerbot/solidium';
-import { createEffect, on } from 'solid-js';
 import { Defer } from '../common/Defer';
 import { createTrigger } from '../common/createTrigger';
 import { noop } from '../common/noop';
 import { HttpRequestImpl } from '../core/HttpRequestImpl';
 import { PassiveTrigger } from '../trigger';
 import { HttpConfiguration } from '../types/HttpConfiguration';
-import { HttpMethod } from '../types/HttpMethod';
 import { HttpRequest } from '../types/HttpRequest';
 import { HttpRequestOptions } from '../types/HttpRequestOptions';
 import { HttpResponse } from '../types/HttpResponse';
@@ -22,6 +20,7 @@ import { CreateResourceOptions } from '../types/CreateResourceOptions';
 import { HTTPError } from '../error/HTTPError';
 import { UploadProgressEvent } from '../events/UploadProgressEvent';
 import { DownloadProgressEvent } from '../events/DownloadProgressEvent';
+import { FetchResourceOptions } from '../types/FetchResourceOptions';
 
 enum ResourceStatus {
     IDLE = 'idle',
@@ -65,7 +64,8 @@ export class ActuatorResource implements Resource {
     public get error(): HTTPError | undefined {
         return this._error;
     }
-    request!: HttpRequest;
+    private configuration!: HttpConfiguration;
+    private createResourceOptions!: CreateResourceOptions;
     private stopTrigger = noop;
     private responseDefer = new Defer<HttpResponse>();
     public get responsePromise() {
@@ -76,58 +76,23 @@ export class ActuatorResource implements Resource {
         configuration: HttpConfiguration,
         createResourceOptions: CreateResourceOptions
     ) {
-        createEffect(
-            on(
-                () => {
-                    return this.convertToRequestOptions(createResourceOptions);
-                },
-                requestOptions => {
-                    this.stopTrigger();
-                    this.request = new HttpRequestImpl(
-                        configuration,
-                        requestOptions
-                    );
-                    const trigger =
-                        createTrigger(this.appCtx, requestOptions.trigger) ||
-                        configuration.trigger ||
-                        new PassiveTrigger();
+        this.stopTrigger();
+        this.configuration = configuration;
+        this.createResourceOptions = createResourceOptions;
+        const trigger =
+            createTrigger(this.appCtx, createResourceOptions.trigger) ||
+            configuration.trigger ||
+            new PassiveTrigger();
 
-                    this.stopTrigger = trigger.dispatch(() => {
-                        return this.refetch();
-                    });
-                }
-            )
-        );
-    }
-    private convertToRequestOptions(options: CreateResourceOptions) {
-        const obtainProperty = <T extends keyof CreateResourceOptions>(
-            key: T
-        ): HttpRequestOptions[T] => {
-            const value = options[key];
-            if (typeof value === 'function') {
-                return (value as () => HttpRequestOptions[T])();
-            }
-            return value as HttpRequestOptions[T];
-        };
-        return {
-            key: obtainProperty('key'),
-            path: obtainProperty('path'),
-            params: obtainProperty('params'),
-            parameterEncoder: options.parameterEncoder,
-            method: options.method || HttpMethod.GET,
-            body: obtainProperty('body'),
-            headers: options.headers,
-            search: obtainProperty('search'),
-            trigger: options.trigger,
-            fetcher: options.fetcher,
-            interceptors: options.interceptors
-        } as HttpRequestOptions;
+        this.stopTrigger = trigger.dispatch(() => {
+            return this.fetch({});
+        });
     }
     @PreDestroy()
     onCleanup() {
         this.stopTrigger();
     }
-    async refetch(clearCache?: boolean) {
+    async fetch(options: FetchResourceOptions) {
         if (this.pending) {
             try {
                 await this.responseDefer.promise;
@@ -140,8 +105,8 @@ export class ActuatorResource implements Resource {
         this._response = undefined;
         this._error = undefined;
         try {
-            const configuration = this.request.configuration;
-            const response = await this.executeRequest(clearCache);
+            const configuration = this.configuration;
+            const response = await this.executeRequest(options);
             await configuration.validateStatus(response);
             this.status = ResourceStatus.SUCCESS;
             this._response = response;
@@ -151,13 +116,13 @@ export class ActuatorResource implements Resource {
             this.responseDefer.reject(error);
         }
     }
-    private async executeRequest(clearCache?: boolean) {
-        const configuration = this.request.configuration;
+    private async executeRequest(options: FetchResourceOptions) {
+        const configuration = this.configuration;
         const executeRequest = async (
             request: HttpRequest
         ): Promise<HttpResponse> => {
             const cacheStrategy = request.configuration.cacheStrategy;
-            if (clearCache) {
+            if (options.clearCache) {
                 await cacheStrategy.clearCache(request);
             }
             return request.configuration.cacheStrategy.execute(
@@ -195,6 +160,36 @@ export class ActuatorResource implements Resource {
                     return interceptor.intercept(request, next);
                 };
             }, executeRequest);
-        return interceptedRequestExecutor(this.request.clone());
+        return interceptedRequestExecutor(this.createRequest(options));
+    }
+    private createRequest(fetchOptions: FetchResourceOptions) {
+        const requestOptions: HttpRequestOptions = {
+            ...this.createResourceOptions
+        };
+        if (fetchOptions.body) {
+            requestOptions.body = fetchOptions.body;
+        }
+        if (fetchOptions.headers) {
+            if (!requestOptions.headers) {
+                requestOptions.headers = fetchOptions.headers;
+            } else {
+                requestOptions.headers = requestOptions.headers.mergeAll(
+                    requestOptions.headers
+                );
+            }
+        }
+        if (fetchOptions.search) {
+            requestOptions.search = {
+                ...requestOptions.search,
+                ...fetchOptions.search
+            };
+        }
+        if (fetchOptions.params) {
+            requestOptions.params = {
+                ...requestOptions.params,
+                ...fetchOptions.params
+            };
+        }
+        return new HttpRequestImpl(this.configuration, requestOptions);
     }
 }

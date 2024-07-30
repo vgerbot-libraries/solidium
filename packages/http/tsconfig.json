@@ -6,6 +6,7 @@
             "@/": ["src/"]
         },
         "declarationDir": "lib",
-        "declaration": true
+        "declaration": true,
+        "resolveJsonModule": true
     }
 }
