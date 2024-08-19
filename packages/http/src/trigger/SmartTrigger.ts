@@ -9,15 +9,14 @@ import { IdleTrigger } from './IdleTrigger';
 export class SmartTrigger implements HttpRequestTrigger {
     private triggers: HttpRequestTrigger[] = [];
     constructor({
-        immediate,
-        idle,
         interval,
         onFocus,
-        onOnline
+        onOnline,
+        ...remain
     }: HttpRequestTriggerOptions) {
-        if (idle) {
+        if ('idle' in remain && remain.idle) {
             this.triggers.push(new IdleTrigger());
-        } else if (immediate) {
+        } else if ('immediate' in remain && remain.immediate) {
             this.triggers.push(new ImmediateTrigger());
         }
         if (typeof interval === 'number' && interval > 0) {

@@ -100,24 +100,25 @@ export class ActuatorResource implements Resource {
         );
     }
     private convertToRequestOptions(options: CreateResourceOptions) {
-        const obtainProperty = <T extends keyof CreateResourceOptions>(
-            key: T
-        ): HttpRequestOptions[T] => {
-            const value = options[key];
-            if (typeof value === 'function') {
-                return (value as () => HttpRequestOptions[T])();
-            }
-            return value as HttpRequestOptions[T];
-        };
         return {
-            key: obtainProperty('key'),
-            path: obtainProperty('path'),
-            params: obtainProperty('params'),
+            get key() {
+                return options.key;
+            },
+            get path() {
+                return options.path;
+            },
+            get params() {
+                return options.params;
+            },
             parameterEncoder: options.parameterEncoder,
             method: options.method || HttpMethod.GET,
-            body: obtainProperty('body'),
+            get body() {
+                return options.body;
+            },
             headers: options.headers,
-            search: obtainProperty('search'),
+            get search() {
+                return options.search;
+            },
             trigger: options.trigger,
             fetcher: options.fetcher,
             interceptors: options.interceptors
