@@ -4,9 +4,17 @@ import { defineMemberDecoratorProcessor } from '../core/defineMemberDecoratorPro
 
 export const SIGNAL_MARK_KEY = Symbol('solidium_mark_as_signal_property');
 
-export const Signal = defineMemberDecoratorProcessor(SIGNAL_MARK_KEY, {
-    afterInstantiation<T>(instance: T, member: MemberKey) {
-        defineSignalMember(instance, member, instance[member as keyof T]);
-        return instance;
-    }
-});
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+export interface SignalOptions {
+    // IGNORE
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function Signal(_: SignalOptions = {}) {
+    return defineMemberDecoratorProcessor(SIGNAL_MARK_KEY, {
+        afterInstantiation<T>(instance: T, member: MemberKey) {
+            defineSignalMember(instance, member, instance[member as keyof T]);
+            return instance;
+        }
+    });
+}

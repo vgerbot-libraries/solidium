@@ -6,10 +6,10 @@ import { Bucket } from './bucket/Bucket';
 /**
  * ```jsx
  * <Solidium autoRegisterClasses={[
-    StorageConfigure.default({
+    Persistence.default({
         // default storage configuration
     }),
-    StorageConfigure.bucket(
+    Persistence.bucket(
         'custom-bucket-name',
         {
             // custom storage configuration
@@ -20,10 +20,10 @@ import { Bucket } from './bucket/Bucket';
  * 
  * ```js
  class BizService {
-    @Signal
+    @Signal()
     @Storage() // use default storage
     autoSaveToDefaultStorage: boolean;
-    @Signal
+    @Signal()
     @Storage({
         bucket: 'custom-bucket-name'
     }) // 
@@ -31,7 +31,7 @@ import { Bucket } from './bucket/Bucket';
  }
  * ```
  */
-export class StorageConfigure {
+export class Persistence {
     static default(configuration?: BucketConfiguration) {
         class StorageConfigurationFactory {
             @Factory(DEFAULT_BUCKET_CONFIGURATION)
@@ -40,7 +40,7 @@ export class StorageConfigure {
             }
         }
         keep(StorageConfigurationFactory);
-        return StorageConfigure;
+        return Persistence;
     }
     static bucket(name: string, configuration: BucketConfiguration) {
         class StorageFactory {
@@ -53,7 +53,7 @@ export class StorageConfigure {
     }
     @Inject(DEFAULT_BUCKET_CONFIGURATION)
     private configuration: BucketConfiguration = {
-        name: 'solidium-storage',
+        name: 'solidium-persistence',
         version: '1.0'
     };
 
