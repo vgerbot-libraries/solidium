@@ -1,5 +1,5 @@
 import { ClassMetadata } from '@vgerbot/ioc';
-import { Signal } from '../src/decorators';
+import { Signal } from '../../src/decorators';
 
 describe('hello', () => {
     it('casual', () => {
@@ -8,7 +8,7 @@ describe('hello', () => {
             public get times() {
                 return this.a * 2;
             }
-            @Signal
+            @Signal()
             public get aa() {
                 return this.a + 1;
             }

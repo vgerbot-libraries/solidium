@@ -14,7 +14,7 @@ export interface StorageOptions {
     key?: string;
 }
 
-export const Storage = (options: StorageOptions) => {
+export const Storage = (options: StorageOptions = {}) => {
     return defineMemberDecoratorProcessor('storage', {
         afterInstantiation<T extends Record<MemberKey, unknown>>(
             instance: T,
