@@ -353,9 +353,9 @@
         return paths[0] !== path ? paths[0] : undefined;
       };
       EncodeContext.prototype.transformObject = function (object) {
-        var handler = this.getObjectMapper(object);
+        var mapper = this.getObjectMapper(object);
         var path = this.getRootPath();
-        return handler.transform(object, this, path);
+        return mapper.transform(object, this, path);
       };
       EncodeContext.prototype.getObjectMapper = function (object) {
         return this.objectMappers.find(function (it) {
