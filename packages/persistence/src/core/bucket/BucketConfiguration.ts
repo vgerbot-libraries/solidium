@@ -4,7 +4,7 @@ import { DefaultDrivers } from '../../drivers/DefaultDrivers';
 
 export interface BucketConfiguration {
     name: string;
-    version?: string;
+    version?: number;
     driver?: DefaultDrivers | StorageDriver;
     serializer?: DataSerializer;
     description?: string;

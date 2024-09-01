@@ -373,12 +373,15 @@ function defineMemberDecoratorProcessor(key, processor) {
 }
 
 const SIGNAL_MARK_KEY = Symbol('solidium_mark_as_signal_property');
-const Signal = defineMemberDecoratorProcessor(SIGNAL_MARK_KEY, {
-  afterInstantiation(instance, member) {
-    defineSignalMember(instance, member, instance[member]);
-    return instance;
-  }
-});
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function Signal(_ = {}) {
+  return defineMemberDecoratorProcessor(SIGNAL_MARK_KEY, {
+    afterInstantiation(instance, member) {
+      defineSignalMember(instance, member, instance[member]);
+      return instance;
+    }
+  });
+}
 
 const RESULT_MAP = new SignalMap();
 function store(instance, methodName, value) {

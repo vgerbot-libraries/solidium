@@ -1,5 +1,5 @@
 import { HTTPError } from '../error/HTTPError';
-import { HttpRequest } from './HttpRequest';
+import { FetchResourceOptions } from './FetchResourceOptions';
 import { HttpResponse } from './HttpResponse';
 export interface Resource<T extends HttpResponse = HttpResponse> {
     readonly idle: boolean;
@@ -8,8 +8,7 @@ export interface Resource<T extends HttpResponse = HttpResponse> {
     readonly failure: boolean;
     readonly completed: boolean;
     readonly response: T | undefined;
-    readonly request: HttpRequest;
     readonly responsePromise: Promise<T>;
     readonly error: HTTPError | undefined;
-    refetch(clearCache?: boolean): Promise<void>;
+    fetch(options: FetchResourceOptions): Promise<void>;
 }

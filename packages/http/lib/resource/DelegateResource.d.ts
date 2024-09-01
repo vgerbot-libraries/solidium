@@ -1,4 +1,5 @@
 import { HTTPError } from '../error/HTTPError';
+import { FetchResourceOptions } from '../types/FetchResourceOptions';
 import { HttpHeaders } from '../types/HttpHeaders';
 import { HttpRequest } from '../types/HttpRequest';
 import { HttpResponse } from '../types/HttpResponse';
@@ -20,10 +21,9 @@ export declare abstract class DelegateResource<T extends HttpResponse> implement
     get success(): boolean;
     get failure(): boolean;
     get completed(): boolean;
-    get request(): HttpRequest;
     get error(): HTTPError | undefined;
     abstract get response(): T | undefined;
     abstract get responsePromise(): Promise<T>;
     constructor(target: Resource);
-    refetch(force?: boolean): Promise<void>;
+    fetch(options: FetchResourceOptions): Promise<void>;
 }

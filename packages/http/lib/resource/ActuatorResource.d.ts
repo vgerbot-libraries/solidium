@@ -1,9 +1,9 @@
 import { HttpConfiguration } from '../types/HttpConfiguration';
-import { HttpRequest } from '../types/HttpRequest';
 import { HttpResponse } from '../types/HttpResponse';
 import { Resource } from '../types/Resource';
 import { CreateResourceOptions } from '../types/CreateResourceOptions';
 import { HTTPError } from '../error/HTTPError';
+import { FetchResourceOptions } from '../types/FetchResourceOptions';
 export declare class ActuatorResource implements Resource {
     private appCtx;
     private status;
@@ -18,13 +18,14 @@ export declare class ActuatorResource implements Resource {
     get response(): HttpResponse | undefined;
     private _error;
     get error(): HTTPError | undefined;
-    request: HttpRequest;
+    private configuration;
+    private createResourceOptions;
     private stopTrigger;
     private responseDefer;
     get responsePromise(): Promise<HttpResponse>;
     init(configuration: HttpConfiguration, createResourceOptions: CreateResourceOptions): void;
-    private convertToRequestOptions;
     onCleanup(): void;
-    refetch(clearCache?: boolean): Promise<void>;
+    fetch(options: FetchResourceOptions): Promise<void>;
     private executeRequest;
+    private createRequest;
 }

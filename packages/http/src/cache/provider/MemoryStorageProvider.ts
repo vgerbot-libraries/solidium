@@ -1,7 +1,8 @@
+import LRUCache from '../../lru/LRUCache';
 import { StorageProvider } from '../../types/StorageProvider';
 
 export class MemoryStorageProvider implements StorageProvider {
-    private _cache = new Map<string, string>();
+    private _cache = new LRUCache<string, string>();
     set(key: string, value: string): Promise<void> {
         this._cache.set(key, value);
         return Promise.resolve();

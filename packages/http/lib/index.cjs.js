@@ -4,8 +4,8 @@ Object.defineProperty(exports, '__esModule', { value: true });
 
 var ioc = require('@vgerbot/ioc');
 var solidium = require('@vgerbot/solidium');
-var solidJs = require('solid-js');
 var lazy = require('@vgerbot/lazy');
+var solidJs = require('solid-js');
 
 /******************************************************************************
 Copyright (c) Microsoft Corporation.
@@ -48,6 +48,18 @@ var __assign = function() {
     };
     return __assign.apply(this, arguments);
 };
+
+function __rest(s, e) {
+    var t = {};
+    for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
+        t[p] = s[p];
+    if (s != null && typeof Object.getOwnPropertySymbols === "function")
+        for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
+            if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
+                t[p[i]] = s[p[i]];
+        }
+    return t;
+}
 
 function __decorate(decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
@@ -149,9 +161,94 @@ var CommonInterceptorNameEnum;
   CommonInterceptorNameEnum["TIMEOUT"] = "timeout";
 })(CommonInterceptorNameEnum || (CommonInterceptorNameEnum = {}));
 
+var LRUCache = /** @class */function () {
+  function LRUCache(capacity) {
+    if (capacity === void 0) {
+      capacity = 500;
+    }
+    this.capacity = capacity;
+    this.lookup = new Map();
+    this.reverseLookup = new Map();
+    this.length = 0;
+    this.head = undefined;
+    this.tail = undefined;
+  }
+  /** if the value is an object this returns a direct reference */
+  LRUCache.prototype.get = function (key) {
+    var node = this.lookup.get(key);
+    if (!node) return undefined;
+    this.detach(node);
+    this.prepend(node);
+    return node.value;
+  };
+  LRUCache.prototype.set = function (key, value) {
+    var node = this.lookup.get(key);
+    if (!node) {
+      node = {
+        value: value
+      };
+      this.length++;
+      this.prepend(node);
+      this.trimCache();
+      this.lookup.set(key, node);
+      this.reverseLookup.set(node, key);
+    } else {
+      this.detach(node);
+      this.prepend(node);
+      node.value = value;
+    }
+  };
+  LRUCache.prototype.delete = function (key) {
+    var node = this.lookup.get(key);
+    if (!node) {
+      return;
+    }
+    this.detach(node);
+    this.length--;
+  };
+  LRUCache.prototype.keys = function () {
+    return Array.from(this.lookup.keys());
+  };
+  LRUCache.prototype.trimCache = function () {
+    if (this.length <= this.capacity) return;
+    var tail = this.tail;
+    this.detach(tail);
+    var key = this.reverseLookup.get(tail);
+    this.lookup.delete(key);
+    this.reverseLookup.delete(tail);
+  };
+  LRUCache.prototype.detach = function (node) {
+    if (node.prev) {
+      node.prev.next = node.next;
+    }
+    if (node.next) {
+      node.next.prev = node.prev;
+    }
+    if (this.head === node) {
+      this.head = this.head.next;
+    }
+    if (this.tail === node) {
+      this.tail = this.tail.prev;
+    }
+    node.next = undefined;
+    node.prev = undefined;
+  };
+  LRUCache.prototype.prepend = function (node) {
+    if (!this.head) {
+      this.head = node;
+      this.tail = node;
+      return;
+    }
+    node.next = this.head;
+    this.head.prev = node;
+    this.head = node;
+  };
+  return LRUCache;
+}();
+
 var MemoryStorageProvider = /** @class */function () {
   function MemoryStorageProvider() {
-    this._cache = new Map();
+    this._cache = new LRUCache();
   }
   MemoryStorageProvider.prototype.set = function (key, value) {
     this._cache.set(key, value);
@@ -705,15 +802,14 @@ var IdleTrigger = /** @class */function () {
 
 var SmartTrigger = /** @class */function () {
   function SmartTrigger(_a) {
-    var immediate = _a.immediate,
-      idle = _a.idle,
-      interval = _a.interval,
+    var interval = _a.interval,
       onFocus = _a.onFocus,
-      onOnline = _a.onOnline;
+      onOnline = _a.onOnline,
+      remain = __rest(_a, ["interval", "onFocus", "onOnline"]);
     this.triggers = [];
-    if (idle) {
+    if ('idle' in remain && remain.idle) {
       this.triggers.push(new IdleTrigger());
-    } else if (immediate) {
+    } else if ('immediate' in remain && remain.immediate) {
       this.triggers.push(new ImmediateTrigger());
     }
     if (typeof interval === 'number' && interval > 0) {
@@ -1069,6 +1165,36 @@ function createEntity(data) {
   return new PlainTextEntity(data + '');
 }
 
+function mergeURLSearchParams() {
+  var params = [];
+  for (var _i = 0; _i < arguments.length; _i++) {
+    params[_i] = arguments[_i];
+  }
+  var result = new URLSearchParams();
+  params.forEach(function (params) {
+    if (params instanceof URLSearchParams) {
+      params.forEach(function (value, key) {
+        result.append(key, value);
+      });
+    } else if (isObject(params)) {
+      var _loop_1 = function (key) {
+        var value = params[key];
+        if (Array.isArray(value)) {
+          value.forEach(function (it) {
+            result.append(key, it + '');
+          });
+        } else {
+          result.append(key, value + '');
+        }
+      };
+      for (var key in params) {
+        _loop_1(key);
+      }
+    }
+  });
+  return result;
+}
+
 function resolveURL(baseURL, url) {
   if (url instanceof URL) {
     return url;
@@ -1101,21 +1227,12 @@ var HttpRequestImpl = /** @class */function () {
     this.configuration = configuration;
     this.requestOptions = requestOptions;
     this.listeners = new Map();
-    var url = resolveURL(configuration.baseUrl, requestOptions.url);
-    var searchParams = __assign(__assign({}, configuration.search), requestOptions.search || {});
-    var _loop_1 = function (key) {
-      var value = searchParams[key];
-      if (Array.isArray(value)) {
-        value.forEach(function (it) {
-          return url.searchParams.append(key, it);
-        });
-      } else {
-        url.searchParams.set(key, value);
-      }
-    };
-    for (var key in searchParams) {
-      _loop_1(key);
-    }
+    var path = resolvePath(requestOptions.path, requestOptions.params || {}, requestOptions.parameterEncoder || function (value) {
+      return value + '';
+    });
+    var url = resolveURL(configuration.baseUrl, path);
+    var searchParams = mergeURLSearchParams(configuration.search, url.searchParams, requestOptions.search);
+    url.search = searchParams.toString();
     this.url = url;
     var body = createEntity(requestOptions.body);
     this.body = body;
@@ -1168,6 +1285,38 @@ var HttpRequestImpl = /** @class */function () {
   });
   return HttpRequestImpl;
 }();
+var REGEXP_DYNAMIC_SEGMENT = /{([^}?]+)\??}/;
+var REGEXP_OPTIONAL_DYNAMIC_SEGMENT = /\/?{([^}?]+)\?}/g;
+function resolvePath(path, params, parameterEncoder) {
+  var regexp = new RegExp(REGEXP_DYNAMIC_SEGMENT, 'g');
+  var dynamicSegmentKeys = new Set();
+  var match;
+  while ((match = regexp.exec(path)) !== null) {
+    dynamicSegmentKeys.add(match[1]);
+  }
+  dynamicSegmentKeys.forEach(function (key) {
+    if (!(key in params)) {
+      return;
+    }
+    var pattern = new RegExp("{".concat(key, "\\??}"), 'g');
+    var value = params[key];
+    path = path.replace(pattern, function () {
+      return parameterEncoder(value);
+    });
+  });
+  path = path.replace(REGEXP_OPTIONAL_DYNAMIC_SEGMENT, '');
+  var missingDynamicSegmentMatch = path.match(REGEXP_DYNAMIC_SEGMENT);
+  if (missingDynamicSegmentMatch) {
+    throw new Error(
+    // eslint-disable-next-line max-len
+    "[solidium-http-client] required parameter missing (".concat(missingDynamicSegmentMatch[1], "), \"").concat(path, "\" cannot be resolved"));
+  }
+  // https://www.rfc-editor.org/rfc/rfc1738#section-3.3
+  if (path[0] !== '/' && path.length > 0) {
+    path = "/".concat(path);
+  }
+  return path;
+}
 
 var PassiveTrigger = /** @class */function () {
   function PassiveTrigger() {}
@@ -1250,41 +1399,18 @@ var ActuatorResource = /** @class */function () {
   });
   ActuatorResource.prototype.init = function (configuration, createResourceOptions) {
     var _this = this;
-    solidJs.createEffect(solidJs.on(function () {
-      return _this.convertToRequestOptions(createResourceOptions);
-    }, function (requestOptions) {
-      _this.stopTrigger();
-      _this.request = new HttpRequestImpl(configuration, requestOptions);
-      var trigger = createTrigger(_this.appCtx, requestOptions.trigger) || configuration.trigger || new PassiveTrigger();
-      _this.stopTrigger = trigger.dispatch(function () {
-        return _this.refetch();
-      });
-    }));
-  };
-  ActuatorResource.prototype.convertToRequestOptions = function (options) {
-    var obtainProperty = function (key) {
-      var value = options[key];
-      if (typeof value === 'function') {
-        return value();
-      }
-      return value;
-    };
-    return {
-      key: obtainProperty('key'),
-      url: obtainProperty('url'),
-      method: options.method || HttpMethod.GET,
-      body: obtainProperty('body'),
-      headers: options.headers,
-      search: obtainProperty('search'),
-      trigger: options.trigger,
-      fetcher: options.fetcher,
-      interceptors: options.interceptors
-    };
+    this.stopTrigger();
+    this.configuration = configuration;
+    this.createResourceOptions = createResourceOptions;
+    var trigger = createTrigger(this.appCtx, createResourceOptions.trigger) || configuration.trigger || new PassiveTrigger();
+    this.stopTrigger = trigger.dispatch(function () {
+      return _this.fetch({});
+    });
   };
   ActuatorResource.prototype.onCleanup = function () {
     this.stopTrigger();
   };
-  ActuatorResource.prototype.refetch = function (clearCache) {
+  ActuatorResource.prototype.fetch = function (options) {
     return __awaiter(this, void 0, void 0, function () {
       var configuration, response, error_1;
       return __generator(this, function (_a) {
@@ -1311,8 +1437,8 @@ var ActuatorResource = /** @class */function () {
             _a.label = 6;
           case 6:
             _a.trys.push([6, 9,, 10]);
-            configuration = this.request.configuration;
-            return [4 /*yield*/, this.executeRequest(clearCache)];
+            configuration = this.configuration;
+            return [4 /*yield*/, this.executeRequest(options)];
           case 7:
             response = _a.sent();
             return [4 /*yield*/, configuration.validateStatus(response)];
@@ -1333,12 +1459,12 @@ var ActuatorResource = /** @class */function () {
       });
     });
   };
-  ActuatorResource.prototype.executeRequest = function (clearCache) {
+  ActuatorResource.prototype.executeRequest = function (options) {
     return __awaiter(this, void 0, void 0, function () {
       var configuration, executeRequest, interceptedRequestExecutor;
       var _this = this;
       return __generator(this, function (_a) {
-        configuration = this.request.configuration;
+        configuration = this.configuration;
         executeRequest = function (request) {
           return __awaiter(_this, void 0, void 0, function () {
             var cacheStrategy;
@@ -1347,7 +1473,7 @@ var ActuatorResource = /** @class */function () {
               switch (_a.label) {
                 case 0:
                   cacheStrategy = request.configuration.cacheStrategy;
-                  if (!clearCache) return [3 /*break*/, 2];
+                  if (!options.clearCache) return [3 /*break*/, 2];
                   return [4 /*yield*/, cacheStrategy.clearCache(request)];
                 case 1:
                   _a.sent();
@@ -1385,16 +1511,36 @@ var ActuatorResource = /** @class */function () {
             return interceptor.intercept(request, next);
           };
         }, executeRequest);
-        return [2 /*return*/, interceptedRequestExecutor(this.request.clone())];
+        return [2 /*return*/, interceptedRequestExecutor(this.createRequest(options))];
       });
     });
   };
+  ActuatorResource.prototype.createRequest = function (fetchOptions) {
+    var requestOptions = __assign({}, this.createResourceOptions);
+    if (fetchOptions.body) {
+      requestOptions.body = fetchOptions.body;
+    }
+    if (fetchOptions.headers) {
+      if (!requestOptions.headers) {
+        requestOptions.headers = fetchOptions.headers;
+      } else {
+        requestOptions.headers = requestOptions.headers.mergeAll(requestOptions.headers);
+      }
+    }
+    if (fetchOptions.search) {
+      requestOptions.search = __assign(__assign({}, requestOptions.search), fetchOptions.search);
+    }
+    if (fetchOptions.params) {
+      requestOptions.params = __assign(__assign({}, requestOptions.params), fetchOptions.params);
+    }
+    return new HttpRequestImpl(this.configuration, requestOptions);
+  };
   __decorate([ioc.Inject(), __metadata("design:type", ioc.ApplicationContext)], ActuatorResource.prototype, "appCtx", void 0);
-  __decorate([solidium.Signal, __metadata("design:type", String)], ActuatorResource.prototype, "status", void 0);
-  __decorate([solidium.Signal, __metadata("design:type", Number)], ActuatorResource.prototype, "uploadProgress", void 0);
-  __decorate([solidium.Signal, __metadata("design:type", Number)], ActuatorResource.prototype, "downloadProgress", void 0);
-  __decorate([solidium.Signal, __metadata("design:type", Object)], ActuatorResource.prototype, "_response", void 0);
-  __decorate([solidium.Signal, __metadata("design:type", Object)], ActuatorResource.prototype, "_error", void 0);
+  __decorate([solidium.Signal(), __metadata("design:type", String)], ActuatorResource.prototype, "status", void 0);
+  __decorate([solidium.Signal(), __metadata("design:type", Number)], ActuatorResource.prototype, "uploadProgress", void 0);
+  __decorate([solidium.Signal(), __metadata("design:type", Number)], ActuatorResource.prototype, "downloadProgress", void 0);
+  __decorate([solidium.Signal(), __metadata("design:type", Object)], ActuatorResource.prototype, "_response", void 0);
+  __decorate([solidium.Signal(), __metadata("design:type", Object)], ActuatorResource.prototype, "_error", void 0);
   __decorate([ioc.PreDestroy(), __metadata("design:type", Function), __metadata("design:paramtypes", []), __metadata("design:returntype", void 0)], ActuatorResource.prototype, "onCleanup", null);
   ActuatorResource = __decorate([ioc.Scope(ioc.InstanceScope.TRANSIENT)], ActuatorResource);
   return ActuatorResource;
@@ -1749,11 +1895,7 @@ var HttpClient = /** @class */function () {
         }
       });
     }
-    if (search) {
-      for (var key in search) {
-        this.configuration.search[key] = search[key] + '';
-      }
-    }
+    this.configuration.search = mergeURLSearchParams(this.configuration.search, search);
     (_b = this.configurers) === null || _b === void 0 ? void 0 : _b.forEach(function (configurer) {
       configurer.configHeaders && configurer.configHeaders(_this.configuration.headers);
       configurer.addInterceptors && configurer.addInterceptors(_this.interceptorRegistry);
@@ -1848,13 +1990,6 @@ var DelegateResource = /** @class */function () {
     enumerable: false,
     configurable: true
   });
-  Object.defineProperty(DelegateResource.prototype, "request", {
-    get: function () {
-      return this.target.request;
-    },
-    enumerable: false,
-    configurable: true
-  });
   Object.defineProperty(DelegateResource.prototype, "error", {
     get: function () {
       return this.target.error;
@@ -1862,8 +1997,8 @@ var DelegateResource = /** @class */function () {
     enumerable: false,
     configurable: true
   });
-  DelegateResource.prototype.refetch = function (force) {
-    return this.target.refetch(force);
+  DelegateResource.prototype.fetch = function (options) {
+    return this.target.fetch(options);
   };
   return DelegateResource;
 }();

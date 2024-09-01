@@ -33,7 +33,7 @@ enum ResourceStatus {
 export class ActuatorResource implements Resource {
     @Inject()
     private appCtx!: ApplicationContext;
-    @Signal
+    @Signal()
     private status: ResourceStatus = ResourceStatus.IDLE;
     get idle() {
         return this.status === ResourceStatus.IDLE;
@@ -50,16 +50,16 @@ export class ActuatorResource implements Resource {
     get completed(): boolean {
         return this.success || this.failure;
     }
-    @Signal
+    @Signal()
     public uploadProgress: number = 0;
-    @Signal
+    @Signal()
     public downloadProgress: number = 0;
-    @Signal
+    @Signal()
     private _response: HttpResponse | undefined;
     get response(): HttpResponse | undefined {
         return this._response;
     }
-    @Signal
+    @Signal()
     private _error: HTTPError | undefined;
     public get error(): HTTPError | undefined {
         return this._error;

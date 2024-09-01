@@ -1,7 +1,7 @@
 import { Inject, PreDestroy, Scope, InstanceScope, ApplicationContext, PostInject, Factory } from '@vgerbot/ioc';
 import { Signal, useService, defineMemberDecoratorProcessor } from '@vgerbot/solidium';
-import { createEffect, on, runWithOwner, createSignal, getOwner } from 'solid-js';
 import { lazyMember } from '@vgerbot/lazy';
+import { runWithOwner, createSignal, getOwner } from 'solid-js';
 
 /******************************************************************************
 Copyright (c) Microsoft Corporation.
@@ -17,6 +17,18 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ***************************************************************************** */
+
+function __rest(s, e) {
+    var t = {};
+    for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
+        t[p] = s[p];
+    if (s != null && typeof Object.getOwnPropertySymbols === "function")
+        for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
+            if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
+                t[p[i]] = s[p[i]];
+        }
+    return t;
+}
 
 function __decorate(decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
@@ -90,9 +102,90 @@ var CommonInterceptorNameEnum;
   CommonInterceptorNameEnum["TIMEOUT"] = "timeout";
 })(CommonInterceptorNameEnum || (CommonInterceptorNameEnum = {}));
 
+class LRUCache {
+  constructor(capacity = 500) {
+    this.capacity = capacity;
+    this.lookup = new Map();
+    this.reverseLookup = new Map();
+    this.length = 0;
+    this.head = undefined;
+    this.tail = undefined;
+  }
+  /** if the value is an object this returns a direct reference */
+  get(key) {
+    const node = this.lookup.get(key);
+    if (!node) return undefined;
+    this.detach(node);
+    this.prepend(node);
+    return node.value;
+  }
+  set(key, value) {
+    let node = this.lookup.get(key);
+    if (!node) {
+      node = {
+        value
+      };
+      this.length++;
+      this.prepend(node);
+      this.trimCache();
+      this.lookup.set(key, node);
+      this.reverseLookup.set(node, key);
+    } else {
+      this.detach(node);
+      this.prepend(node);
+      node.value = value;
+    }
+  }
+  delete(key) {
+    const node = this.lookup.get(key);
+    if (!node) {
+      return;
+    }
+    this.detach(node);
+    this.length--;
+  }
+  keys() {
+    return Array.from(this.lookup.keys());
+  }
+  trimCache() {
+    if (this.length <= this.capacity) return;
+    const tail = this.tail;
+    this.detach(tail);
+    const key = this.reverseLookup.get(tail);
+    this.lookup.delete(key);
+    this.reverseLookup.delete(tail);
+  }
+  detach(node) {
+    if (node.prev) {
+      node.prev.next = node.next;
+    }
+    if (node.next) {
+      node.next.prev = node.prev;
+    }
+    if (this.head === node) {
+      this.head = this.head.next;
+    }
+    if (this.tail === node) {
+      this.tail = this.tail.prev;
+    }
+    node.next = undefined;
+    node.prev = undefined;
+  }
+  prepend(node) {
+    if (!this.head) {
+      this.head = node;
+      this.tail = node;
+      return;
+    }
+    node.next = this.head;
+    this.head.prev = node;
+    this.head = node;
+  }
+}
+
 class MemoryStorageProvider {
   constructor() {
-    this._cache = new Map();
+    this._cache = new LRUCache();
   }
   set(key, value) {
     this._cache.set(key, value);
@@ -591,17 +684,17 @@ class IdleTrigger {
 }
 
 class SmartTrigger {
-  constructor({
-    immediate,
-    idle,
-    interval,
-    onFocus,
-    onOnline
-  }) {
+  constructor(_a) {
+    var {
+        interval,
+        onFocus,
+        onOnline
+      } = _a,
+      remain = __rest(_a, ["interval", "onFocus", "onOnline"]);
     this.triggers = [];
-    if (idle) {
+    if ('idle' in remain && remain.idle) {
       this.triggers.push(new IdleTrigger());
-    } else if (immediate) {
+    } else if ('immediate' in remain && remain.immediate) {
       this.triggers.push(new ImmediateTrigger());
     }
     if (typeof interval === 'number' && interval > 0) {
@@ -906,6 +999,29 @@ function createEntity(data) {
   return new PlainTextEntity(data + '');
 }
 
+function mergeURLSearchParams(...params) {
+  const result = new URLSearchParams();
+  params.forEach(params => {
+    if (params instanceof URLSearchParams) {
+      params.forEach((value, key) => {
+        result.append(key, value);
+      });
+    } else if (isObject(params)) {
+      for (const key in params) {
+        const value = params[key];
+        if (Array.isArray(value)) {
+          value.forEach(it => {
+            result.append(key, it + '');
+          });
+        } else {
+          result.append(key, value + '');
+        }
+      }
+    }
+  });
+  return result;
+}
+
 function resolveURL(baseURL, url) {
   if (url instanceof URL) {
     return url;
@@ -938,16 +1054,10 @@ class HttpRequestImpl {
     this.configuration = configuration;
     this.requestOptions = requestOptions;
     this.listeners = new Map();
-    const url = resolveURL(configuration.baseUrl, requestOptions.url);
-    const searchParams = Object.assign(Object.assign({}, configuration.search), requestOptions.search || {});
-    for (const key in searchParams) {
-      const value = searchParams[key];
-      if (Array.isArray(value)) {
-        value.forEach(it => url.searchParams.append(key, it));
-      } else {
-        url.searchParams.set(key, value);
-      }
-    }
+    const path = resolvePath(requestOptions.path, requestOptions.params || {}, requestOptions.parameterEncoder || (value => value + ''));
+    const url = resolveURL(configuration.baseUrl, path);
+    const searchParams = mergeURLSearchParams(configuration.search, url.searchParams, requestOptions.search);
+    url.search = searchParams.toString();
     this.url = url;
     const body = createEntity(requestOptions.body);
     this.body = body;
@@ -988,6 +1098,38 @@ class HttpRequestImpl {
   get interceptors() {
     return this.configuration.interceptors.concat(this.requestOptions.interceptors || []);
   }
+}
+const REGEXP_DYNAMIC_SEGMENT = /{([^}?]+)\??}/;
+const REGEXP_OPTIONAL_DYNAMIC_SEGMENT = /\/?{([^}?]+)\?}/g;
+function resolvePath(path, params, parameterEncoder) {
+  const regexp = new RegExp(REGEXP_DYNAMIC_SEGMENT, 'g');
+  const dynamicSegmentKeys = new Set();
+  let match;
+  while ((match = regexp.exec(path)) !== null) {
+    dynamicSegmentKeys.add(match[1]);
+  }
+  dynamicSegmentKeys.forEach(key => {
+    if (!(key in params)) {
+      return;
+    }
+    const pattern = new RegExp(`{${key}\\??}`, 'g');
+    const value = params[key];
+    path = path.replace(pattern, () => {
+      return parameterEncoder(value);
+    });
+  });
+  path = path.replace(REGEXP_OPTIONAL_DYNAMIC_SEGMENT, '');
+  const missingDynamicSegmentMatch = path.match(REGEXP_DYNAMIC_SEGMENT);
+  if (missingDynamicSegmentMatch) {
+    throw new Error(
+    // eslint-disable-next-line max-len
+    `[solidium-http-client] required parameter missing (${missingDynamicSegmentMatch[1]}), "${path}" cannot be resolved`);
+  }
+  // https://www.rfc-editor.org/rfc/rfc1738#section-3.3
+  if (path[0] !== '/' && path.length > 0) {
+    path = `/${path}`;
+  }
+  return path;
 }
 
 class PassiveTrigger {
@@ -1036,41 +1178,18 @@ let ActuatorResource = class ActuatorResource {
     return this.responseDefer.promise;
   }
   init(configuration, createResourceOptions) {
-    createEffect(on(() => {
-      return this.convertToRequestOptions(createResourceOptions);
-    }, requestOptions => {
-      this.stopTrigger();
-      this.request = new HttpRequestImpl(configuration, requestOptions);
-      const trigger = createTrigger(this.appCtx, requestOptions.trigger) || configuration.trigger || new PassiveTrigger();
-      this.stopTrigger = trigger.dispatch(() => {
-        return this.refetch();
-      });
-    }));
-  }
-  convertToRequestOptions(options) {
-    const obtainProperty = key => {
-      const value = options[key];
-      if (typeof value === 'function') {
-        return value();
-      }
-      return value;
-    };
-    return {
-      key: obtainProperty('key'),
-      url: obtainProperty('url'),
-      method: options.method || HttpMethod.GET,
-      body: obtainProperty('body'),
-      headers: options.headers,
-      search: obtainProperty('search'),
-      trigger: options.trigger,
-      fetcher: options.fetcher,
-      interceptors: options.interceptors
-    };
+    this.stopTrigger();
+    this.configuration = configuration;
+    this.createResourceOptions = createResourceOptions;
+    const trigger = createTrigger(this.appCtx, createResourceOptions.trigger) || configuration.trigger || new PassiveTrigger();
+    this.stopTrigger = trigger.dispatch(() => {
+      return this.fetch({});
+    });
   }
   onCleanup() {
     this.stopTrigger();
   }
-  refetch(clearCache) {
+  fetch(options) {
     return __awaiter(this, void 0, void 0, function* () {
       if (this.pending) {
         try {
@@ -1084,8 +1203,8 @@ let ActuatorResource = class ActuatorResource {
       this._response = undefined;
       this._error = undefined;
       try {
-        const configuration = this.request.configuration;
-        const response = yield this.executeRequest(clearCache);
+        const configuration = this.configuration;
+        const response = yield this.executeRequest(options);
         yield configuration.validateStatus(response);
         this.status = ResourceStatus.SUCCESS;
         this._response = response;
@@ -1096,12 +1215,12 @@ let ActuatorResource = class ActuatorResource {
       }
     });
   }
-  executeRequest(clearCache) {
+  executeRequest(options) {
     return __awaiter(this, void 0, void 0, function* () {
-      const configuration = this.request.configuration;
+      const configuration = this.configuration;
       const executeRequest = request => __awaiter(this, void 0, void 0, function* () {
         const cacheStrategy = request.configuration.cacheStrategy;
-        if (clearCache) {
+        if (options.clearCache) {
           yield cacheStrategy.clearCache(request);
         }
         return request.configuration.cacheStrategy.execute(request, cachedResponse => __awaiter(this, void 0, void 0, function* () {
@@ -1127,16 +1246,36 @@ let ActuatorResource = class ActuatorResource {
           return interceptor.intercept(request, next);
         };
       }, executeRequest);
-      return interceptedRequestExecutor(this.request.clone());
+      return interceptedRequestExecutor(this.createRequest(options));
     });
+  }
+  createRequest(fetchOptions) {
+    const requestOptions = Object.assign({}, this.createResourceOptions);
+    if (fetchOptions.body) {
+      requestOptions.body = fetchOptions.body;
+    }
+    if (fetchOptions.headers) {
+      if (!requestOptions.headers) {
+        requestOptions.headers = fetchOptions.headers;
+      } else {
+        requestOptions.headers = requestOptions.headers.mergeAll(requestOptions.headers);
+      }
+    }
+    if (fetchOptions.search) {
+      requestOptions.search = Object.assign(Object.assign({}, requestOptions.search), fetchOptions.search);
+    }
+    if (fetchOptions.params) {
+      requestOptions.params = Object.assign(Object.assign({}, requestOptions.params), fetchOptions.params);
+    }
+    return new HttpRequestImpl(this.configuration, requestOptions);
   }
 };
 __decorate([Inject(), __metadata("design:type", ApplicationContext)], ActuatorResource.prototype, "appCtx", void 0);
-__decorate([Signal, __metadata("design:type", String)], ActuatorResource.prototype, "status", void 0);
-__decorate([Signal, __metadata("design:type", Number)], ActuatorResource.prototype, "uploadProgress", void 0);
-__decorate([Signal, __metadata("design:type", Number)], ActuatorResource.prototype, "downloadProgress", void 0);
-__decorate([Signal, __metadata("design:type", Object)], ActuatorResource.prototype, "_response", void 0);
-__decorate([Signal, __metadata("design:type", Object)], ActuatorResource.prototype, "_error", void 0);
+__decorate([Signal(), __metadata("design:type", String)], ActuatorResource.prototype, "status", void 0);
+__decorate([Signal(), __metadata("design:type", Number)], ActuatorResource.prototype, "uploadProgress", void 0);
+__decorate([Signal(), __metadata("design:type", Number)], ActuatorResource.prototype, "downloadProgress", void 0);
+__decorate([Signal(), __metadata("design:type", Object)], ActuatorResource.prototype, "_response", void 0);
+__decorate([Signal(), __metadata("design:type", Object)], ActuatorResource.prototype, "_error", void 0);
 __decorate([PreDestroy(), __metadata("design:type", Function), __metadata("design:paramtypes", []), __metadata("design:returntype", void 0)], ActuatorResource.prototype, "onCleanup", null);
 ActuatorResource = __decorate([Scope(InstanceScope.TRANSIENT)], ActuatorResource);
 
@@ -1424,11 +1563,7 @@ class HttpClient {
         }
       });
     }
-    if (search) {
-      for (const key in search) {
-        this.configuration.search[key] = search[key] + '';
-      }
-    }
+    this.configuration.search = mergeURLSearchParams(this.configuration.search, search);
     (_a = this.configurers) === null || _a === void 0 ? void 0 : _a.forEach(configurer => {
       configurer.configHeaders && configurer.configHeaders(this.configuration.headers);
       configurer.addInterceptors && configurer.addInterceptors(this.interceptorRegistry);
@@ -1482,17 +1617,14 @@ class DelegateResource {
   get completed() {
     return this.target.completed;
   }
-  get request() {
-    return this.target.request;
-  }
   get error() {
     return this.target.error;
   }
   constructor(target) {
     this.target = target;
   }
-  refetch(force) {
-    return this.target.refetch(force);
+  fetch(options) {
+    return this.target.fetch(options);
   }
 }
 
