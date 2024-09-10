@@ -552,10 +552,12 @@ class DefaultCacheStrategy {
       case HttpMethod.POST:
         return next();
     }
-    if (request.disableCache) {
+    const cacheOption = request.cacheOption;
+    if (cacheOption === false || typeof cacheOption === 'object' && cacheOption.expire <= 0) {
       return next();
     }
     const provider = request.configuration.storageProvider;
+    // TODO: cache provider
     const key = request.key;
     return provider.get(key).then(value => {
       if (!value) {
@@ -1063,7 +1065,7 @@ class HttpRequestImpl {
     this.body = body;
     this.headers = requestOptions.headers ? configuration.headers.mergeAll(requestOptions.headers) : configuration.headers.clone();
     this.method = requestOptions.method || HttpMethod.GET;
-    this.disableCache = requestOptions.disableCache || false;
+    this.cacheOption = requestOptions.cache || false;
     this.fetcher = requestOptions.fetcher || configuration.fetcher;
   }
   on(type, listener) {
@@ -1835,7 +1837,7 @@ function useSSE(options, chunkParser) {
   headers.set('Accept', 'text/event-stream');
   const worker = useResource(Object.assign(Object.assign({}, options), {
     headers,
-    disableCache: true
+    cache: false
   }));
   return new SSEResource(worker, chunkParser);
 }

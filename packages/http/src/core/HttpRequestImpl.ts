@@ -10,7 +10,10 @@ import { HttpHeaders } from '../types/HttpHeaders';
 import { HttpInterceptor } from '../types/HttpInterceptor';
 import { HttpMethod } from '../types/HttpMethod';
 import { HttpRequest } from '../types/HttpRequest';
-import { HttpRequestOptions } from '../types/HttpRequestOptions';
+import {
+    HttpRequestCacheOption,
+    HttpRequestOptions
+} from '../types/HttpRequestOptions';
 import { ParameterEncoder } from '../types/ParameterEncoder';
 
 export class HttpRequestImpl implements HttpRequest {
@@ -18,7 +21,7 @@ export class HttpRequestImpl implements HttpRequest {
     body: HttpEntity;
     headers: HttpHeaders;
     method: HttpMethod;
-    disableCache: boolean;
+    cacheOption: HttpRequestCacheOption;
     fetcher: Fetcher;
     private readonly listeners: Map<
         HttpEventType,
@@ -47,7 +50,7 @@ export class HttpRequestImpl implements HttpRequest {
             ? configuration.headers.mergeAll(requestOptions.headers)
             : configuration.headers.clone();
         this.method = requestOptions.method || HttpMethod.GET;
-        this.disableCache = requestOptions.disableCache || false;
+        this.cacheOption = requestOptions.cache || false;
         this.fetcher = requestOptions.fetcher || configuration.fetcher;
     }
     on<T extends HttpEventType>(

@@ -644,10 +644,12 @@ var DefaultCacheStrategy = /** @class */function () {
       case HttpMethod.POST:
         return next();
     }
-    if (request.disableCache) {
+    var cacheOption = request.cacheOption;
+    if (cacheOption === false || typeof cacheOption === 'object' && cacheOption.expire <= 0) {
       return next();
     }
     var provider = request.configuration.storageProvider;
+    // TODO: cache provider
     var key = request.key;
     return provider.get(key).then(function (value) {
       if (!value) {
@@ -1238,7 +1240,7 @@ var HttpRequestImpl = /** @class */function () {
     this.body = body;
     this.headers = requestOptions.headers ? configuration.headers.mergeAll(requestOptions.headers) : configuration.headers.clone();
     this.method = requestOptions.method || HttpMethod.GET;
-    this.disableCache = requestOptions.disableCache || false;
+    this.cacheOption = requestOptions.cache || false;
     this.fetcher = requestOptions.fetcher || configuration.fetcher;
   }
   HttpRequestImpl.prototype.on = function (type, listener) {
@@ -2332,7 +2334,7 @@ function useSSE(options, chunkParser) {
   headers.set('Accept', 'text/event-stream');
   var worker = useResource(__assign(__assign({}, options), {
     headers: headers,
-    disableCache: true
+    cache: false
   }));
   return new SSEResource(worker, chunkParser);
 }

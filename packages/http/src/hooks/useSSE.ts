@@ -12,7 +12,7 @@ export function useSSE<T>(
     const worker = useResource({
         ...options,
         headers,
-        disableCache: true
+        cache: false
     });
     return new SSEResource(worker, chunkParser);
 }

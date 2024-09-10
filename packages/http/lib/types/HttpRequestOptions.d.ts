@@ -8,6 +8,15 @@ import { HttpRequestTriggerOptions } from './HttpRequestTriggerOptions';
 import { JSONType } from './JSONType';
 import { ParameterEncoder } from './ParameterEncoder';
 import { SearchParams } from './SearchParams';
+export type HttpRequestCacheOption = boolean | {
+    mode: 'memory' | 'idb' | 'localstorage' | 'sessionstorage';
+    /**
+     * The unit is milliseconds
+     * When set to `Infinity`, it means that the data will never expire.
+     * When set to 0 or a negative number, it means not to cache.
+     */
+    expire: number;
+};
 export interface HttpRequestOptions {
     key?: string;
     path: string;
@@ -21,7 +30,7 @@ export interface HttpRequestOptions {
      * Configuration for triggering automatic requests.
      */
     trigger?: HttpRequestTriggerOptions | HttpRequestTrigger;
-    disableCache?: boolean;
+    cache?: HttpRequestCacheOption;
     interceptors?: HttpInterceptor[];
     fetcher?: Fetcher;
 }
