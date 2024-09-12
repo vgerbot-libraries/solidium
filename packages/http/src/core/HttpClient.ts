@@ -14,7 +14,7 @@ import {
 import { HttpConfigurer } from '../types/HttpConfigurer';
 import { CreateResourceOptions } from '../types/CreateResourceOptions';
 import { Resource } from '../types/Resource';
-import { StorageProvider } from '../types/StorageProvider';
+import { isStorageProvider, StorageProvider } from '../types/StorageProvider';
 import { HttpHeadersImpl } from './HttpHeadersImpl';
 import { HttpInterceptorRegistryImpl } from './HttpInterceptorRegistryImpl';
 import { internalValidateStatus } from './internalValidateStatus';
@@ -29,10 +29,12 @@ export class HttpClient {
                 return configuration;
             }
         }
+
         keep(HttpConfigurationFactory);
 
         return HttpClient;
     }
+
     @Inject(HTTP_CONFIGURATION)
     private configurationOptions: HttpConfigurationOptions = {};
     @Inject(HTTP_CONFIGURER)
@@ -51,15 +53,46 @@ export class HttpClient {
             interceptors,
             search,
             fetcher,
-            storageProvider: storageProviderClass,
+            storageProviders: storageProviderDefs,
+            defaultStorageProvider: defaultStorageProviderName,
             cacheStrategy: cacheStrategyClass,
             trigger: triggerOption
         } = this.configurationOptions;
         const appCtx = this.appCtx;
 
-        const storageProvider = appCtx.getInstance(
-            storageProviderClass || MemoryStorageProvider
-        ) as StorageProvider;
+        const storageProviders = Object.keys(storageProviderDefs || {}).reduce(
+            (acc, name, it) => {
+                if (isStorageProvider(it)) {
+                    acc[name] = it;
+                    return acc;
+                }
+                if (typeof it !== 'function') {
+                    throw new Error(`Invalid storage provider: ${name}!`);
+                }
+                const instance = appCtx.getInstance(it) as StorageProvider;
+                acc[name] = instance;
+                return acc;
+            },
+            {} as Record<string, StorageProvider>
+        );
+
+        const memoryStorageProvider = appCtx.getInstance(MemoryStorageProvider);
+
+        const defaultStorageProvider =
+            (() => {
+                if (typeof defaultStorageProviderName === 'string') {
+                    return storageProviders[defaultStorageProviderName];
+                }
+                if (isStorageProvider(defaultStorageProviderName)) {
+                    return defaultStorageProviderName;
+                }
+                if (typeof defaultStorageProviderName === 'function') {
+                    return appCtx.getInstance(
+                        defaultStorageProviderName
+                    ) as StorageProvider;
+                }
+            })() ?? memoryStorageProvider;
+
         const cacheStrategy = appCtx.getInstance(
             cacheStrategyClass || DefaultCacheStrategy
         ) as CacheStrategy;
@@ -75,7 +108,8 @@ export class HttpClient {
             headers: HttpHeadersImpl.empty(),
             search: {},
             fetcher: fetcher || builtinFetcher,
-            storageProvider: storageProvider,
+            storageProviders,
+            defaultStorageProvider,
             cacheStrategy,
             trigger: defaultTrigger,
             clone() {
@@ -85,9 +119,8 @@ export class HttpClient {
                     search: {
                         ...this.search
                     },
-                    storageProvider: appCtx.getInstance(
-                        storageProviderClass || MemoryStorageProvider
-                    ) as StorageProvider,
+                    storageProviders,
+                    defaultStorageProvider,
                     cacheStrategy: appCtx.getInstance(
                         cacheStrategyClass || DefaultCacheStrategy
                     ) as CacheStrategy,
@@ -138,5 +171,23 @@ export class HttpClient {
         const worker = this.appCtx.getInstance(ActuatorResource);
         worker.init(this.configuration.clone(), options);
         return worker;
+    }
+    getStorageProvider(
+        storageProviderName: string = 'memory'
+    ): StorageProvider {
+        const { storageProviders, defaultStorageProvider } = this.configuration;
+        const provider = storageProviders[storageProviderName];
+        if (provider) {
+            return provider;
+        }
+        if (typeof defaultStorageProvider === 'string') {
+            const provider = storageProviders[defaultStorageProvider];
+            if (provider) {
+                return provider;
+            }
+        } else if (defaultStorageProvider) {
+            return defaultStorageProvider;
+        }
+        return this.appCtx.getInstance(MemoryStorageProvider);
     }
 }

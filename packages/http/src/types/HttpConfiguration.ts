@@ -20,12 +20,22 @@ export interface HttpConfigurationOptions {
           >;
     headers?: Record<string, string | string[]>;
     fetcher?: Fetcher;
+
     validateStatus?(response: HttpResponse): Promise<boolean>;
+
     trigger?:
         | HttpRequestTriggerOptions
         | Newable<HttpRequestTrigger>
         | HttpRequestTrigger;
-    storageProvider?: Newable<StorageProvider>;
+    storageProviders?: {
+        [key in 'memory' | 'idb' | 'localstorage' | 'sessionstorage' | string]:
+            | StorageProvider
+            | Newable<StorageProvider>;
+    };
+    defaultStorageProvider?:
+        | string
+        | StorageProvider
+        | Newable<StorageProvider>;
     cacheStrategy?: Newable<CacheStrategy>;
 }
 
@@ -35,8 +45,16 @@ export interface HttpConfiguration extends Cloneable<HttpConfiguration> {
     search: URLSearchParams | Record<string, string>;
     headers: HttpHeaders;
     fetcher: Fetcher;
-    storageProvider: StorageProvider;
+    storageProviders: {
+        memory: StorageProvider;
+        idb: StorageProvider;
+        localstorage: StorageProvider;
+        sessionstorage: StorageProvider;
+        [key: string]: StorageProvider | undefined;
+    };
+    defaultStorageProvider: StorageProvider;
     cacheStrategy: CacheStrategy;
     trigger?: HttpRequestTrigger;
+
     validateStatus(response: HttpResponse): Promise<void>;
 }

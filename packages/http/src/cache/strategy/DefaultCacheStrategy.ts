@@ -11,6 +11,7 @@ interface CachedData {
     status: string;
     statusText: string;
 }
+
 class CachedHttpResponse implements HttpResponse {
     constructor(
         public request: HttpRequest,
@@ -24,17 +25,21 @@ class CachedHttpResponse implements HttpResponse {
         this.status = parseInt(cachedData.status, 10);
         this.statusText = cachedData.statusText;
     }
+
     async body(): Promise<Blob> {
         const response = await fetch(this.cachedData.body);
         return response.blob();
     }
+
     headers: HttpHeaders;
     status: number;
     statusText: string;
+
     clone(): HttpResponse {
         return new CachedHttpResponse(this.request, this.cachedData);
     }
 }
+
 export class DefaultCacheStrategy implements CacheStrategy {
     execute(
         request: HttpRequest,
@@ -54,8 +59,7 @@ export class DefaultCacheStrategy implements CacheStrategy {
         ) {
             return next();
         }
-        const provider = request.configuration.storageProvider;
-        // TODO: cache provider
+        const provider = request.getStorageProvider();
         const key = request.key;
         return provider.get(key).then(value => {
             if (!value) {
@@ -73,8 +77,9 @@ export class DefaultCacheStrategy implements CacheStrategy {
             return new CachedHttpResponse(request, cachedData);
         });
     }
+
     clearCache(request: HttpRequest): Promise<void> {
-        const provider = request.configuration.storageProvider;
+        const provider = request.getStorageProvider();
         const key = request.key;
         return provider.remove(key);
     }

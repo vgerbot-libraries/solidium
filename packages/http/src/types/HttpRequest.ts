@@ -8,6 +8,7 @@ import { HttpHeaders } from './HttpHeaders';
 import { HttpInterceptor } from './HttpInterceptor';
 import { HttpMethod } from './HttpMethod';
 import { HttpRequestCacheOption } from './HttpRequestOptions';
+import { StorageProvider } from './StorageProvider';
 
 export interface HttpRequest extends Cloneable<HttpRequest> {
     key: string; // default to url.toString()
@@ -24,4 +25,5 @@ export interface HttpRequest extends Cloneable<HttpRequest> {
         type: T,
         listener: (event: HttpEventMap[T]) => void
     ): () => void;
+    getStorageProvider(): StorageProvider;
 }

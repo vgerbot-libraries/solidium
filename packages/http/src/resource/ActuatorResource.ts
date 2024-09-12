@@ -125,7 +125,7 @@ export class ActuatorResource implements Resource {
             if (options.clearCache) {
                 await cacheStrategy.clearCache(request);
             }
-            return request.configuration.cacheStrategy.execute(
+            return cacheStrategy.execute(
                 request,
                 async (cachedResponse?: HttpResponse) => {
                     if (cachedResponse) {

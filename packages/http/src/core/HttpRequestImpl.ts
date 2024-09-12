@@ -15,6 +15,8 @@ import {
     HttpRequestOptions
 } from '../types/HttpRequestOptions';
 import { ParameterEncoder } from '../types/ParameterEncoder';
+import { StorageProvider } from '../types/StorageProvider';
+import { NoopStorageProvider } from '../cache/provider/NoopStorageProvider';
 
 export class HttpRequestImpl implements HttpRequest {
     url: URL;
@@ -27,6 +29,7 @@ export class HttpRequestImpl implements HttpRequest {
         HttpEventType,
         Array<(event: HttpEvent) => void>
     > = new Map();
+
     constructor(
         public readonly configuration: HttpConfiguration,
         private readonly requestOptions: HttpRequestOptions
@@ -53,6 +56,7 @@ export class HttpRequestImpl implements HttpRequest {
         this.cacheOption = requestOptions.cache || false;
         this.fetcher = requestOptions.fetcher || configuration.fetcher;
     }
+
     on<T extends HttpEventType>(
         type: T,
         listener: (event: HttpEventMap[T]) => void
@@ -72,27 +76,51 @@ export class HttpRequestImpl implements HttpRequest {
             }
         };
     }
+
     dispatch(event: HttpEvent): void {
         const listeners = this.listeners.get(event.type);
         if (listeners) {
             listeners.forEach(listener => listener(event));
         }
     }
+
     clone(): HttpRequest {
         return new HttpRequestImpl(this.configuration, this.requestOptions);
     }
+
     get key(): string {
         if (this.requestOptions['key']) {
             return this.requestOptions.key;
         }
         return this.url.toString();
     }
+
     get interceptors(): HttpInterceptor[] {
         return this.configuration.interceptors.concat(
             this.requestOptions.interceptors || []
         );
     }
+
+    getStorageProvider(storageProviderName?: string): StorageProvider {
+        const { storageProviders, defaultStorageProvider } = this.configuration;
+        const provider = storageProviderName
+            ? storageProviders[storageProviderName]
+            : undefined;
+        if (provider) {
+            return provider;
+        }
+        if (typeof this.cacheOption === 'object') {
+            return (
+                storageProviders[this.cacheOption.mode] ??
+                defaultStorageProvider
+            );
+        } else if (!this.cacheOption) {
+            return NoopStorageProvider.getInstance();
+        }
+        return defaultStorageProvider;
+    }
 }
+
 const REGEXP_DYNAMIC_SEGMENT = /{([^}?]+)\??}/;
 const REGEXP_OPTIONAL_DYNAMIC_SEGMENT = /\/?{([^}?]+)\?}/g;
 
