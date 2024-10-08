@@ -4,12 +4,12 @@ import { Reference } from '../types/Reference';
 import { ObjectPath } from './ObjectPath';
 
 export interface ObjectMapper<I = unknown, O = I> {
-    canTransform(object: I): boolean;
+    canTransform(object: unknown): boolean;
     transform(
         object: I,
         context: EncodeContext,
         path: ObjectPath
     ): O | Reference;
-    canRevive(object: O): boolean;
+    canRevive(object: unknown): boolean;
     revive(object: O, context: DecodeContext, path: ObjectPath): I;
 }

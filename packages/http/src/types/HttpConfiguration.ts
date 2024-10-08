@@ -46,13 +46,11 @@ export interface HttpConfiguration extends Cloneable<HttpConfiguration> {
     headers: HttpHeaders;
     fetcher: Fetcher;
     storageProviders: {
-        memory: StorageProvider;
-        idb: StorageProvider;
-        localstorage: StorageProvider;
-        sessionstorage: StorageProvider;
-        [key: string]: StorageProvider | undefined;
+        [key: 'memory' | 'idb' | 'localStorage' | 'sessionStorage' | string]:
+            | StorageProvider
+            | undefined;
     };
-    defaultStorageProvider: StorageProvider;
+    defaultStorageProvider: StorageProvider | string;
     cacheStrategy: CacheStrategy;
     trigger?: HttpRequestTrigger;
 

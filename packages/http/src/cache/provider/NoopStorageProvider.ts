@@ -11,15 +11,15 @@ export class NoopStorageProvider implements StorageProvider {
         //
     }
 
-    set(key: string, value: string): Promise<void> {
+    set(): Promise<void> {
         return Promise.resolve();
     }
 
-    get(key: string): Promise<string | undefined> {
+    get(): Promise<string | undefined> {
         return Promise.resolve(undefined);
     }
 
-    remove(key: string): Promise<void> {
+    remove(): Promise<void> {
         return Promise.resolve();
     }
 }

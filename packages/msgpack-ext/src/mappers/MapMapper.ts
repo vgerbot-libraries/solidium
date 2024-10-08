@@ -11,7 +11,7 @@ export class MapMapper extends IterableMapper<
     Map<unknown, unknown>,
     TransformedMap
 > {
-    canTransform(object: Map<unknown, unknown>): boolean {
+    canTransform(object: unknown): boolean {
         return object instanceof Map;
     }
     createNewInstance(): Map<unknown, unknown> {
@@ -36,7 +36,7 @@ export class MapMapper extends IterableMapper<
             callback(item, childPath);
         });
     }
-    canRevive(object: TransformedMap): boolean {
+    canRevive(object: unknown): boolean {
         return (
             isPlainObject(object) &&
             '$' in object &&

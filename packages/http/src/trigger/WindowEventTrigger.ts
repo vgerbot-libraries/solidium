@@ -6,6 +6,7 @@ export class WindowEventTrigger implements HttpRequestTrigger {
         requestTrigger: (revalidate?: boolean | undefined) => Promise<void>
     ): () => void {
         const eventListener = () => {
+            // noinspection JSIgnoredPromiseFromCall
             requestTrigger(true);
         };
         window.addEventListener(this.eventType, eventListener);

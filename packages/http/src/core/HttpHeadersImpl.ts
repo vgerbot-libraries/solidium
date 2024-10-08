@@ -79,12 +79,6 @@ export class HttpHeadersImpl implements HttpHeaders {
         return this;
     }
     setBasicAuth(username: string, password: string): HttpHeaders {
-        if (
-            typeof username !== 'string' ||
-            (password && typeof password !== 'string')
-        ) {
-            throw new Error('Username and password must be strings');
-        }
         const credentials = btoa(`${username}:${password}`);
         this.set('Authorization', `Basic ${credentials}`);
         return this;

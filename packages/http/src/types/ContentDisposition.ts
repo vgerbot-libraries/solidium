@@ -74,7 +74,7 @@ export class ContentDisposition
 
     private encodeHeaderValue(value: string): string {
         // Encode the value if it contains special characters
-        if (/[^\w\d!#$&.+\-^_`|~]/.test(value)) {
+        if (/[^\w!#$&.+\-^_`|~]/.test(value)) {
             return encodeURIComponent(value);
         }
         return value;

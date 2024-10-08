@@ -9,7 +9,7 @@ export class ReferenceMapper implements ObjectMapper<unknown, Reference> {
     transform(): Reference {
         throw new Error('Method not implemented.');
     }
-    canRevive(object: Reference): boolean {
+    canRevive(object: unknown): boolean {
         return object instanceof Reference;
     }
     revive(object: Reference, context: DecodeContext): unknown {

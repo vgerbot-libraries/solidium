@@ -76,7 +76,7 @@ export class DataResource<T> extends DelegateResource<DataHttpResponse<T>> {
         });
     }
     constructor(
-        target: Resource<HttpResponse>,
+        target: Resource,
         private readonly parser: (blob: Blob) => Promise<T>
     ) {
         super(target);

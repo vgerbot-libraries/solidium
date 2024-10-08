@@ -23,7 +23,7 @@ export class SetMapper extends IterableMapper<Set<unknown>, TransformedSet> {
             callback(item, path.child(i));
         });
     }
-    canRevive(object: TransformedSet): boolean {
+    canRevive(object: unknown): boolean {
         return (
             isPlainObject(object) &&
             '$' in object &&
@@ -35,7 +35,7 @@ export class SetMapper extends IterableMapper<Set<unknown>, TransformedSet> {
     append(target: Set<unknown>, value: unknown): void {
         target.add(value);
     }
-    canTransform(object: Set<unknown>): boolean {
+    canTransform(object: unknown): boolean {
         return object instanceof Set;
     }
     createNewInstance(): Set<unknown> {

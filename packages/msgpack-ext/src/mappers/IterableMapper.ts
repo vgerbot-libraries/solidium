@@ -12,7 +12,7 @@ export type TransformedIterable<Tag extends number = number> = {
 export abstract class IterableMapper<T extends Iterable<unknown>, R>
     implements ObjectMapper<T, R>
 {
-    abstract canTransform(object: T): boolean;
+    abstract canTransform(object: unknown): boolean;
     abstract createNewInstance(): T;
     abstract append(target: T, value: unknown): void;
     abstract createTransformedResult(resultArray: unknown[]): R;
@@ -44,7 +44,7 @@ export abstract class IterableMapper<T extends Iterable<unknown>, R>
         }
         return this.createTransformedResult(result);
     }
-    abstract canRevive(object: R): boolean;
+    abstract canRevive(object: unknown): boolean;
     revive(object: R, context: DecodeContext, path: ObjectPath): T {
         const receiver = this.createNewInstance();
         context.recording(receiver, path);

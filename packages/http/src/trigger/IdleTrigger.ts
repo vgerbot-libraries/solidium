@@ -7,7 +7,7 @@ export class IdleTrigger implements HttpRequestTrigger {
         let stopped = false;
         requestIdleCallback(() => {
             if (stopped) return;
-            requestTrigger();
+            return requestTrigger();
         });
         return () => {
             stopped = true;

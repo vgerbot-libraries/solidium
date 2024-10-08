@@ -5,7 +5,7 @@ type TransformedMap = {
     _: [unknown, unknown][];
 };
 export declare class MapMapper extends IterableMapper<Map<unknown, unknown>, TransformedMap> {
-    canTransform(object: Map<unknown, unknown>): boolean;
+    canTransform(object: unknown): boolean;
     createNewInstance(): Map<unknown, unknown>;
     append(target: Map<unknown, unknown>, value: unknown[]): void;
     createTransformedResult(resultArray: unknown[]): TransformedMap;

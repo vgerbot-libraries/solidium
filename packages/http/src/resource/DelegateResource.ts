@@ -21,7 +21,7 @@ export abstract class DelegateResponse implements HttpResponse {
     get request(): HttpRequest {
         return this.origin.request;
     }
-    constructor(protected readonly origin: HttpResponse) {}
+    protected constructor(protected readonly origin: HttpResponse) {}
     abstract clone(): HttpResponse;
 }
 
@@ -48,7 +48,7 @@ export abstract class DelegateResource<T extends HttpResponse>
     }
     abstract get response(): T | undefined;
     abstract get responsePromise(): Promise<T>;
-    constructor(protected readonly target: Resource) {}
+    protected constructor(protected readonly target: Resource) {}
 
     fetch(options: FetchResourceOptions): Promise<void> {
         return this.target.fetch(options);

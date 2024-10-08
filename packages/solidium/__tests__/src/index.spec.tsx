@@ -1,5 +1,5 @@
 import { ClassMetadata } from '@vgerbot/ioc';
-import { Signal } from '../../src/decorators';
+import { Signal } from '../../src';
 
 describe('hello', () => {
     it('casual', () => {
@@ -12,8 +12,8 @@ describe('hello', () => {
             public get aa() {
                 return this.a + 1;
             }
-            public set aa(aa: number) {
-                this.a - 1;
+            public set aa(_aa: number) {
+                this.a = 1;
             }
         }
         const reader = ClassMetadata.getInstance(A).reader();

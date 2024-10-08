@@ -1,10 +1,20 @@
 export function isArrayBufferView(data: unknown): data is ArrayBufferView {
     if (
-        typeof (data as ArrayBufferView).buffer === 'object' &&
-        typeof (data as ArrayBufferView).byteLength === 'number' &&
-        typeof (data as ArrayBufferView).byteOffset === 'number'
+        data !== null &&
+        typeof data === 'object' &&
+        hasObjectProperty(data, 'buffer') &&
+        hasNumberProperty(data, 'byteLength') &&
+        hasNumberProperty(data, 'byteOffset')
     ) {
         return false;
     }
     return true;
+}
+function hasObjectProperty(target: object, name: string) {
+    const value = (target as Record<string, unknown>)[name];
+    return name in target && value !== null && typeof value === 'object';
+}
+function hasNumberProperty(target: object, name: string) {
+    const value = (target as Record<string, unknown>)[name];
+    return name in target && value !== null && typeof value === 'number';
 }

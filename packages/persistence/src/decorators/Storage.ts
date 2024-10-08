@@ -27,8 +27,7 @@ export const Storage = (options: StorageOptions = {}) => {
             const bucketOrName = options.bucket || DEFAULT_BUCKET;
 
             const bucket =
-                typeof bucketOrName === 'string' ||
-                typeof bucketOrName === 'symbol'
+                typeof bucketOrName != 'object'
                     ? <Bucket>container.getInstance(bucketOrName)
                     : bucketOrName;
             const observe = () => {

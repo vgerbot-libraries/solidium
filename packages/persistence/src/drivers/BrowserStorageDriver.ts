@@ -14,7 +14,7 @@ export abstract class BrowserStorageDriver implements StorageDriver {
         string,
         StorageDriverChangeEventListener[]
     >();
-    constructor(
+    protected constructor(
         private readonly options: StorageDriverOptions,
         protected readonly storage: Storage
     ) {}

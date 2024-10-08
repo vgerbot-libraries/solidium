@@ -97,7 +97,6 @@ function initMemberDecoratorProcessorsSet<T>(
                 | undefined;
             if (
                 markData == null ||
-                markData == undefined ||
                 typeof markData !== 'object' ||
                 !markData[IS_MEMBER_DECORATOR_PROCESSOR]
             ) {

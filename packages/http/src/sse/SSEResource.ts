@@ -84,7 +84,7 @@ export class SSEResource<T> extends DelegateResource<SSEResponse<T>> {
     }
     private readonly owner: Owner | null;
     constructor(
-        target: Resource<HttpResponse>,
+        target: Resource,
         private readonly parser: (chunk: string) => T
     ) {
         super(target);

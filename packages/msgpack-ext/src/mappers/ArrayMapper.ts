@@ -14,10 +14,10 @@ export class ArrayMapper extends IterableMapper<unknown[], unknown[]> {
             callback(item, path.child(index));
         });
     }
-    canRevive(object: unknown[]): boolean {
+    canRevive(object: unknown): boolean {
         return Array.isArray(object);
     }
-    canTransform(object: unknown[]): boolean {
+    canTransform(object: unknown): boolean {
         return Array.isArray(object);
     }
     createNewInstance(): unknown[] {

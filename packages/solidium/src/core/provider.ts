@@ -5,6 +5,7 @@ import {
     Newable
 } from '@vgerbot/ioc';
 import { ParentProps, createContext, createRoot } from 'solid-js';
+import { createComponent } from 'solid-js/web';
 import { afterInstantiation, beforeInstantiation } from './processor';
 import { Identifier } from '@vgerbot/ioc/dist/types/Identifier';
 import { COMPONENT_TREE_SCOPE } from '../decorators/ComponentTreeScope';
@@ -74,9 +75,10 @@ export function Solidium(props: SolidiumProps) {
     props.autoRegisterClasses?.forEach(cls => {
         appCtx.getInstance(cls);
     });
-    return (
-        <IoCContext.Provider value={appCtx}>
-            {props.children}
-        </IoCContext.Provider>
-    );
+    return createComponent(IoCContext.Provider, {
+        value: appCtx,
+        get children() {
+            return props.children;
+        }
+    });
 }

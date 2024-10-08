@@ -2,5 +2,5 @@ import { Mark } from '@vgerbot/ioc';
 
 export const TRACK_METHOD_MARK_KEY = Symbol('solidium_track_method');
 
-export const Track = (fn: <T>(this: T) => any) =>
+export const Track = (fn: <T>(this: T) => unknown) =>
     Mark(TRACK_METHOD_MARK_KEY, fn) as MethodDecorator;

@@ -9,7 +9,7 @@ export declare class SetMapper extends IterableMapper<Set<unknown>, TransformedS
     forEachTransformedResult(target: TransformedSet, path: ObjectPath, callback: (item: unknown, childPath: ObjectPath) => void): void;
     canRevive(object: TransformedSet): boolean;
     append(target: Set<unknown>, value: unknown): void;
-    canTransform(object: Set<unknown>): boolean;
+    canTransform(object: unknown): boolean;
     createNewInstance(): Set<unknown>;
 }
 export {};

@@ -7,14 +7,11 @@ type Node<V> = {
 export default class LRUCache<K, V> {
     private lookup: Map<K, Node<V>>;
     private reverseLookup: Map<Node<V>, K>;
-    private capacity: number;
     private length: number;
     private head?: Node<V>;
     private tail?: Node<V>;
 
-    constructor(capacity = 500) {
-        this.capacity = capacity;
-
+    constructor(private readonly capacity = 500) {
         this.lookup = new Map();
         this.reverseLookup = new Map();
 

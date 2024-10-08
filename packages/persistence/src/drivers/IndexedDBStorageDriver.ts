@@ -17,8 +17,8 @@ export class IndexedDBStorageDriver implements StorageDriver {
         string,
         StorageDriverChangeEventListener[]
     >();
-    private bucketName: string;
-    private version?: number;
+    private readonly bucketName: string;
+    private readonly version?: number;
     private idbDefer = new Defer<IDBPDatabase>();
     private get idbPromise() {
         return this.idbDefer.promise;

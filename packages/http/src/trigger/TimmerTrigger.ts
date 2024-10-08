@@ -10,11 +10,11 @@ export class TimmerTrigger implements HttpRequestTrigger {
     }
     constructor(public interval: number = 1000) {}
     dispatch(requestTrigger: () => Promise<void>): () => void {
-        const timmerId = setInterval(() => {
-            requestTrigger();
+        const timerId = setInterval(() => {
+            return requestTrigger();
         }, this.interval);
         return () => {
-            clearInterval(timmerId);
+            clearInterval(timerId);
         };
     }
 }

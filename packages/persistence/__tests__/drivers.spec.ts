@@ -1,4 +1,4 @@
-import { LocalStorageDriver } from '../src/drivers/LocalStorageDriver';
+import { LocalStorageDriver } from '@src/drivers/LocalStorageDriver';
 
 describe('storage drivers', () => {
     describe('local storage driver', () => {
@@ -53,7 +53,7 @@ describe('storage drivers', () => {
                 const mockKey = 'testKey';
                 await driver.setItem(mockKey, mockBlob);
                 await expect(driver.clear()).resolves.not.toThrow();
-                expect(driver.getItem(mockKey)).resolves.toBeUndefined();
+                await expect(driver.getItem(mockKey)).resolves.toBeUndefined();
                 await expect(driver.length()).resolves.toBe(0);
             });
         });
@@ -68,7 +68,7 @@ describe('storage drivers', () => {
                 driver.getItem = originGetItem;
             });
             it('should getItem not be called when no listeners are added', async () => {
-                driver.setItem(
+                await driver.setItem(
                     'testKey',
                     new Blob(['test'], { type: 'text/plain' })
                 );
