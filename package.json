@@ -4,7 +4,8 @@
     "description": "",
     "private": true,
     "engines": {
-        "node": ">=16"
+        "node": ">=16",
+        "pnpm": ">=9.0.4"
     },
     "scripts": {
         "test": "zx ./scripts/run.mjs --script test --target",
@@ -79,7 +80,6 @@
         "url": "https://github.com/vgerbot-libraries/solidium/issues"
     },
     "homepage": "https://github.com/vgerbot-libraries/solidium#readme",
-    "packageManager": "yarn@1.22.19",
     "workspaces": [
         "packages/*",
         "packages/examples/*"
