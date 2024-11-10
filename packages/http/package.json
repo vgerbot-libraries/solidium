@@ -42,7 +42,8 @@
     "@vgerbot/ioc": "^1.1.2",
     "@vgerbot/lazy": "^1.0.6",
     "@vgerbot/solidium": "workspace:1.0.0",
-    "reflect-metadata": "^0.2.1"
+    "reflect-metadata": "^0.2.1",
+    "tslib": "^2.6.3"
   },
   "peerDependencies": {
     "@vgerbot/ioc": ">=1.1.2",

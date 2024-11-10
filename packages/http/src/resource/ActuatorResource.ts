@@ -9,18 +9,17 @@ import { Signal } from '@vgerbot/solidium';
 import { Defer } from '../common/Defer';
 import { createTrigger } from '../common/createTrigger';
 import { noop } from '../common/noop';
-import { HttpRequestImpl } from '../core/HttpRequestImpl';
+import { createHttpRequest } from '../core/HttpRequestImpl';
+import { HTTPError } from '../error/HTTPError';
+import { DownloadProgressEvent } from '../events/DownloadProgressEvent';
+import { UploadProgressEvent } from '../events/UploadProgressEvent';
 import { PassiveTrigger } from '../trigger';
+import { CreateResourceOptions } from '../types/CreateResourceOptions';
+import { FetchResourceOptions } from '../types/FetchResourceOptions';
 import { HttpConfiguration } from '../types/HttpConfiguration';
 import { HttpRequest } from '../types/HttpRequest';
-import { HttpRequestOptions } from '../types/HttpRequestOptions';
 import { HttpResponse } from '../types/HttpResponse';
 import { Resource } from '../types/Resource';
-import { CreateResourceOptions } from '../types/CreateResourceOptions';
-import { HTTPError } from '../error/HTTPError';
-import { UploadProgressEvent } from '../events/UploadProgressEvent';
-import { DownloadProgressEvent } from '../events/DownloadProgressEvent';
-import { FetchResourceOptions } from '../types/FetchResourceOptions';
 
 enum ResourceStatus {
     IDLE = 'idle',
@@ -163,33 +162,10 @@ export class ActuatorResource implements Resource {
         return interceptedRequestExecutor(this.createRequest(options));
     }
     private createRequest(fetchOptions: FetchResourceOptions) {
-        const requestOptions: HttpRequestOptions = {
-            ...this.createResourceOptions
-        };
-        if (fetchOptions.body) {
-            requestOptions.body = fetchOptions.body;
-        }
-        if (fetchOptions.headers) {
-            if (!requestOptions.headers) {
-                requestOptions.headers = fetchOptions.headers;
-            } else {
-                requestOptions.headers = requestOptions.headers.mergeAll(
-                    requestOptions.headers
-                );
-            }
-        }
-        if (fetchOptions.search) {
-            requestOptions.search = {
-                ...requestOptions.search,
-                ...fetchOptions.search
-            };
-        }
-        if (fetchOptions.params) {
-            requestOptions.params = {
-                ...requestOptions.params,
-                ...fetchOptions.params
-            };
-        }
-        return new HttpRequestImpl(this.configuration, requestOptions);
+        return createHttpRequest(
+            this.createResourceOptions,
+            fetchOptions,
+            this.configuration
+        );
     }
 }

@@ -17,6 +17,7 @@ import {
 import { ParameterEncoder } from '../types/ParameterEncoder';
 import { StorageProvider } from '../types/StorageProvider';
 import { NoopStorageProvider } from '../cache/provider/NoopStorageProvider';
+import { FetchResourceOptions } from '../types/FetchResourceOptions';
 
 export class HttpRequestImpl implements HttpRequest {
     url: URL;
@@ -102,22 +103,34 @@ export class HttpRequestImpl implements HttpRequest {
     }
 
     getStorageProvider(storageProviderName?: string): StorageProvider {
-        const { storageProviders, defaultStorageProvider } = this.configuration;
+        const {
+            storageProviders,
+            defaultStorageProvider: defaultStorageProviderOrName
+        } = this.configuration;
         const provider = storageProviderName
             ? storageProviders[storageProviderName]
             : undefined;
         if (provider) {
             return provider;
         }
+        const defaultStorageProvider =
+            typeof defaultStorageProviderOrName === 'string'
+                ? storageProviders[defaultStorageProviderOrName]
+                : defaultStorageProviderOrName;
         if (typeof this.cacheOption === 'object') {
-            return (
+            const storageProvider =
                 storageProviders[this.cacheOption.mode] ??
-                defaultStorageProvider
-            );
+                defaultStorageProvider;
+            if (!storageProvider) {
+                throw new Error(
+                    `Invalid storage provider: ${this.cacheOption.mode}`
+                );
+            }
+            return storageProvider;
         } else if (!this.cacheOption) {
             return NoopStorageProvider.getInstance();
         }
-        return defaultStorageProvider;
+        return defaultStorageProvider ?? NoopStorageProvider.getInstance();
     }
 }
 
@@ -161,4 +174,39 @@ function resolvePath(
         path = `/${path}`;
     }
     return path;
+}
+
+export function createHttpRequest(
+    baseOptions: HttpRequestOptions,
+    fetchOptions: FetchResourceOptions,
+    configuration: HttpConfiguration
+) {
+    const requestOptions: HttpRequestOptions = {
+        ...baseOptions
+    };
+    if (fetchOptions.body) {
+        requestOptions.body = fetchOptions.body;
+    }
+    if (fetchOptions.headers) {
+        if (!requestOptions.headers) {
+            requestOptions.headers = fetchOptions.headers;
+        } else {
+            requestOptions.headers = requestOptions.headers.mergeAll(
+                requestOptions.headers
+            );
+        }
+    }
+    if (fetchOptions.search) {
+        requestOptions.search = {
+            ...requestOptions.search,
+            ...fetchOptions.search
+        };
+    }
+    if (fetchOptions.params) {
+        requestOptions.params = {
+            ...requestOptions.params,
+            ...fetchOptions.params
+        };
+    }
+    return new HttpRequestImpl(configuration, requestOptions);
 }
