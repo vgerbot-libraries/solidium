@@ -26,11 +26,7 @@ export const SetterInterceptor = (
             constructor: Newable<T>,
             member: MemberKey
         ) => {
-            appendSetterInterceptor(
-                constructor.prototype,
-                options as SetterInterceptorOptions,
-                member
-            );
+            appendSetterInterceptor(constructor.prototype, options, member);
         }
     }) as MethodDecorator;
 };
