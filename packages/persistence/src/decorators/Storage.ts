@@ -23,7 +23,7 @@ export const Storage = (options: StorageOptions = {}) => {
             container: ApplicationContext
         ) {
             const [, set] = getSignal(instance, member);
-            const key = options.key || member.toString();
+            const key = options.key ?? member.toString();
             const bucketOrName = options.bucket || DEFAULT_BUCKET;
 
             const bucket =
