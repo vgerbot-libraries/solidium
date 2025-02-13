@@ -15,7 +15,10 @@ import {
     Progress,
     Body,
     Sse,
-    sse
+    sse,
+    ProgressiveResponse,
+    RestfulResponse,
+    SSEResponse
 } from '@vgerbot/solidium-http';
 
 import { Inject } from '@vgerbot/ioc';
@@ -23,47 +26,47 @@ import { Inject } from '@vgerbot/ioc';
 import { Track } from '@vgerbot/solidium';
 import { Storage } from '@vgerbot/persistence';
 
-interface BaseResponse<Data, Error> {
-    data: Data;
-    error: Error;
-    pending: boolean;
-    aborted: boolean;
-    success: boolean;
-    onSuccess(
-        callback: (response: BaseResponse<Data, Error>) => void
-    ): BaseResponse<Data, Error>;
-    onFailure(
-        callback: (response: BaseResponse<Data, Error>) => void
-    ): BaseResponse<Data, Error>;
-    onComplete(
-        callback: (response: BaseResponse<Data, Error>) => void
-    ): BaseResponse<Data, Error>;
-    abort(): void;
-    execute(): void;
-}
+// interface BaseResponse<Data, Error> {
+//     data: Data;
+//     error: Error;
+//     pending: boolean;
+//     aborted: boolean;
+//     success: boolean;
+//     onSuccess(
+//         callback: (response: BaseResponse<Data, Error>) => void
+//     ): BaseResponse<Data, Error>;
+//     onFailure(
+//         callback: (response: BaseResponse<Data, Error>) => void
+//     ): BaseResponse<Data, Error>;
+//     onComplete(
+//         callback: (response: BaseResponse<Data, Error>) => void
+//     ): BaseResponse<Data, Error>;
+//     abort(): void;
+//     execute(): void;
+// }
 
-interface RestfulResponse<Data, Error> extends BaseResponse {
-    onSuccess(
-        callback: (response: RestfulResponse<Data, Error>) => void
-    ): RestfulResponse<Data, Error>;
-    onFailure(
-        callback: (response: RestfulResponse<Data, Error>) => void
-    ): RestfulResponse<Data, Error>;
-    onComplete(
-        callback: (response: RestfulResponse<Data, Error>) => void
-    ): RestfulResponse<Data, Error>;
-}
-interface ProgressiveResponse<Data, Error> extends BaseResponse {
-    onProgress(progressListener: (event: ProgressEvent) => void);
-}
+// interface RestfulResponse<Data, Error> extends BaseResponse {
+//     onSuccess(
+//         callback: (response: RestfulResponse<Data, Error>) => void
+//     ): RestfulResponse<Data, Error>;
+//     onFailure(
+//         callback: (response: RestfulResponse<Data, Error>) => void
+//     ): RestfulResponse<Data, Error>;
+//     onComplete(
+//         callback: (response: RestfulResponse<Data, Error>) => void
+//     ): RestfulResponse<Data, Error>;
+// }
+// interface ProgressiveResponse<Data, Error> extends BaseResponse {
+//     onProgress(progressListener: (event: ProgressEvent) => void);
+// }
 
-type JSONData = Record<string, unknown>;
-function restful<Data = JSONData, Error = Error>(): RestfulResponse<
-    Data,
-    Error
-> {
-    // TODO:
-}
+// type JSONData = Record<string, unknown>;
+// function restful<Data = JSONData, Error = Error>(): RestfulResponse<
+//     Data,
+//     Error
+// > {
+//     // TODO:
+// }
 
 @Endpoint({
     baseURL: 'https://api.alovajs.dev',
@@ -127,7 +130,7 @@ class TODOAPIService {
     getTodoList(
         @Query('pageIndex') pageIndex: number,
         @Query('pageSize') pageSize: number
-    ) {
+    ): RestfulResponse {
         return restful(...arguments);
     }
     @Get('/todo/item/:id')
@@ -152,20 +155,23 @@ class TODOAPIService {
 })
 class AttachmentService {
     @Post('/upload')
-    upload(@Body file: File, @Progress() progress: ProgressEventListener) {
+    upload(
+        @Body file: File,
+        @Progress() progress: ProgressEventListener
+    ): ProgressiveResponse {
         return upload(...arguments);
     }
     uploadFile(
         @Multipart('file') file: File,
         @Progress() progress: ProgressEventListener
-    ) {
+    ): ProgressiveResponse {
         return upload(...arguments);
     }
     @Get('/download/:filename')
     download(
         @Path('filename') filename: string,
         @Progress() progress: ProgressEventListener
-    ) {
+    ): ProgressiveResponse {
         return download(...arguments);
     }
 }
@@ -179,7 +185,7 @@ class AIService {
     chat(
         @Body('conversationId') conversationId: string,
         @Body('message') message: string
-    ) {
+    ): SSEResponse {
         return sse(...arguments);
     }
     @Post('conversation/create')
