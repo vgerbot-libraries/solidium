@@ -1,20 +1,19 @@
 import { Progress } from '../../progress/Progress';
-import { ByteStream } from '../ByteStream';
 import { ProgressiveByteStream } from './ProgressiveByteStreams';
 
-export class BlobByteStream
-    extends ProgressiveByteStream
-    implements ByteStream
-{
-    constructor(private readonly blob: Blob) {
+export class NativeReadableStream extends ProgressiveByteStream {
+    constructor(
+        private readonly contentLength: number,
+        private readonly stream: ReadableStream
+    ) {
         super();
     }
     total(): Promise<number> {
-        return Promise.resolve(this.blob.size);
+        return Promise.resolve(this.contentLength);
     }
     async readAsBuffer(): Promise<ArrayBuffer> {
-        const total = this.blob.size;
-        const reader = this.blob.stream().getReader();
+        const total = this.contentLength;
+        const reader = this.stream.getReader();
         const chunks: Uint8Array[] = [];
         let loaded = 0;
         this.updateProgress(new Progress(total, 0));

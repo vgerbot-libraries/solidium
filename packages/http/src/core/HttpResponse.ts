@@ -5,7 +5,7 @@ import { HttpSource } from '../http/HttpSource';
 
 export interface HttpResponseInit {
     status: number;
-    context: RequestMethod;
+    method: RequestMethod;
 }
 
 export class HttpResponse implements HttpSource {
@@ -22,5 +22,15 @@ export class HttpResponse implements HttpSource {
     }
     body(): Promise<ByteStream> {
         return this.source.body();
+    }
+    async text(encoding?: string) {
+        const stream = await this.body();
+        const buffer = await stream.readAsBuffer();
+        const decoder = new TextDecoder(encoding);
+        return decoder.decode(buffer);
+    }
+    async json<T>() {
+        const text = await this.text();
+        return JSON.parse(text) as T;
     }
 }

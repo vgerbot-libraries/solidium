@@ -1,15 +1,19 @@
+import { RequestAdapterConstructor } from '../adapter/RequestAdapter';
+import { XMLHttpRequestAdapter } from '../adapter/XMLHTTPRequestAdapter';
 import { Interceptor, InterceptorFunction } from './Interceptor';
 
 interface RequestEndpointOptions {
     baseURL: string;
     timeout?: number;
     interceptors?: Array<Interceptor | InterceptorFunction>;
+    adapter?: RequestAdapterConstructor;
 }
 
 export class RequestEndpoint {
     public readonly baseURL: string;
     public readonly timeout: number;
     private readonly interceptors: Interceptor[] = [];
+    public readonly adapter: RequestAdapterConstructor;
     constructor(
         options: RequestEndpointOptions,
         public parent?: RequestEndpoint
@@ -28,6 +32,7 @@ export class RequestEndpoint {
             });
             this.interceptors.push(...interceptors);
         }
+        this.adapter = options.adapter ?? parent?.adapter ?? XMLHttpRequestAdapter;
     }
     
     getInterceptors(): Interceptor[] {

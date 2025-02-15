@@ -6,21 +6,28 @@ export interface CookieItem {
 }
 export class HttpHeaders {
     private readonly headers = new Map<string, string[]>();
-    constructor(init?: Headers | Record<string, string>) {
+    constructor(
+        init?: Headers | Record<string, string[]> | Map<string, string[]>
+    ) {
         if (init instanceof Headers) {
             init.forEach((value, name) => {
                 this.set(name, value);
             });
+        } else if (init instanceof Map) {
+            init.forEach((value, name) => {
+                this.headers.set(name, value);
+            });
         } else if (init) {
             for (const name in init) {
-                if (init.hasOwnProperty(name)) {
-                    this.set(name, init[name]);
+                if (Object.hasOwn(init, name)) {
+                    const value = init[name];
+                    this.headers.set(name, value);
                 }
             }
         }
     }
-    set(name: string, value: string) {
-        this.headers.set(name, [value]);
+    set(name: string, ...values: string[]) {
+        this.headers.set(name, values);
     }
     append(name: string, ...values: string[]) {
         const originValues = this.headers.get(name) ?? [];
@@ -35,6 +42,13 @@ export class HttpHeaders {
     }
     has(name: string) {
         return this.headers.has(name);
+    }
+    concat(other: HttpHeaders) {
+        const result = new HttpHeaders(this.headers);
+        other.forEach((key, value) => {
+            result.set(key, ...value);
+        });
+        return result;
     }
     forEach(callback: (key: string, value: string[]) => void) {
         this.headers.forEach((value, key) => {
