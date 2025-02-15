@@ -1,5 +1,0 @@
-.github
-.husky
-*.js
-**/lib
-node_modules
