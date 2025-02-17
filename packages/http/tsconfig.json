@@ -6,6 +6,8 @@
             "@/*": ["src/*"]
         },
         "declarationDir": "lib",
-        "declaration": true
+        "declaration": true,
+        "experimentalDecorators": false,
+        "emitDecoratorMetadata": false
     }
 }

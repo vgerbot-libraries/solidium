@@ -8,13 +8,14 @@ import { BlobByteStream } from '../http/streams/BlobByteStream';
 import { Progress } from '../progress/Progress';
 import { ProgressHandler } from '../progress/ProgressHandler';
 import { AdapterExecutionResult } from './AdapterExecutionResult';
+import { parseHeaders } from '../common/parseHeaders';
 
 export class XMLHttpRequestAdapter implements RequestAdapter {
     private readonly xhr: XMLHttpRequest;
     private executeRequestIfNeed: () => void;
     private readonly events = new Events();
     private readonly headersDefer = new Defer<HttpHeaders>();
-    private bodyDefer = new Defer<ByteStream>();
+    private readonly bodyDefer = new Defer<ByteStream>();
     private isAborted = false;
 
     constructor(options: AdapterOptions) {
@@ -50,20 +51,8 @@ export class XMLHttpRequestAdapter implements RequestAdapter {
         };
         xhr.addEventListener('readystatechange', () => {
             if (xhr.readyState === XMLHttpRequest.HEADERS_RECEIVED) {
-                const headersStr = xhr.getAllResponseHeaders();
-                const headers = new HttpHeaders();
-                headersStr
-                    .trim()
-                    .split(/[\r\n]+/)
-                    .forEach(line => {
-                        const parts = line.split(': ');
-                        const header = parts.shift();
-                        const value = parts.join(': ');
-                        if (!header) {
-                            return;
-                        }
-                        headers.append(header, value);
-                    });
+                const rawHeaders = xhr.getAllResponseHeaders();
+                const headers = new HttpHeaders(parseHeaders(rawHeaders));
                 this.headersDefer.resolve(headers);
             } else if (xhr.readyState === XMLHttpRequest.DONE) {
                 this.bodyDefer.resolve(new BlobByteStream(xhr.response));

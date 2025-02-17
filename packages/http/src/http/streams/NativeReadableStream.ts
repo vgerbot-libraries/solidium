@@ -12,28 +12,47 @@ export class NativeReadableStream extends ProgressiveByteStream {
         return Promise.resolve(this.contentLength);
     }
     async readAsBuffer(): Promise<ArrayBuffer> {
-        const total = this.contentLength;
-        const reader = this.stream.getReader();
+        const reader = this.readAsStream().getReader();
         const chunks: Uint8Array[] = [];
-        let loaded = 0;
-        this.updateProgress(new Progress(total, 0));
         while (true) {
             const { done, value } = await reader.read();
             if (done) {
                 break;
             }
-            loaded += value.byteLength;
-            chunks.push(value);
-            const progress = new Progress(total, loaded, value);
-            this.updateProgress(progress);
+            chunks.push(new Uint8Array(value));
         }
         const realTotal = chunks.reduce((sum, it) => sum + it.byteLength, 0);
         const result = new Uint8Array(realTotal);
 
-        chunks.reduce((offset, chunk) => {
-            result.set(chunk, offset);
-            return offset + chunk.byteLength;
-        }, 0);
+        {
+            let offset = 0;
+            for (const chunk of chunks) {
+                result.set(chunk, offset);
+                offset += chunk.byteLength;
+            }
+        }
         return result.buffer;
+    }
+    readAsStream(): ReadableStream<ArrayBuffer> {
+        const stream = this.stream;
+        const total = this.contentLength;
+        let loaded = 0;
+        const that = this;
+        return new ReadableStream({
+            start(controller) {
+                that.updateProgress(new Progress(total, 0));
+                const reader = stream.getReader();
+                reader.read().then(function process({ done, value }) {
+                    if (done) {
+                        controller.close();
+                        return;
+                    }
+                    controller.enqueue(value);
+                    loaded += value.byteLength;
+                    that.updateProgress(new Progress(total, loaded));
+                    reader.read().then(process);
+                });
+            }
+        });
     }
 }

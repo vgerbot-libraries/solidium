@@ -1,6 +1,9 @@
 import { EndpointMetadata } from '../metadata/EndpointMetadata';
 
-export function Query(name: string, defaultValue?: string | number | boolean) {
+export function PathVariable(
+    name: string,
+    defaultValue?: string | number | boolean
+) {
     return function (
         target: Function,
         methodName: string,
@@ -10,7 +13,7 @@ export function Query(name: string, defaultValue?: string | number | boolean) {
             EndpointMetadata.from(target).getMethodMetadata(methodName);
         metadata?.appendExecutionHandler((metadata, params, args) => {
             const value = args[parameterIndex];
-            params.queryParams[name] = (value ?? defaultValue) + '';
+            params.pathVariables[name] = (value ?? defaultValue) + '';
         });
     };
 }

@@ -33,4 +33,23 @@ export class HttpResponse implements HttpSource {
         const text = await this.text();
         return JSON.parse(text) as T;
     }
+    async *textStream(encoding: string = 'UTF-8') {
+        const byteStream = await this.source.body();
+        const stream = byteStream.readAsStream();
+        const reader = stream.getReader();
+        const decoder = new TextDecoder(encoding);
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) {
+                break;
+            }
+            yield decoder.decode(value, {});
+        }
+    }
+    async *jsonStream<T>(encoding: string = 'UTF-8') {
+        for await (const chunk of this.textStream(encoding)) {
+            const json = chunk.replace(/^data:\s+/, '');
+            yield JSON.parse(json) as T;
+        }
+    }
 }

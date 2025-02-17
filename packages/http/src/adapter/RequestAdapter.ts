@@ -10,6 +10,6 @@ export interface RequestAdapter {
     execute(): Promise<AdapterExecutionResult>;
 }
 export type RequestAdapterFactory = (options: AdapterOptions) => RequestAdapter;
-export interface RequestAdapterConstructor {
-    new (options: AdapterOptions): RequestAdapter;
-}
+export type RequestAdapterConstructor = new (
+    options: AdapterOptions
+) => RequestAdapter;

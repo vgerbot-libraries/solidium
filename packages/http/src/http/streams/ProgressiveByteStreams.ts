@@ -13,4 +13,5 @@ export abstract class ProgressiveByteStream implements ByteStream {
         this.events.emit('progress', progress);
     }
     abstract readAsBuffer(): Promise<ArrayBuffer>;
+    abstract readAsStream(): ReadableStream<ArrayBuffer>;
 }

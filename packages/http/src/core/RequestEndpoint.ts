@@ -14,29 +14,25 @@ export class RequestEndpoint {
     public readonly timeout: number;
     private readonly interceptors: Interceptor[] = [];
     public readonly adapter: RequestAdapterConstructor;
-    constructor(
-        options: RequestEndpointOptions,
-        public parent?: RequestEndpoint
-    ) {
-        this.baseURL = options.baseURL ?? parent?.baseURL ?? document.baseURI;
-        this.timeout = options.timeout ?? parent?.timeout ?? 0;
-        
-        if(options.interceptors) {
+    constructor(options: RequestEndpointOptions) {
+        this.baseURL = options.baseURL ?? document.baseURI;
+        this.timeout = options.timeout ?? 0;
+
+        if (options.interceptors) {
             const interceptors = options.interceptors.map(it => {
-                if(typeof it === 'function') {
+                if (typeof it === 'function') {
                     return {
                         invoke: it
-                    }
+                    };
                 }
                 return it;
             });
             this.interceptors.push(...interceptors);
         }
-        this.adapter = options.adapter ?? parent?.adapter ?? XMLHttpRequestAdapter;
+        this.adapter = options.adapter ?? XMLHttpRequestAdapter;
     }
-    
+
     getInterceptors(): Interceptor[] {
-        const parentInterceptors = this.parent?.getInterceptors() ?? [];
-        return parentInterceptors.concat(this.interceptors);
+        return this.interceptors;
     }
 }

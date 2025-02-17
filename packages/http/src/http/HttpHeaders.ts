@@ -55,6 +55,13 @@ export class HttpHeaders {
             callback(key, value);
         });
     }
+    toNative(): Headers {
+        const result = new Headers();
+        this.forEach((key, value) => {
+            result.append(key, value.join(', '));
+        });
+        return result;
+    }
     [Symbol.iterator]() {
         return this.headers[Symbol.iterator]();
     }
