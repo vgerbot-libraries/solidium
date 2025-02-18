@@ -8,5 +8,6 @@ export interface AdapterOptions {
     url: string;
     headers: HttpHeaders;
     body: FormData | string | Blob | undefined;
+    timeout: number;
     singal: AbortSignal;
 }

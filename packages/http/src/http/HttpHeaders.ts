@@ -9,25 +9,41 @@ export class HttpHeaders {
     constructor(
         init?: Headers | Record<string, string[]> | Map<string, string[]>
     ) {
-        if (init instanceof Headers) {
-            init.forEach((value, name) => {
-                this.set(name, value);
-            });
-        } else if (init instanceof Map) {
-            init.forEach((value, name) => {
-                this.headers.set(name, value);
-            });
-        } else if (init) {
-            for (const name in init) {
-                if (Object.hasOwn(init, name)) {
-                    const value = init[name];
-                    this.headers.set(name, value);
-                }
-            }
+        if (init) {
+            this.setAll(init);
         }
     }
     set(name: string, ...values: string[]) {
         this.headers.set(name, values);
+    }
+    setAll(
+        headers:
+            | Record<string, string | string[]>
+            | Map<string, string | string[]>
+            | Headers
+    ) {
+        if (headers instanceof Headers) {
+            headers.forEach((value, name) => {
+                this.set(name, value);
+            });
+        } else if (headers instanceof Map) {
+            headers.forEach((value, key) => {
+                if (Array.isArray(value)) {
+                    this.set(key, ...value);
+                } else {
+                    this.set(key, value);
+                }
+            });
+        } else {
+            for (const key in headers) {
+                const value = headers[key];
+                if (Array.isArray(value)) {
+                    this.set(key, ...value);
+                } else {
+                    this.set(key, value);
+                }
+            }
+        }
     }
     append(name: string, ...values: string[]) {
         const originValues = this.headers.get(name) ?? [];

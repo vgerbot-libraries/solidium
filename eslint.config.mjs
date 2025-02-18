@@ -19,12 +19,18 @@ export default tseslint.config(
                 quotes: ['error', 'single'],
                 'max-len': ['error', 120],
                 'arrow-parens': 'off',
-                '@typescript-eslint/no-dynamic-delete': 'off'
+                'no-unused-vars': 'off',
+                '@typescript-eslint/no-dynamic-delete': 'off',
+                '@typescript-eslint/no-unsafe-function-type': 'off',
+                '@typescript-eslint/no-unused-vars': 'error'
             },
             languageOptions: {
                 parserOptions: {
                     project: [__dirname + '/tsconfig.json', __dirname + '/tsconfig.test.json']
-                },    
+                },
+                globals: {
+                    ...globals.browser
+                }
             }
         },
         {

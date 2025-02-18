@@ -178,8 +178,8 @@ importers:
   packages/http:
     dependencies:
       '@vgerbot/ioc':
-        specifier: ^1.2.0
-        version: 1.2.0
+        specifier: ^1.2.1
+        version: 1.2.1
       '@vgerbot/lazy':
         specifier: ^1.0.7
         version: 1.0.7
@@ -215,8 +215,8 @@ importers:
   packages/persistence:
     dependencies:
       '@vgerbot/ioc':
-        specifier: ^1.2.0
-        version: 1.2.0
+        specifier: ^1.2.1
+        version: 1.2.1
       '@vgerbot/lazy':
         specifier: ^1.0.7
         version: 1.0.7
@@ -246,8 +246,8 @@ importers:
   packages/solidium:
     dependencies:
       '@vgerbot/ioc':
-        specifier: ^1.2.0
-        version: 1.2.0
+        specifier: ^1.2.1
+        version: 1.2.1
       reflect-metadata:
         specifier: ^0.2.2
         version: 0.2.2
@@ -1541,8 +1541,8 @@ packages:
     resolution: {integrity: sha512-kArLq83QxGLbuHrTMoOEWO+l2MwsNS2TGISEdx8xgqpkbytB07XmlQyQdNDrCc1ecSqx0cnmhGvpX+VBwqqSkg==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
-  '@vgerbot/ioc@1.2.0':
-    resolution: {integrity: sha512-Ts3QCPbRGUQ6qK8vTQlvXHyFQAA/u8aisGExKa2vHHDVKS4mlwTGCp2FZN39/sUxn1SmJwiAHdRkQOtWPE++iQ==}
+  '@vgerbot/ioc@1.2.1':
+    resolution: {integrity: sha512-ZMMvjanc1QbksupXbBYp/c19DJls8uD63wLIRe2wSD986TPD31tEo3xb8nE0gm85xizMub/SmICYwGZ+KZnBmQ==}
 
   '@vgerbot/lazy@1.0.7':
     resolution: {integrity: sha512-Vz/ZTvd/5woP2bXRgK0CkYxy4L3SiNZDeFOC/G4aKEO6wGN3ZdexKwRE8woBik7f/oSVC9WCFpVvm7WV4wt1sQ==}
@@ -7090,7 +7090,7 @@ snapshots:
       '@typescript-eslint/types': 8.24.0
       eslint-visitor-keys: 4.2.0
 
-  '@vgerbot/ioc@1.2.0':
+  '@vgerbot/ioc@1.2.1':
     dependencies:
       '@vgerbot/lazy': 1.0.7
       reflect-metadata: 0.1.14

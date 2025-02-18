@@ -15,3 +15,20 @@ export interface Interceptor {
 export type InterceptorConstructor = new () => Interceptor;
 
 export type InterceptorFunction = Interceptor['invoke'];
+
+export function isInterceptorFunction(
+    value: unknown
+): value is InterceptorFunction {
+    return (
+        typeof value === 'function' &&
+        typeof value.prototype['invoke'] !== 'function'
+    );
+}
+export function isInterceptorConstructor(
+    value: unknown
+): value is InterceptorConstructor {
+    return (
+        typeof value === 'function' &&
+        typeof value.prototype['invoke'] === 'function'
+    );
+}

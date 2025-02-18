@@ -9,7 +9,6 @@ export interface RequestAdapter {
     onUpload(listener: ProgressHandler): () => void;
     execute(): Promise<AdapterExecutionResult>;
 }
-export type RequestAdapterFactory = (options: AdapterOptions) => RequestAdapter;
 export type RequestAdapterConstructor = new (
     options: AdapterOptions
 ) => RequestAdapter;

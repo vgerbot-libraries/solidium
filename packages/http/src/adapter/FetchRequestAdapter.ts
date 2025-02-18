@@ -70,16 +70,17 @@ export class FetchRequestAdapter implements RequestAdapter {
     onDownload(listener: ProgressHandler): () => void {
         return this.events.on('download', listener);
     }
-    onUpload(listener: ProgressHandler): () => void {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    onUpload(_listener: ProgressHandler): () => void {
         return () => void 0;
     }
     async execute(): Promise<AdapterExecutionResult> {
         this.executeRequestIfNeed();
-        const that = this;
         const { headersDefer, bodyDefer } = this;
+        const getStatus = () => this.status;
         return {
             get status() {
-                return that.status;
+                return getStatus();
             },
             headers() {
                 return headersDefer.promise;

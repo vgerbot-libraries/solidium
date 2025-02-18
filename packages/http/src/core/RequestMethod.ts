@@ -1,5 +1,7 @@
 import { AdapterOptions } from '../adapter/AdapterOptions';
+import { RequestAdapterConstructor } from '../adapter/RequestAdapter';
 import { isURL } from '../common/isURL';
+import { joinPath } from '../common/joinPath';
 import { resolveURL } from '../common/resolveURL';
 import { HttpHeaders } from '../http/HttpHeaders';
 import { HttpMethod } from '../http/HttpMethod';
@@ -10,11 +12,15 @@ import { RequestEndpoint } from './RequestEndpoint';
 
 export class RequestMethod {
     private readonly url: string;
-    private readonly headers = new HttpHeaders();
     private readonly interceptors: Interceptor[] = [];
+    private readonly timeout: number;
+    private readonly adapter: RequestAdapterConstructor;
     constructor(
         public readonly endpoint: RequestEndpoint,
         public readonly method: HttpMethod,
+        private readonly headers: HttpHeaders,
+        adapter: RequestAdapterConstructor | undefined,
+        timeout: number,
         pathOrURL: string
     ) {
         if (isURL(pathOrURL)) {
@@ -22,6 +28,8 @@ export class RequestMethod {
         } else {
             this.url = joinPath(this.endpoint.baseURL, pathOrURL);
         }
+        this.adapter = adapter ?? endpoint.adapter;
+        this.timeout = timeout || this.endpoint.timeout;
     }
 
     invoke(params: ExecuteRequestMethodParams) {
@@ -58,9 +66,12 @@ export class RequestMethod {
             headers: this.headers.concat(params.headers),
             body: params.payload,
             singal: params.signal,
+            timeout: this.timeout,
             invokeMethod: this
         };
-        const adapter = new (params.adapter ?? this.endpoint.adapter)(options);
+        const adapter = new (params.adapter ??
+            this.adapter ??
+            this.endpoint.adapter)(options);
         return adapter;
     }
 }
