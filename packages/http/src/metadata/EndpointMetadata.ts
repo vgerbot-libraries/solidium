@@ -1,8 +1,10 @@
 import { RequestAdapterConstructor } from '../adapter/RequestAdapter';
 import { buildEndpointClass, EndpointInstance } from '../core/EndpointInstance';
 import {
+    Interceptor,
     InterceptorConstructor,
     InterceptorFunction,
+    InterceptorTypeIdentifier,
     isInterceptorFunction
 } from '../core/Interceptor';
 import { HttpHeaders } from '../http/HttpHeaders';
@@ -19,7 +21,7 @@ interface BaseEndpointOptions {
     headers?: Record<string, string | string[]>;
     adapter?: RequestAdapterConstructor;
     interceptors?: Array<
-        InterceptorConstructor | InterceptorFunction | string | symbol
+        InterceptorTypeIdentifier | Interceptor | InterceptorFunction
     >;
 }
 export type EndpointOptions =
@@ -52,7 +54,7 @@ export class EndpointMetadata {
     >();
     private adapter?: RequestAdapterConstructor;
     private interceptors?: Array<
-        InterceptorConstructor | InterceptorFunction | string | symbol
+        InterceptorTypeIdentifier | Interceptor | InterceptorFunction
     >;
     private constructor() {}
 
@@ -106,7 +108,7 @@ export class EndpointMetadata {
     getMethods() {
         return this.methods;
     }
-    getInterceptors(): Array<InterceptorConstructor | string | symbol> {
+    getInterceptors(): Array<InterceptorTypeIdentifier | Interceptor> {
         return (
             this.interceptors?.map(interceptor => {
                 if (isInterceptorFunction(interceptor)) {

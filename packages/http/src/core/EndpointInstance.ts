@@ -5,7 +5,8 @@ import { RequestMethod } from './RequestMethod';
 import {
     Interceptor,
     InterceptorConstructor,
-    InterceptorTypeIdentifier
+    InterceptorTypeIdentifier,
+    isInterceptor
 } from './Interceptor';
 import { RequestAdapterConstructor } from '../adapter/RequestAdapter';
 
@@ -14,7 +15,7 @@ export interface EndpointInstance {
     [INTERCEPTORS]: Interceptor[];
     [ADAPTER]?: RequestAdapterConstructor;
     [CONSTRUCT_INTERCEPTORS]: (
-        interceptors: Array<InterceptorTypeIdentifier>
+        interceptors: Array<InterceptorTypeIdentifier | Interceptor>
     ) => Interceptor[];
 }
 export const METHODS = Symbol('endpoint-request-methods');
@@ -30,6 +31,9 @@ export function buildEndpointClass(
         return metadata
             .getInterceptors()
             .map(identifier => {
+                if (isInterceptor(identifier)) {
+                    return identifier;
+                }
                 return appCtx.getInstance(identifier);
             })
             .flat();

@@ -2,10 +2,12 @@ import { RequestAdapterConstructor } from '../adapter/RequestAdapter';
 import { EndpointInstance } from '../core/EndpointInstance';
 import { executeRequest } from '../core/executeRequest';
 import {
-    InterceptorConstructor,
-    InterceptorFunction
+    Interceptor,
+    InterceptorFunction,
+    InterceptorTypeIdentifier
 } from '../core/Interceptor';
 import { HttpMethod } from '../http/HttpMethod';
+import { RetryConfig } from '../interceptors/RetryInterceptor';
 import { EndpointMetadata } from '../metadata/EndpointMetadata';
 import { RequestMethodMetadata } from '../metadata/RequestMethodMetadata';
 
@@ -14,9 +16,10 @@ export interface RequestOptions {
     method: HttpMethod;
     headers?: Record<string, string | string[]>;
     interceptors?: Array<
-        InterceptorFunction | InterceptorConstructor | string | symbol
+        InterceptorTypeIdentifier | Interceptor | InterceptorFunction
     >;
     timeout?: number;
+    retry?: RetryConfig;
     adapter?: RequestAdapterConstructor;
 }
 export function Request(options: RequestOptions) {

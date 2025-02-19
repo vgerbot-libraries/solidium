@@ -87,4 +87,11 @@ export class HttpHeaders {
     clone() {
         return new HttpHeaders(this.headers);
     }
+    toJSON() {
+        const result: Record<string, string[]> = {};
+        this.headers.forEach((value, key) => {
+            result[key] = value;
+        });
+        return result;
+    }
 }

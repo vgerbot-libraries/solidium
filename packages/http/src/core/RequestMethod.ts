@@ -4,6 +4,9 @@ import { isURL } from '../common/isURL';
 import { joinPath } from '../common/joinPath';
 import { mergeAbortSignal } from '../common/mergeAbortSignal';
 import { resolveURL } from '../common/resolveURL';
+import { ErrorContextInterceptor } from '../interceptors/ErrorContextInterceptor';
+import { RetryInterceptor } from '../interceptors/RetryInterceptor';
+import { TimeoutInterceptor } from '../interceptors/TimeoutInterceptor';
 import { EndpointMetadata } from '../metadata/EndpointMetadata';
 import { RequestMethodMetadata } from '../metadata/RequestMethodMetadata';
 import {
@@ -14,9 +17,11 @@ import {
 } from './EndpointInstance';
 import { ExecuteRequestMethodParams } from './ExecuteRequestParams';
 import { HttpResponse } from './HttpResponse';
+import { Interceptor } from './Interceptor';
 
 export class RequestMethod {
     private readonly url: string;
+    private readonly baseInterceptors: Interceptor[] = [];
     constructor(
         public readonly name: string | symbol,
         public readonly endpointMetadata: EndpointMetadata,
@@ -28,14 +33,33 @@ export class RequestMethod {
         } else {
             this.url = joinPath(this.endpointMetadata.getBaseURL(), pathOrURL);
         }
+        this.baseInterceptors.push(new ErrorContextInterceptor());
+        const retryConfig = this.metadata.getRetryConfig();
+        if (retryConfig) {
+            this.baseInterceptors.push(new RetryInterceptor(retryConfig));
+        }
     }
 
     invoke(instance: EndpointInstance, params: ExecuteRequestMethodParams) {
-        const interceptors = instance[INTERCEPTORS];
+        const timeout =
+            this.metadata.getTimeout() || this.endpointMetadata.getTimeout();
+        const extInterceptors: Interceptor[] = [];
+        if (timeout > 0) {
+            extInterceptors.push(new TimeoutInterceptor({ timeout }));
+        } else if (timeout !== 0) {
+            extInterceptors.push(new TimeoutInterceptor());
+        }
+        const endpointInterceptors = instance[INTERCEPTORS];
         const methodInterceptors = instance[CONSTRUCT_INTERCEPTORS](
             this.metadata.getInterceptors()
         );
-        const allInterceptors = interceptors.concat(methodInterceptors);
+        const allInterceptors = [
+            ...this.baseInterceptors,
+            ...extInterceptors,
+            ...endpointInterceptors,
+            ...methodInterceptors
+        ];
+
         const sendRequest = allInterceptors.reduceRight(
             (next, interceptor) =>
                 (method: RequestMethod, params: ExecuteRequestMethodParams) => {
@@ -66,8 +90,6 @@ export class RequestMethod {
         );
         const method = this.metadata.getHttpMethod();
         const headers = this.metadata.getHeaders();
-        const timeout =
-            this.metadata.getTimeout() || this.endpointMetadata.getTimeout();
         const signal = mergeAbortSignal(
             this.metadata.getSignal(),
             params.signal
@@ -78,7 +100,6 @@ export class RequestMethod {
             headers: headers.concat(params.headers),
             payload: params.payload,
             signal,
-            timeout,
             invokeMethod: this
         };
         const adapter = new (params.adapter ??

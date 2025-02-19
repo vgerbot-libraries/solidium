@@ -6,15 +6,17 @@ export interface Interceptor {
     invoke(
         method: RequestMethod,
         params: ExecuteRequestMethodParams,
-        next: (
-            method: RequestMethod,
-            params: ExecuteRequestMethodParams
-        ) => Promise<HttpResponse>
+        next: InterceptorNextFunction
     ): Promise<HttpResponse>;
 }
 export type InterceptorConstructor = new () => Interceptor;
 
 export type InterceptorFunction = Interceptor['invoke'];
+
+export type InterceptorNextFunction = (
+    method: RequestMethod,
+    params: ExecuteRequestMethodParams
+) => Promise<HttpResponse>;
 
 export function isInterceptorFunction(
     value: unknown
@@ -30,6 +32,14 @@ export function isInterceptorConstructor(
     return (
         typeof value === 'function' &&
         typeof value.prototype['invoke'] === 'function'
+    );
+}
+export function isInterceptor(value: unknown): value is Interceptor {
+    return (
+        typeof value === 'object' &&
+        !!value &&
+        'invoke' in value &&
+        typeof value['invoke'] === 'function'
     );
 }
 export type InterceptorTypeIdentifier =

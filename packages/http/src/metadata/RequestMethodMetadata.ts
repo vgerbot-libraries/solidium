@@ -22,7 +22,9 @@ export class RequestMethodMetadata {
     ) {
         this.signal = new AbortSignal();
     }
-
+    getRetryConfig() {
+        return this.options.retry;
+    }
     appendExecutionHandler(handler: ExecutionHandler) {
         this.executionHandlers.push(handler);
     }
