@@ -1,3 +1,4 @@
+import { EndpointInstance } from '../core/EndpointInstance';
 import { ExecuteRequestMethodParams } from '../core/ExecuteRequestParams';
 import { HttpResponse } from '../core/HttpResponse';
 import { Interceptor, isInterceptorFunction } from '../core/Interceptor';
@@ -6,6 +7,7 @@ import { RequestOptions } from '../decorators/Request';
 import { HttpHeaders } from '../http/HttpHeaders';
 
 export type ExecutionHandler = (
+    instance: EndpointInstance,
     metadata: RequestMethodMetadata,
     params: ExecuteRequestMethodParams,
     args: unknown[]
@@ -13,10 +15,25 @@ export type ExecutionHandler = (
 
 export class RequestMethodMetadata {
     private readonly executionHandlers: ExecutionHandler[] = [];
-    constructor(private readonly options: RequestOptions) {}
+    private signal: AbortSignal;
+    constructor(
+        public readonly name: string | symbol,
+        private readonly options: RequestOptions
+    ) {
+        this.signal = new AbortSignal();
+    }
 
     appendExecutionHandler(handler: ExecutionHandler) {
         this.executionHandlers.push(handler);
+    }
+    getExecutionHandlers() {
+        return this.executionHandlers.slice(0);
+    }
+    appendSignal(signal: AbortSignal) {
+        this.signal = signal;
+    }
+    getSignal() {
+        return this.signal;
     }
     getPath() {
         return this.options.path;

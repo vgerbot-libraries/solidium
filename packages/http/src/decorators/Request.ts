@@ -1,6 +1,6 @@
 import { RequestAdapterConstructor } from '../adapter/RequestAdapter';
-import { EndpointInstance } from '../core/buildEndpointClass';
-import { executeReques } from '../core/executeRequest';
+import { EndpointInstance } from '../core/EndpointInstance';
+import { executeRequest } from '../core/executeRequest';
 import {
     InterceptorConstructor,
     InterceptorFunction
@@ -27,9 +27,9 @@ export function Request(options: RequestOptions) {
         if (!target || !('constructor' in target)) {
             return;
         }
-        const method = new RequestMethodMetadata(options);
         const propertyKey =
             typeof context === 'object' ? context.name : context;
+        const method = new RequestMethodMetadata(propertyKey, options);
         if (typeof context === 'string' || typeof context === 'symbol') {
             setupMethodMetadata();
             Reflect.defineProperty(target, propertyKey, {
@@ -48,7 +48,7 @@ export function Request(options: RequestOptions) {
         }
         function deletator(originFunction: Function) {
             return function (this: EndpointInstance, ...args: unknown[]) {
-                return executeReques(this, method, args, originFunction);
+                return executeRequest(this, method, args, originFunction);
             };
         }
     };

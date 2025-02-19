@@ -45,8 +45,8 @@ export class XMLHttpRequestAdapter implements RequestAdapter {
             if (this.isAborted) {
                 return;
             }
-            if (options.body) {
-                xhr.send(options.body);
+            if (options.payload) {
+                xhr.send(options.payload);
             }
         };
         xhr.addEventListener('readystatechange', () => {
@@ -59,11 +59,11 @@ export class XMLHttpRequestAdapter implements RequestAdapter {
             }
         });
         this.xhr = xhr;
-        if (options.singal.aborted) {
+        if (options.signal.aborted) {
             this.isAborted = true;
             xhr.abort();
         } else {
-            options.singal.addEventListener('abort', () => {
+            options.signal.addEventListener('abort', () => {
                 this.isAborted = true;
                 xhr.abort();
             });

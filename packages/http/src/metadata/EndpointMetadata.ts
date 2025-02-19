@@ -1,8 +1,5 @@
 import { RequestAdapterConstructor } from '../adapter/RequestAdapter';
-import {
-    buildEndpointClass,
-    EndpointInstance
-} from '../core/buildEndpointClass';
+import { buildEndpointClass, EndpointInstance } from '../core/EndpointInstance';
 import {
     InterceptorConstructor,
     InterceptorFunction,
@@ -70,12 +67,10 @@ export class EndpointMetadata {
         }
         if (endpointOptions.baseURL) {
             this.baseURL = endpointOptions.baseURL;
+        } else if (typeof document === 'object') {
+            this.baseURL = document.baseURI;
         } else {
-            if (typeof document === 'object') {
-                this.baseURL = document.baseURI;
-            } else {
-                throw new Error('baseURL is not set');
-            }
+            throw new Error('baseURL is not set');
         }
         if (endpointOptions.timeout) {
             this.timeout = endpointOptions.timeout;
@@ -97,14 +92,11 @@ export class EndpointMetadata {
             this.adapter = endpointOptions.adapter;
         }
     }
-    // getMethodMetadata(methodName: string | symbol) {
-    //     if (this.methods.has(methodName)) {
-    //         return this.methods.get(methodName);
-    //     }
-    //     const methodMetadata = new RequestMethodMetadata();
-    //     this.methods.set(methodName, methodMetadata);
-    //     return methodMetadata;
-    // }
+    getMethodMetadata(methodName: string | symbol) {
+        if (this.methods.has(methodName)) {
+            return this.methods.get(methodName);
+        }
+    }
     setMethodMetadata(
         methodName: string | symbol,
         methodMetadata: RequestMethodMetadata

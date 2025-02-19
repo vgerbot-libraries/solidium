@@ -84,4 +84,7 @@ export class HttpHeaders {
     [Symbol.toStringTag]() {
         return 'HttpHeaders';
     }
+    clone() {
+        return new HttpHeaders(this.headers);
+    }
 }

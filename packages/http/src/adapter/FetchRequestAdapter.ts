@@ -20,16 +20,16 @@ export class FetchRequestAdapter implements RequestAdapter {
     constructor(options: AdapterOptions) {
         this.executeRequestIfNeed = () => {
             this.executeRequestIfNeed = () => void 0;
-            options.singal.addEventListener('abort', () => {
+            options.signal.addEventListener('abort', () => {
                 this.abortController.abort();
             });
-            if (options.singal.aborted) {
+            if (options.signal.aborted) {
                 this.abortController.abort();
             }
             fetch(options.url, {
                 method: options.method,
                 headers: options.headers.toNative(),
-                body: options.body,
+                body: options.payload,
                 signal: this.abortController.signal
             }).then(response => {
                 this.status = response.status;

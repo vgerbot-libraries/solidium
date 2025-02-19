@@ -1,4 +1,4 @@
-import { EndpointMetadata } from '../metadata/EndpointMetadata';
+import { appendExecHandler } from '../common/appendExecHandler';
 
 export function Query(name: string, defaultValue?: string | number | boolean) {
     return function (
@@ -6,11 +6,13 @@ export function Query(name: string, defaultValue?: string | number | boolean) {
         methodName: string,
         parameterIndex: number
     ) {
-        const metadata =
-            EndpointMetadata.from(target).getMethodMetadata(methodName);
-        metadata?.appendExecutionHandler((metadata, params, args) => {
-            const value = args[parameterIndex];
-            params.queryParams[name] = (value ?? defaultValue) + '';
-        });
+        appendExecHandler(
+            target,
+            methodName,
+            (instance, metadata, params, args) => {
+                const value = args[parameterIndex];
+                params.queryParams[name] = (value ?? defaultValue) + '';
+            }
+        );
     };
 }

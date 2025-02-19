@@ -1,4 +1,4 @@
-import { EndpointMetadata } from '../metadata/EndpointMetadata';
+import { appendExecHandler } from '../common/appendExecHandler';
 
 export function PathVariable(
     name: string,
@@ -9,11 +9,13 @@ export function PathVariable(
         methodName: string,
         parameterIndex: number
     ) {
-        const metadata =
-            EndpointMetadata.from(target).getMethodMetadata(methodName);
-        metadata?.appendExecutionHandler((metadata, params, args) => {
-            const value = args[parameterIndex];
-            params.pathVariables[name] = (value ?? defaultValue) + '';
-        });
+        appendExecHandler(
+            target,
+            methodName,
+            (instance, metadata, params, args) => {
+                const value = args[parameterIndex];
+                params.pathVariables[name] = (value ?? defaultValue) + '';
+            }
+        );
     };
 }

@@ -32,3 +32,7 @@ export function isInterceptorConstructor(
         typeof value.prototype['invoke'] === 'function'
     );
 }
+export type InterceptorTypeIdentifier =
+    | InterceptorConstructor
+    | string
+    | symbol;

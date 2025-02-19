@@ -7,7 +7,7 @@ export interface AdapterOptions {
     method: HttpMethod;
     url: string;
     headers: HttpHeaders;
-    body: FormData | string | Blob | undefined;
+    payload: FormData | string | Blob | undefined;
     timeout: number;
-    singal: AbortSignal;
+    signal: AbortSignal;
 }

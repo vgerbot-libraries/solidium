@@ -1,40 +1,41 @@
 import { AdapterOptions } from '../adapter/AdapterOptions';
-import { RequestAdapterConstructor } from '../adapter/RequestAdapter';
+import { XMLHttpRequestAdapter } from '../adapter/XMLHTTPRequestAdapter';
 import { isURL } from '../common/isURL';
 import { joinPath } from '../common/joinPath';
+import { mergeAbortSignal } from '../common/mergeAbortSignal';
 import { resolveURL } from '../common/resolveURL';
-import { HttpHeaders } from '../http/HttpHeaders';
-import { HttpMethod } from '../http/HttpMethod';
+import { EndpointMetadata } from '../metadata/EndpointMetadata';
+import { RequestMethodMetadata } from '../metadata/RequestMethodMetadata';
+import {
+    CONSTRUCT_INTERCEPTORS,
+    ADAPTER,
+    INTERCEPTORS,
+    EndpointInstance
+} from './EndpointInstance';
 import { ExecuteRequestMethodParams } from './ExecuteRequestParams';
 import { HttpResponse } from './HttpResponse';
-import { Interceptor } from './Interceptor';
-import { RequestEndpoint } from './RequestEndpoint';
 
 export class RequestMethod {
     private readonly url: string;
-    private readonly interceptors: Interceptor[] = [];
-    private readonly timeout: number;
-    private readonly adapter: RequestAdapterConstructor;
     constructor(
-        public readonly endpoint: RequestEndpoint,
-        public readonly method: HttpMethod,
-        private readonly headers: HttpHeaders,
-        adapter: RequestAdapterConstructor | undefined,
-        timeout: number,
-        pathOrURL: string
+        public readonly name: string | symbol,
+        public readonly endpointMetadata: EndpointMetadata,
+        private readonly metadata: RequestMethodMetadata
     ) {
+        const pathOrURL = metadata.getPath();
         if (isURL(pathOrURL)) {
             this.url = pathOrURL;
         } else {
-            this.url = joinPath(this.endpoint.baseURL, pathOrURL);
+            this.url = joinPath(this.endpointMetadata.getBaseURL(), pathOrURL);
         }
-        this.adapter = adapter ?? endpoint.adapter;
-        this.timeout = timeout || this.endpoint.timeout;
     }
 
-    invoke(params: ExecuteRequestMethodParams) {
-        const interceptors = this.endpoint.getInterceptors();
-        const allInterceptors = interceptors.concat(this.interceptors);
+    invoke(instance: EndpointInstance, params: ExecuteRequestMethodParams) {
+        const interceptors = instance[INTERCEPTORS];
+        const methodInterceptors = instance[CONSTRUCT_INTERCEPTORS](
+            this.metadata.getInterceptors()
+        );
+        const allInterceptors = interceptors.concat(methodInterceptors);
         const sendRequest = allInterceptors.reduceRight(
             (next, interceptor) =>
                 (method: RequestMethod, params: ExecuteRequestMethodParams) => {
@@ -44,7 +45,7 @@ export class RequestMethod {
                 method: RequestMethod,
                 params: ExecuteRequestMethodParams
             ): Promise<HttpResponse> => {
-                const adapter = method.createAdapter(params);
+                const adapter = method.createAdapter(instance, params);
                 const source = await adapter.execute();
                 return new HttpResponse(source, {
                     status: source.status,
@@ -54,24 +55,36 @@ export class RequestMethod {
         );
         return sendRequest(this, params);
     }
-    private createAdapter(params: ExecuteRequestMethodParams) {
+    private createAdapter(
+        instance: EndpointInstance,
+        params: ExecuteRequestMethodParams
+    ) {
         const url = resolveURL(
             this.url,
             params.pathVariables ?? {},
             params.queryParams ?? {}
         );
+        const method = this.metadata.getHttpMethod();
+        const headers = this.metadata.getHeaders();
+        const timeout =
+            this.metadata.getTimeout() || this.endpointMetadata.getTimeout();
+        const signal = mergeAbortSignal(
+            this.metadata.getSignal(),
+            params.signal
+        );
         const options: AdapterOptions = {
             url,
-            method: this.method,
-            headers: this.headers.concat(params.headers),
-            body: params.payload,
-            singal: params.signal,
-            timeout: this.timeout,
+            method,
+            headers: headers.concat(params.headers),
+            payload: params.payload,
+            signal,
+            timeout,
             invokeMethod: this
         };
         const adapter = new (params.adapter ??
-            this.adapter ??
-            this.endpoint.adapter)(options);
+            this.metadata.getAdapter() ??
+            instance[ADAPTER] ??
+            XMLHttpRequestAdapter)(options);
         return adapter;
     }
 }
