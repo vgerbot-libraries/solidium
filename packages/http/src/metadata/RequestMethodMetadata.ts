@@ -5,6 +5,7 @@ import { Interceptor, isInterceptorFunction } from '../core/Interceptor';
 import { RequestMethod } from '../core/RequestMethod';
 import { RequestOptions } from '../decorators/Request';
 import { HttpHeaders } from '../http/HttpHeaders';
+import { SWRConfig } from '../swr/SWRConfig';
 
 export type ExecutionHandler = (
     instance: EndpointInstance,
@@ -16,11 +17,21 @@ export type ExecutionHandler = (
 export class RequestMethodMetadata {
     private readonly executionHandlers: ExecutionHandler[] = [];
     private signal: AbortSignal;
+    private swrConfig?: SWRConfig;
     constructor(
         public readonly name: string | symbol,
         private readonly options: RequestOptions
     ) {
         this.signal = new AbortSignal();
+    }
+    appendSWRConfig(config: SWRConfig) {
+        this.swrConfig = {
+            ...this.swrConfig,
+            ...config
+        };
+    }
+    getSWRConfig() {
+        return this.swrConfig;
     }
     getRetryConfig() {
         return this.options.retry;
