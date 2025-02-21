@@ -9,7 +9,6 @@ import html from '@rollup/plugin-html';
 import serve from '@rollup-extras/plugin-serve';
 import alias from '@rollup/plugin-alias';
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
 const pkg = require(path.resolve(process.cwd(), 'package.json'));
 
 const inputFile = path.resolve(process.cwd(), 'src/index.ts');

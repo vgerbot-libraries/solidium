@@ -12,7 +12,7 @@ export default tseslint.config(
     // 自定义配置需要放在strict配置之前以覆盖其规则
     [
         {
-            files: ['**/*.ts', '**/*.tsx'],  // 使用**匹配嵌套目录
+            files: ['**/*.ts', '**/*.tsx'], // 使用**匹配嵌套目录
             rules: {
                 'no-console': 'off',
                 'no-bitwise': 'off',
@@ -26,7 +26,10 @@ export default tseslint.config(
             },
             languageOptions: {
                 parserOptions: {
-                    project: [__dirname + '/tsconfig.json', __dirname + '/tsconfig.test.json']
+                    project: [
+                        __dirname + '/tsconfig.json',
+                        __dirname + '/tsconfig.test.json'
+                    ]
                 },
                 globals: {
                     ...globals.browser
@@ -34,26 +37,36 @@ export default tseslint.config(
             }
         },
         {
+            files: ['build/*.ts'],
+            languageOptions: {
+                parserOptions: {
+                    project: [__dirname + '/build/tsconfig.json']
+                },
+                globals: {
+                    ...globals.node
+                }
+            },
+            rules: {
+                '@typescript-eslint/no-require-imports': 'off'
+            }
+        },
+        {
             files: ['scripts/*.mjs'],
             languageOptions: {
                 globals: {
                     ...globals.node,
-                    '$': 'readonly',
-                    'fs': 'readonly',
-                    'path': 'readonly',
-                    'argv': 'readonly'
+                    $: 'readonly',
+                    fs: 'readonly',
+                    path: 'readonly',
+                    argv: 'readonly'
                 }
             },
             rules: {
-                "@typescript-eslint/no-require-imports": 'off'
+                '@typescript-eslint/no-require-imports': 'off'
             }
         },
         {
-            ignores: [
-                '**/lib',
-                '.github',
-                '.husky'
-            ],
+            ignores: ['**/lib', '.github', '.husky', '**/dist'],
             plugins: {
                 prettier: prettier
             },
@@ -62,4 +75,4 @@ export default tseslint.config(
             }
         }
     ]
-)
+);
