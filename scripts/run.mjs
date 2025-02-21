@@ -25,5 +25,5 @@ if (typeof target !== 'string' || !target) {
 
     process.env.PACKAGE_NAME = packageName;
 
-    await $`pnpm exec --package=$PACKAGE_NAME -- zx $ROOT_DIR/scripts/$SCRIPT_NAME.mjs ${args._}`;
+    await $`pnpm -r --filter $PACKAGE_NAME exec zx $ROOT_DIR/scripts/$SCRIPT_NAME.mjs ${args._}`;
 }
