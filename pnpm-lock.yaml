@@ -157,11 +157,32 @@ importers:
         specifier: workspace:1.0.0
         version: link:../../solidium
       reflect-metadata:
-        specifier: ^0.2.1
+        specifier: ^0.2.2
         version: 0.2.2
       solid-js:
-        specifier: ^1.8.7
-        version: 1.9.2
+        specifier: ^1.9.4
+        version: 1.9.4
+      tslib:
+        specifier: ^2.8.1
+        version: 2.8.1
+
+  packages/examples/swr:
+    dependencies:
+      '@vgerbot/http':
+        specifier: workspace:1.0.0
+        version: link:../../http
+      '@vgerbot/solidium':
+        specifier: workspace:1.0.0
+        version: link:../../solidium
+      reflect-metadata:
+        specifier: ^0.2.2
+        version: 0.2.2
+      solid-js:
+        specifier: ^1.9.4
+        version: 1.9.4
+      tslib:
+        specifier: ^2.8.1
+        version: 2.8.1
 
   packages/examples/todolist:
     dependencies:
@@ -169,11 +190,14 @@ importers:
         specifier: workspace:1.0.0
         version: link:../../solidium
       reflect-metadata:
-        specifier: ^0.2.1
+        specifier: ^0.2.2
         version: 0.2.2
       solid-js:
-        specifier: ^1.8.7
-        version: 1.9.2
+        specifier: ^1.9.4
+        version: 1.9.4
+      tslib:
+        specifier: ^2.8.1
+        version: 2.8.1
 
   packages/http:
     dependencies:
@@ -4713,9 +4737,6 @@ packages:
   socks@2.8.3:
     resolution: {integrity: sha512-l5x7VUUWbjVFbafGLxPWkYsHIhEvmF85tbIeFZWc8ZPtoMyybuEhL7Jye/ooC4/d48FgOjSJXgsF/AJPYCW8Zw==}
     engines: {node: '>= 10.0.0', npm: '>= 3.0.0'}
-
-  solid-js@1.9.2:
-    resolution: {integrity: sha512-fe/K03nV+kMFJYhAOE8AIQHcGxB4rMIEoEyrulbtmf217NffbbwBqJnJI4ovt16e+kaIt0czE2WA7mP/pYN9yg==}
 
   solid-js@1.9.4:
     resolution: {integrity: sha512-ipQl8FJ31bFUoBNScDQTG3BjN6+9Rg+Q+f10bUbnO6EOTTf5NGerJeHc7wyu5I4RMHEl/WwZwUmy/PTRgxxZ8g==}
@@ -10860,12 +10881,6 @@ snapshots:
     dependencies:
       ip-address: 9.0.5
       smart-buffer: 4.2.0
-
-  solid-js@1.9.2:
-    dependencies:
-      csstype: 3.1.3
-      seroval: 1.1.1
-      seroval-plugins: 1.1.1(seroval@1.1.1)
 
   solid-js@1.9.4:
     dependencies:
