@@ -2,29 +2,48 @@ import { Newable } from '@vgerbot/ioc';
 
 export interface RevalidateOptions {
     /**
-     * Trigger revalidate when window is focused
+     * Auto revalidate on window focus
+     * @default true
      */
     focus: boolean;
     /**
-     * Trigger revalidate when network connection is restored
+     * Auto revalidate on network recovery
+     * @default true
      */
     reconnect: boolean;
     /**
-     * Trigger revalidate when global events are triggered
+     * Auto revalidate when data becomes stale
+     * @default true
+     */
+    ifStale?: boolean;
+    /**
+     * Custom events that trigger revalidation
+     * @default []
      */
     events: string[];
 }
 
 export interface SWRRetryContext {
+    /**
+     * The error that triggered the retry
+     */
     error: unknown;
+    /**
+     * The current retry attempt number (starting from 1)
+     */
     attempt: number;
+    /**
+     * Timestamp of when the error occurred
+     */
+    timestamp: number;
 }
+
 /**
  * Dynamically calculates the delay time (in milliseconds) for error retries.
  *
  * This function is used in error retry mechanisms to dynamically adjust the wait time for the next retry
  * based on the current retry attempt and the error type. By implementing strategies such as exponential backoff,
- * linear backoff, or custom logic, it helps prevent request storms, optimize resource utilization, 
+ * linear backoff, or custom logic, it helps prevent request storms, optimize resource utilization,
  * and improve user experience.
  *
  * @param attempt - The current retry attempt (starting from 1).
@@ -36,46 +55,32 @@ export interface SWRRetryContext {
  * const defaultCalculateDelay = (attempt: number) => {
  *   const baseInterval = 1000; // Base interval
  *   const maxInterval = 30000; // Maximum interval
- *   return Math.min(baseInterval * Math.pow(2, attempt - 1), maxInterval);
+ *   const jitter = Math.random() * 100; // Add jitter to prevent thundering herd
+ *   return Math.min(baseInterval * Math.pow(2, attempt - 1), maxInterval) + jitter;
  * };
- *
- * @example
- * // Linear backoff strategy
- * const linearDelay = (attempt: number) => attempt * 1000;
- *
- * @example
- * // Randomized backoff strategy
- * const randomDelay = (attempt: number) => Math.random() * 1000 * attempt;
- *
- * @example
- * // Dynamic backoff strategy based on error type
- * const dynamicDelay = (attempt: number, error: unknown) => {
- *   if (isNetworkError(error)) {
- *     return attempt * 1000; // Linear backoff for network errors
- *   }
- *   if (isServerError(error)) {
- *     return Math.min(5000 * attempt, 30000); // Longer backoff for server errors
- *   }
- *   return 0; // Immediate retry for other errors
- * };
- *
- * @example
- * // Fixed interval strategy
- * const fixedDelay = () => 2000; // Fixed 2-second delay for all retries
- *
- * @note
- * - If `calculateDelay` is not provided, the default exponential backoff strategy will be used.
- * - The returned delay time must be greater than or equal to `0`. If `0` is returned, the retry will occur immediately.
- * - It is recommended to use `calculateDelay` in conjunction with `maxAttempts` and `shouldRetry` to ensure reasonable 
- retry behavior.
- * - In high-concurrency scenarios, a randomized backoff strategy is recommended to avoid simultaneous retries.
  */
 export type CalculateDelay = (attempt: number, error?: unknown) => number;
 
 export interface SWRRetryConfig {
+    /**
+     * Maximum number of retry attempts
+     * @default 3
+     */
     maxAttempts: number;
+    /**
+     * Base interval between retries in milliseconds
+     * @default 1000
+     */
     interval: number;
+    /**
+     * Custom function to calculate delay between retries
+     */
     calculateDelay?: CalculateDelay;
+    /**
+     * Custom function to determine if a retry should be attempted based on the error
+     * @param ctx - Context containing error details and attempt count
+     * @returns boolean indicating whether to retry
+     */
     shouldRetryOnError?: (ctx: SWRRetryContext) => boolean;
 }
 
@@ -87,42 +92,89 @@ export interface RevalidateStrategy {
     invoke(revalidate: (reason?: string) => void): void;
 }
 
-export interface SWRCachingConfig {
-    /**
-     * Data expiration time (milliseconds), automatic revalidation after expiration
-     */
-    staleTime?: number;
-    /**
-     * Data deduplication interval (milliseconds) to prevent repeated requests in a short time
-     */
-    dedupingInterval?: number;
+export function isRevalidateStrategyClass(
+    value: unknown
+): value is RevalidateStrategy {
+    return (
+        typeof value === 'function' &&
+        'invoke' in value.prototype &&
+        typeof value.prototype['invoke'] === 'function'
+    );
+}
+export function isRevalidateStrategyFunction(
+    value: unknown
+): value is RevalidateStrategyFunction {
+    return typeof value === 'function' && !isRevalidateStrategyClass(value);
 }
 
 export interface SWRThrottleConfig {
+    /**
+     * Throttle interval in milliseconds
+     */
     interval: number;
+    /**
+     * Whether to trigger on the leading edge of the timeout
+     * @default true
+     */
     leading?: boolean;
+    /**
+     * Whether to trigger on the trailing edge of the timeout
+     * @default true
+     */
     trailing?: boolean;
 }
+
 export interface SWRRefreshConfig {
     /**
-     * The time interval for automatic reverification (milliseconds), if set to 0, it will be disabled
+     * Polling interval in milliseconds. 0 to disable
+     * @default 0
      */
     interval?: number;
     /**
-     * Whether the window is still refreshed automatically when it is not visible
+     * Continue polling when window is invisible
+     * @default false
      */
     whenHidden?: boolean;
+    /**
+     * Continue polling when offline
+     * @default false
+     */
+    whenOffline?: boolean;
 }
+
 export interface SWRConfig {
+    /**
+     * Revalidation configuration
+     */
     revalidate: {
         on: RevalidateOptions;
-        strategy: Newable<RevalidateStrategy> | RevalidateStrategyFunction;
+        strategy?: Newable<RevalidateStrategy> | RevalidateStrategyFunction;
     };
+    /**
+     * Event throttling configuration
+     */
     throttle?: {
+        /**
+         * Custom event throttle configurations
+         */
         [event: string]: SWRThrottleConfig;
     };
-
+    /**
+     * Error retry configuration
+     */
     retry?: SWRRetryConfig;
+    /**
+     * Auto refresh configuration
+     */
     refresh?: SWRRefreshConfig;
-    caching?: SWRCachingConfig;
+    /**
+     * Data expiration time in milliseconds. 0 for no expiration
+     * @default 0
+     */
+    staleTime?: number;
+    /**
+     * Deduplication interval in milliseconds
+     * @default 2000
+     */
+    dedupingInterval?: number;
 }
