@@ -2,11 +2,11 @@ import { Signal, createSignal } from 'solid-js';
 
 export class SignalMap {
     private readonly store = new WeakMap<
-        Object,
+        object,
         Map<string | number | symbol, Signal<unknown>>
     >();
     get(
-        object: Object,
+        object: object,
         key: string | number | symbol,
         initValue?: unknown
     ): Signal<unknown> {
@@ -23,7 +23,7 @@ export class SignalMap {
         }
         return signal;
     }
-    delete(object: Object, key: string | number | symbol) {
+    delete(object: object, key: string | number | symbol) {
         const signalMap = this.store.get(object);
         if (signalMap) {
             signalMap.delete(key);

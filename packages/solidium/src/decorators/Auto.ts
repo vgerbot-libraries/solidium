@@ -1,9 +1,9 @@
-import { getOwner, runWithOwner } from 'solid-js';
 import {
     defineSignalMember,
     isSignalMember
 } from '../helper/defineSignalMember';
 import { defineClassDecoratorProcessor } from '../core/defineClassDecoratorProcessor';
+import { runWithSolidiumOwner } from '../core/owner';
 
 export const SOLIDIUM_MARK_CLASS_AUTO = Symbol('solidium-mark-class-auto');
 
@@ -13,7 +13,7 @@ export const Auto = defineClassDecoratorProcessor(SOLIDIUM_MARK_CLASS_AUTO, {
             return instance;
         }
         const prototype = Object.getPrototypeOf(instance);
-        const owner = getOwner();
+
         return new Proxy(instance, {
             get(target, p, receiver) {
                 if (typeof prototype[p] === 'function') {
@@ -23,7 +23,7 @@ export const Auto = defineClassDecoratorProcessor(SOLIDIUM_MARK_CLASS_AUTO, {
                     delete target[p];
                     return Reflect.get(target, p, receiver);
                 }
-                runWithOwner(owner, () => {
+                runWithSolidiumOwner(target, () => {
                     defineSignalMember(prototype, p, target[p]);
                     delete target[p];
                 });

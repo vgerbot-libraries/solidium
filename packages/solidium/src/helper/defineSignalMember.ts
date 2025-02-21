@@ -9,6 +9,7 @@ import {
     SetterInterceptorFunction,
     combineSetterInterceptor
 } from '../common/interceptor';
+import { getOwner, runWithOwner, Signal } from 'solid-js';
 
 const signalMap = new SignalMap();
 
@@ -33,21 +34,25 @@ export function defineSignalMember<T>(
     if (_isSignalMember) {
         return;
     }
-    const extraDataOfMember = extraDataOf(target as Object, member);
+    const extraDataOfMember = extraDataOf(target as object, member);
     extraDataOfMember?.set(IS_SIGNAL_MEMBER_METADATA_KEY, true);
 
     defaultValue = arguments.length === 3 ? defaultValue : descriptor?.value;
-
+    const owner = getOwner();
     Object.defineProperty(target, member, {
         get: function () {
-            const [get] = signalMap.get(this, member, defaultValue);
+            const [get] = runWithOwner(owner, () => {
+                return signalMap.get(this, member, defaultValue);
+            }) as Signal<unknown>;
             if (interceptors?.getter) {
                 return interceptors.getter.call(this, get());
             }
             return get();
         },
         set: function (newValue) {
-            const [get, set] = signalMap.get(this, member);
+            const [get, set] = runWithOwner(owner, () => {
+                return signalMap.get(this, member);
+            }) as Signal<unknown>;
             const interceptorMap = (target as SetterInterceptorTarget<T>)[
                 SETTER_INTERCEPTOR_MAP_KEY
             ];
@@ -61,7 +66,7 @@ export function defineSignalMember<T>(
             } else {
                 interceptor = setterInterceptor || interceptors?.setter;
             }
-            return set(
+            set(
                 interceptor ? interceptor.call(this, get(), newValue) : newValue
             );
         }
@@ -69,10 +74,10 @@ export function defineSignalMember<T>(
 }
 
 export function isSignalMember<T>(target: T, member: MemberKey) {
-    const extraDataOfMember = extraDataOf(target as Object, member);
+    const extraDataOfMember = extraDataOf(target as object, member);
     return !!extraDataOfMember?.get(IS_SIGNAL_MEMBER_METADATA_KEY);
 }
 
 export function getSignal<T>(instance: T, member: MemberKey) {
-    return signalMap.get(instance as Object, member);
+    return signalMap.get(instance as object, member);
 }

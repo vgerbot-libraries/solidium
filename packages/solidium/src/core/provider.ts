@@ -4,12 +4,19 @@ import {
     InstanceScope,
     Newable
 } from '@vgerbot/ioc';
-import { ParentProps, createContext, createRoot } from 'solid-js';
+import {
+    Owner,
+    ParentProps,
+    createContext,
+    createRoot,
+    getOwner
+} from 'solid-js';
 import { createComponent } from 'solid-js/web';
 import { afterInstantiation, beforeInstantiation } from './processor';
 import { Identifier } from '@vgerbot/ioc/dist/types/Identifier';
 import { COMPONENT_TREE_SCOPE } from '../decorators/ComponentTreeScope';
 import { ComponentTreeScopeInstanceResolution } from '../ioc/ScopedInstanceResolution';
+import { setupOwner } from './owner';
 
 export const IoCContext = createContext<ApplicationContext>();
 
@@ -60,6 +67,13 @@ export function Solidium(props: SolidiumProps) {
     ) {
         return beforeInstantiation(constructor, appCtx);
     });
+    const owner = getOwner();
+    appCtx.registerAfterInstantiationProcessor(
+        <T extends object>(instance: T) => {
+            setupOwner(instance, owner as Owner);
+            return instance;
+        }
+    );
     appCtx.registerAfterInstantiationProcessor(function <T extends object>(
         instance: T
     ) {

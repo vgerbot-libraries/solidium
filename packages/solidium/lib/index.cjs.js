@@ -1,10 +1,8 @@
 'use strict';
 
-Object.defineProperty(exports, '__esModule', { value: true });
-
-var web = require('solid-js/web');
 var ioc = require('@vgerbot/ioc');
 var solidJs = require('solid-js');
+var web = require('solid-js/web');
 
 /******************************************************************************
 Copyright (c) Microsoft Corporation.
@@ -20,7 +18,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ***************************************************************************** */
-/* global Reflect, Promise, SuppressedError, Symbol */
+/* global Reflect, Promise, SuppressedError, Symbol, Iterator */
 
 var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf ||
@@ -66,10 +64,14 @@ typeof SuppressedError === "function" ? SuppressedError : function (error, suppr
 var IS_MEMBER_DECORATOR_PROCESSOR = Symbol('solidium-is-member-decorator-processor');
 var IS_CLASS_DECORATOR_PROCESSOR = Symbol('solidium-is-class-decorator-processor');
 
+function hasOwn(object, propertyKey) {
+  return Object.prototype.hasOwnProperty.call(object, propertyKey);
+}
+
 var SOLIDIUM_MEMBER_DECORATOR_PROCESSOR_KEY = Symbol('solidium-member-decorator-processors');
 var SOLIDIUM_CLASS_DECORATOR_PROCESSOR_KEY = Symbol('solidium-class-decorator-processors');
 function initClassDecoratorProcessorsSet(constructor, container) {
-  if (constructor.hasOwnProperty(SOLIDIUM_CLASS_DECORATOR_PROCESSOR_KEY)) {
+  if (hasOwn(constructor, SOLIDIUM_CLASS_DECORATOR_PROCESSOR_KEY)) {
     return;
   }
   var metadata = ioc.ClassMetadata.getInstance(constructor).reader();
@@ -95,11 +97,12 @@ function initClassDecoratorProcessorsSet(constructor, container) {
     value: allClassDecoratorProcessor
   });
   allClassDecoratorProcessor.forEach(function (processor) {
-    processor.beforeInstantiation && processor.beforeInstantiation(constructor, metadata, container);
+    var _a;
+    (_a = processor.beforeInstantiation) === null || _a === undefined ? undefined : _a.call(processor, constructor, metadata, container);
   });
 }
 function initMemberDecoratorProcessorsSet(constructor, container) {
-  if (constructor.hasOwnProperty(SOLIDIUM_MEMBER_DECORATOR_PROCESSOR_KEY)) {
+  if (hasOwn(constructor, SOLIDIUM_MEMBER_DECORATOR_PROCESSOR_KEY)) {
     return;
   }
   var metadata = ioc.ClassMetadata.getInstance(constructor).reader();
@@ -113,7 +116,7 @@ function initMemberDecoratorProcessorsSet(constructor, container) {
     var markInfoMembers = __spreadArray(__spreadArray([], Object.getOwnPropertyNames(markInfo), true), Object.getOwnPropertySymbols(markInfo), true);
     markInfoMembers.forEach(function (key) {
       var markData = markInfo[key];
-      if (markData == null || markData == undefined || typeof markData !== 'object' || !markData[IS_MEMBER_DECORATOR_PROCESSOR]) {
+      if (markData == null || typeof markData !== 'object' || !markData[IS_MEMBER_DECORATOR_PROCESSOR]) {
         return;
       }
       var processors = allMemberDecoratorProcessors.get(member) || new Set();
@@ -146,7 +149,7 @@ function afterInstantiation(instance, container) {
   var constructor = instance.constructor;
   var metadata = ioc.ClassMetadata.getInstance(constructor).reader();
   var allClassProcessors = constructor[SOLIDIUM_CLASS_DECORATOR_PROCESSOR_KEY];
-  if (!!allClassProcessors) {
+  if (allClassProcessors) {
     allClassProcessors.forEach(function (processor) {
       var newInstance = processor.afterInstantiation && processor.afterInstantiation(instance, metadata, container);
       if (newInstance instanceof constructor) {
@@ -155,7 +158,7 @@ function afterInstantiation(instance, container) {
     });
   }
   var allMemberProcessors = constructor[SOLIDIUM_MEMBER_DECORATOR_PROCESSOR_KEY];
-  if (!!allMemberProcessors) {
+  if (allMemberProcessors) {
     allMemberProcessors.forEach(function (processors, member) {
       processors.forEach(function (processor) {
         if (processor.afterInstantiation) {
@@ -221,7 +224,7 @@ var ComponentTreeScopeInstanceResolution = /** @class */function () {
     if (!solidOwner) {
       return;
     }
-    return (_b = (_a = solidOwner.instances) === null || _a === void 0 ? void 0 : _a.get(options.identifier)) === null || _b === void 0 ? void 0 : _b.instance;
+    return (_b = (_a = solidOwner.instances) === null || _a === undefined ? undefined : _a.get(options.identifier)) === null || _b === undefined ? undefined : _b.instance;
   };
   ComponentTreeScopeInstanceResolution.prototype.destroy = function () {
     var _this = this;
@@ -251,12 +254,21 @@ var ComponentTreeScopeInstanceResolution = /** @class */function () {
       if (hasInstance) {
         return owner;
       }
-      owner = (_a = owner.owner) === null || _a === void 0 ? void 0 : _a.owner;
+      owner = (_a = owner.owner) === null || _a === undefined ? undefined : _a.owner;
     }
     return owner;
   };
   return ComponentTreeScopeInstanceResolution;
 }();
+
+var SOLIDIUM_SOLID_OWNER_PROPERTY_KEY = Symbol('solidium-solid-owner-property');
+function runWithSolidiumOwner(instance, callback) {
+  var owner = Reflect.get(instance, SOLIDIUM_SOLID_OWNER_PROPERTY_KEY);
+  return solidJs.runWithOwner(owner, callback);
+}
+function setupOwner(instance, owner) {
+  Reflect.set(instance, SOLIDIUM_SOLID_OWNER_PROPERTY_KEY, owner);
+}
 
 var IoCContext = solidJs.createContext();
 var ServiceInstanceStatusManager = /** @class */function () {
@@ -300,6 +312,11 @@ function Solidium(props) {
   appCtx.registerBeforeInstantiationProcessor(function (constructor) {
     return beforeInstantiation(constructor, appCtx);
   });
+  var owner = solidJs.getOwner();
+  appCtx.registerAfterInstantiationProcessor(function (instance) {
+    setupOwner(instance, owner);
+    return instance;
+  });
   appCtx.registerAfterInstantiationProcessor(function (instance) {
     return afterInstantiation(instance, appCtx);
   });
@@ -307,7 +324,7 @@ function Solidium(props) {
   if (typeof props.init === 'function') {
     props.init(appCtx);
   }
-  (_a = props.autoRegisterClasses) === null || _a === void 0 ? void 0 : _a.forEach(function (cls) {
+  (_a = props.autoRegisterClasses) === null || _a === undefined ? undefined : _a.forEach(function (cls) {
     appCtx.getInstance(cls);
   });
   return web.createComponent(IoCContext.Provider, {
@@ -396,8 +413,8 @@ var signalMap = new SignalMap();
 var IS_SIGNAL_MEMBER_METADATA_KEY = 'is_signal_member_metadata_key';
 function defineSignalMember(target, member, defaultValue, interceptors) {
   var descriptor = Object.getOwnPropertyDescriptor(target, member);
-  var hasGetter = !!(descriptor === null || descriptor === void 0 ? void 0 : descriptor.get);
-  var hasSetter = !!(descriptor === null || descriptor === void 0 ? void 0 : descriptor.set);
+  var hasGetter = !!(descriptor === null || descriptor === undefined ? undefined : descriptor.get);
+  var hasSetter = !!(descriptor === null || descriptor === undefined ? undefined : descriptor.set);
   if (hasGetter || hasSetter) {
     return;
   }
@@ -406,35 +423,42 @@ function defineSignalMember(target, member, defaultValue, interceptors) {
     return;
   }
   var extraDataOfMember = extraDataOf(target, member);
-  extraDataOfMember === null || extraDataOfMember === void 0 ? void 0 : extraDataOfMember.set(IS_SIGNAL_MEMBER_METADATA_KEY, true);
-  defaultValue = arguments.length === 3 ? defaultValue : descriptor === null || descriptor === void 0 ? void 0 : descriptor.value;
+  extraDataOfMember === null || extraDataOfMember === undefined ? undefined : extraDataOfMember.set(IS_SIGNAL_MEMBER_METADATA_KEY, true);
+  defaultValue = arguments.length === 3 ? defaultValue : descriptor === null || descriptor === undefined ? undefined : descriptor.value;
+  var owner = solidJs.getOwner();
   Object.defineProperty(target, member, {
     get: function () {
-      var get = signalMap.get(this, member, defaultValue)[0];
-      if (interceptors === null || interceptors === void 0 ? void 0 : interceptors.getter) {
+      var _this = this;
+      var get = solidJs.runWithOwner(owner, function () {
+        return signalMap.get(_this, member, defaultValue);
+      })[0];
+      if (interceptors === null || interceptors === undefined ? undefined : interceptors.getter) {
         return interceptors.getter.call(this, get());
       }
       return get();
     },
     set: function (newValue) {
-      var _a = signalMap.get(this, member),
+      var _this = this;
+      var _a = solidJs.runWithOwner(owner, function () {
+          return signalMap.get(_this, member);
+        }),
         get = _a[0],
         set = _a[1];
       var interceptorMap = target[SETTER_INTERCEPTOR_MAP_KEY];
       var interceptor;
-      var setterInterceptor = interceptorMap === null || interceptorMap === void 0 ? void 0 : interceptorMap.get(member);
-      if (setterInterceptor && (interceptors === null || interceptors === void 0 ? void 0 : interceptors.setter)) {
+      var setterInterceptor = interceptorMap === null || interceptorMap === undefined ? undefined : interceptorMap.get(member);
+      if (setterInterceptor && (interceptors === null || interceptors === undefined ? undefined : interceptors.setter)) {
         interceptor = combineSetterInterceptor(setterInterceptor, interceptors.setter);
       } else {
-        interceptor = setterInterceptor || (interceptors === null || interceptors === void 0 ? void 0 : interceptors.setter);
+        interceptor = setterInterceptor || (interceptors === null || interceptors === undefined ? undefined : interceptors.setter);
       }
-      return set(interceptor ? interceptor.call(this, get(), newValue) : newValue);
+      set(interceptor ? interceptor.call(this, get(), newValue) : newValue);
     }
   });
 }
 function isSignalMember(target, member) {
   var extraDataOfMember = extraDataOf(target, member);
-  return !!(extraDataOfMember === null || extraDataOfMember === void 0 ? void 0 : extraDataOfMember.get(IS_SIGNAL_MEMBER_METADATA_KEY));
+  return !!(extraDataOfMember === null || extraDataOfMember === undefined ? undefined : extraDataOfMember.get(IS_SIGNAL_MEMBER_METADATA_KEY));
 }
 function getSignal(instance, member) {
   return signalMap.get(instance, member);
@@ -477,7 +501,7 @@ var OBSERVE_PROPERTY_MARK_KEY = Symbol('solidium_observed_property');
  * @returns an method decorator
  */
 function Observe(options) {
-  if (options === void 0) {
+  if (options === undefined) {
     options = {};
   }
   return defineMemberDecoratorProcessor(OBSERVE_PROPERTY_MARK_KEY, {
@@ -527,9 +551,9 @@ var Computed = defineMemberDecoratorProcessor(COMPUTED_GETTER_MARK_KEY, {
   afterInstantiation: function (instance, member) {
     var prototype = Object.getPrototypeOf(instance);
     var descriptor = Object.getOwnPropertyDescriptor(prototype, member);
-    var originGetter = descriptor === null || descriptor === void 0 ? void 0 : descriptor.get;
+    var originGetter = descriptor === null || descriptor === undefined ? undefined : descriptor.get;
     var hasGetter = !!originGetter;
-    var hasSetter = !!(descriptor === null || descriptor === void 0 ? void 0 : descriptor.set);
+    var hasSetter = !!(descriptor === null || descriptor === undefined ? undefined : descriptor.set);
     if (!hasGetter) {
       // WARNING
       return instance;
@@ -540,7 +564,7 @@ var Computed = defineMemberDecoratorProcessor(COMPUTED_GETTER_MARK_KEY, {
     }
     var getter = useComputed(function () {
       var _a;
-      return (_a = descriptor === null || descriptor === void 0 ? void 0 : descriptor.get) === null || _a === void 0 ? void 0 : _a.call(instance);
+      return (_a = descriptor === null || descriptor === undefined ? undefined : descriptor.get) === null || _a === undefined ? undefined : _a.call(instance);
     });
     Object.defineProperty(instance, member, __assign(__assign({}, descriptor), {
       get: getter
@@ -588,7 +612,6 @@ var Auto = defineClassDecoratorProcessor(SOLIDIUM_MARK_CLASS_AUTO, {
       return instance;
     }
     var prototype = Object.getPrototypeOf(instance);
-    var owner = solidJs.getOwner();
     return new Proxy(instance, {
       get: function (target, p, receiver) {
         if (typeof prototype[p] === 'function') {
@@ -598,7 +621,7 @@ var Auto = defineClassDecoratorProcessor(SOLIDIUM_MARK_CLASS_AUTO, {
           delete target[p];
           return Reflect.get(target, p, receiver);
         }
-        solidJs.runWithOwner(owner, function () {
+        runWithSolidiumOwner(target, function () {
           defineSignalMember(prototype, p, target[p]);
           delete target[p];
         });

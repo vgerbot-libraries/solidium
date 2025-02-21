@@ -10,6 +10,7 @@ import {
     IS_CLASS_DECORATOR_PROCESSOR,
     ClassDecoratorProcessor
 } from './DecoratorProcessor';
+import { hasOwn } from '../common/hasOwn';
 
 const SOLIDIUM_MEMBER_DECORATOR_PROCESSOR_KEY = Symbol(
     'solidium-member-decorator-processors'
@@ -29,7 +30,7 @@ function initClassDecoratorProcessorsSet<T>(
     constructor: Newable<T>,
     container: ApplicationContext
 ) {
-    if (constructor.hasOwnProperty(SOLIDIUM_CLASS_DECORATOR_PROCESSOR_KEY)) {
+    if (hasOwn(constructor, SOLIDIUM_CLASS_DECORATOR_PROCESSOR_KEY)) {
         return;
     }
     const metadata = ClassMetadata.getInstance(constructor).reader();
@@ -63,8 +64,7 @@ function initClassDecoratorProcessorsSet<T>(
         value: allClassDecoratorProcessor
     });
     allClassDecoratorProcessor.forEach(processor => {
-        processor.beforeInstantiation &&
-            processor.beforeInstantiation(constructor, metadata, container);
+        processor.beforeInstantiation?.(constructor, metadata, container);
     });
 }
 
@@ -72,7 +72,7 @@ function initMemberDecoratorProcessorsSet<T>(
     constructor: Newable<T>,
     container: ApplicationContext
 ) {
-    if (constructor.hasOwnProperty(SOLIDIUM_MEMBER_DECORATOR_PROCESSOR_KEY)) {
+    if (hasOwn(constructor, SOLIDIUM_MEMBER_DECORATOR_PROCESSOR_KEY)) {
         return;
     }
     const metadata = ClassMetadata.getInstance(constructor).reader();
@@ -153,7 +153,7 @@ export function afterInstantiation<T extends object>(
     const allClassProcessors =
         constructor[SOLIDIUM_CLASS_DECORATOR_PROCESSOR_KEY];
 
-    if (!!allClassProcessors) {
+    if (allClassProcessors) {
         allClassProcessors.forEach(processor => {
             const newInstance =
                 processor.afterInstantiation &&
@@ -165,7 +165,7 @@ export function afterInstantiation<T extends object>(
     }
     const allMemberProcessors =
         constructor[SOLIDIUM_MEMBER_DECORATOR_PROCESSOR_KEY];
-    if (!!allMemberProcessors) {
+    if (allMemberProcessors) {
         allMemberProcessors.forEach((processors, member) => {
             processors.forEach(processor => {
                 if (processor.afterInstantiation) {

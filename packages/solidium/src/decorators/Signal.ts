@@ -4,7 +4,7 @@ import { defineMemberDecoratorProcessor } from '../core/defineMemberDecoratorPro
 
 export const SIGNAL_MARK_KEY = Symbol('solidium_mark_as_signal_property');
 
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface SignalOptions {
     // IGNORE
 }
