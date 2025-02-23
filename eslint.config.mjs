@@ -2,9 +2,6 @@ import eslint from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import prettier from 'eslint-plugin-prettier';
 import globals from 'globals';
-import path from 'path';
-
-const __dirname = path.resolve('.');
 
 export default tseslint.config(
     tseslint.configs.strict,
@@ -26,10 +23,7 @@ export default tseslint.config(
             },
             languageOptions: {
                 parserOptions: {
-                    project: [
-                        __dirname + '/tsconfig.json',
-                        __dirname + '/tsconfig.test.json'
-                    ]
+                    projectService: true
                 },
                 globals: {
                     ...globals.browser
@@ -40,7 +34,7 @@ export default tseslint.config(
             files: ['build/*.ts'],
             languageOptions: {
                 parserOptions: {
-                    project: [__dirname + '/build/tsconfig.json']
+                    projectService: true
                 },
                 globals: {
                     ...globals.node
@@ -59,6 +53,17 @@ export default tseslint.config(
                     fs: 'readonly',
                     path: 'readonly',
                     argv: 'readonly'
+                }
+            },
+            rules: {
+                '@typescript-eslint/no-require-imports': 'off'
+            }
+        },
+        {
+            files: ['rollup.*.js', 'commitlint.config.js'],
+            languageOptions: {
+                globals: {
+                    ...globals.node
                 }
             },
             rules: {

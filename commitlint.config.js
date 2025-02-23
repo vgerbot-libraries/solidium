@@ -1,5 +1,8 @@
 module.exports = {
-    extends: ["@commitlint/config-lerna-scopes", "@commitlint/config-conventional"],
+    extends: [
+        '@commitlint/config-lerna-scopes',
+        '@commitlint/config-conventional'
+    ],
     rules: {
         'body-leading-blank': [1, 'always'],
         'footer-leading-blank': [1, 'always'],
@@ -11,7 +14,8 @@ module.exports = {
         'type-empty': [2, 'never'],
         'type-enum': [
             2,
-            'always', [
+            'always',
+            [
                 'build',
                 'chore',
                 'docs',
