@@ -14,6 +14,7 @@
         "sourceMap": true,
         "importHelpers": true,
         "declaration": true,
+        "incremental": true,
         "listFiles": true,
         "forceConsistentCasingInFileNames": true,
         "esModuleInterop": true,
@@ -24,5 +25,16 @@
             "src/types"
         ]
     },
-    "exclude": ["**/__tests__", "node_modules"]
+    "exclude": ["**/__tests__", "node_modules"],
+    "references": [
+        {
+            "path": "./packages/solidium/tsconfig.json"
+        },
+        {
+            "path": "./packages/http/tsconfig.json"
+        },
+        {
+            "path": "./packages/persistence/tsconfig.json"
+        }
+    ]
 }
