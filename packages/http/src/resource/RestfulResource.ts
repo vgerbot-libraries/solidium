@@ -1,4 +1,4 @@
-import { METHODS } from '../core/EndpointInstance';
+import { METHODS } from '../core/EndpointMembers';
 import { getExecutionContext } from '../core/executeRequest';
 import { ExecutableResource, EXECUTE, Resource } from './Resource';
 import { ResourceStatus } from './ResourceStatus';

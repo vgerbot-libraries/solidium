@@ -10,11 +10,11 @@ import { TimeoutInterceptor } from '../interceptors/TimeoutInterceptor';
 import { EndpointMetadata } from '../metadata/EndpointMetadata';
 import { RequestMethodMetadata } from '../metadata/RequestMethodMetadata';
 import {
-    CONSTRUCT_INTERCEPTORS,
-    ADAPTER,
     INTERCEPTORS,
-    EndpointInstance
-} from './EndpointInstance';
+    ADAPTER,
+    CONSTRUCT_INTERCEPTORS
+} from './EndpointMembers';
+import { type EndpointInstance } from './EndpointInstance';
 import { ExecuteRequestMethodParams } from './ExecuteRequestParams';
 import { HttpResponse } from './HttpResponse';
 import { Interceptor } from './Interceptor';

@@ -3,6 +3,12 @@ import { Class } from '../common/Class';
 import { EndpointMetadata } from '../metadata/EndpointMetadata';
 import { RequestMethod } from './RequestMethod';
 import {
+    METHODS,
+    INTERCEPTORS,
+    ADAPTER,
+    CONSTRUCT_INTERCEPTORS
+} from './EndpointMembers';
+import {
     Interceptor,
     InterceptorConstructor,
     InterceptorTypeIdentifier,
@@ -18,10 +24,6 @@ export interface EndpointInstance {
         interceptors: Array<InterceptorTypeIdentifier | Interceptor>
     ) => Interceptor[];
 }
-export const METHODS = Symbol('endpoint-request-methods');
-export const INTERCEPTORS = Symbol('endpoint-interceptors');
-export const ADAPTER = Symbol('endpoint-adapter');
-export const CONSTRUCT_INTERCEPTORS = Symbol('endpoint-construct-interceptors');
 
 export function buildEndpointClass(
     endpointClass: Class<EndpointInstance>,

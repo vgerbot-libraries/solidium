@@ -1,4 +1,4 @@
-import { METHODS } from './EndpointInstance';
+import { METHODS } from './EndpointMembers';
 import { getExecutionContext } from './executeRequest';
 
 export function request(...args: unknown[]) {
