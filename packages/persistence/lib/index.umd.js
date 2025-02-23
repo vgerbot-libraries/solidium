@@ -1,7 +1,7 @@
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('@vgerbot/ioc'), require('@vgerbot/solidium'), require('solid-js'), require('@vgerbot/msgpack-ext'), require('idb')) :
     typeof define === 'function' && define.amd ? define(['exports', '@vgerbot/ioc', '@vgerbot/solidium', 'solid-js', '@vgerbot/msgpack-ext', 'idb'], factory) :
-    (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.Solidium = {}, global.ioc, global.solidium, global.solidJs, global.msgpackExt, global.idb));
+    (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.SolidiumPersistence = {}, global.IOC, global.Solidium, global.solidJs, global.MPext, global.idb));
 })(this, (function (exports, ioc, solidium, solidJs, msgpackExt, idb) { 'use strict';
 
     /******************************************************************************
@@ -18,7 +18,7 @@
     OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
     PERFORMANCE OF THIS SOFTWARE.
     ***************************************************************************** */
-    /* global Reflect, Promise, SuppressedError, Symbol */
+    /* global Reflect, Promise, SuppressedError, Symbol, Iterator */
 
     var extendStatics = function(d, b) {
         extendStatics = Object.setPrototypeOf ||
@@ -68,8 +68,8 @@
     }
 
     function __generator(thisArg, body) {
-        var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
-        return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+        var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g = Object.create((typeof Iterator === "function" ? Iterator : Object).prototype);
+        return g.next = verb(0), g["throw"] = verb(1), g["return"] = verb(2), typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
         function verb(n) { return function (v) { return step([n, v]); }; }
         function step(op) {
             if (f) throw new TypeError("Generator is already executing.");
@@ -91,7 +91,7 @@
                 }
                 op = body.call(thisArg, _);
             } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
-            if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+            if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : undefined, done: true };
         }
     }
 
@@ -100,7 +100,7 @@
         if (m) return m.call(o);
         if (o && typeof o.length === "number") return {
             next: function () {
-                if (o && i >= o.length) o = void 0;
+                if (o && i >= o.length) o = undefined;
                 return { value: o && o[i++], done: !o };
             }
         };
@@ -114,8 +114,9 @@
     function __asyncGenerator(thisArg, _arguments, generator) {
         if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
         var g = generator.apply(thisArg, _arguments || []), i, q = [];
-        return i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function () { return this; }, i;
-        function verb(n) { if (g[n]) i[n] = function (v) { return new Promise(function (a, b) { q.push([n, v, a, b]) > 1 || resume(n, v); }); }; }
+        return i = Object.create((typeof AsyncIterator === "function" ? AsyncIterator : Object).prototype), verb("next"), verb("throw"), verb("return", awaitReturn), i[Symbol.asyncIterator] = function () { return this; }, i;
+        function awaitReturn(f) { return function (v) { return Promise.resolve(v).then(f, reject); }; }
+        function verb(n, f) { if (g[n]) { i[n] = function (v) { return new Promise(function (a, b) { q.push([n, v, a, b]) > 1 || resume(n, v); }); }; if (f) i[n] = f(i[n]); } }
         function resume(n, v) { try { step(g[n](v)); } catch (e) { settle(q[0][3], e); } }
         function step(r) { r.value instanceof __await ? Promise.resolve(r.value.v).then(fulfill, reject) : settle(q[0][2], r); }
         function fulfill(value) { resume("next", value); }
@@ -140,16 +141,17 @@
     var DEFAULT_BUCKET = Symbol('solidium-default-bucket');
 
     var Storage = function (options) {
-      if (options === void 0) {
+      if (options === undefined) {
         options = {};
       }
       return solidium.defineMemberDecoratorProcessor('storage', {
         afterInstantiation: function (instance, member, metadata, container) {
-          var _a = solidium.getSignal(instance, member),
-            set = _a[1];
-          var key = options.key || member.toString();
+          var _a;
+          var _b = solidium.getSignal(instance, member),
+            set = _b[1];
+          var key = (_a = options.key) !== null && _a !== undefined ? _a : member.toString();
           var bucketOrName = options.bucket || DEFAULT_BUCKET;
-          var bucket = typeof bucketOrName === 'string' || typeof bucketOrName === 'symbol' ? container.getInstance(bucketOrName) : bucketOrName;
+          var bucket = typeof bucketOrName != 'object' ? container.getInstance(bucketOrName) : bucketOrName;
           var observe = function () {
             return bucket.observe(key, function (event) {
               set(event.newValue);
@@ -245,7 +247,7 @@
               case 1:
                 if (!(i < len)) return [3 /*break*/, 5];
                 key = this.storage.key(i);
-                if (!(key === null || key === void 0 ? void 0 : key.match(regex))) {
+                if (!(key === null || key === undefined ? undefined : key.match(regex))) {
                   return [3 /*break*/, 4];
                 }
                 value = this.storage.getItem(key);
@@ -295,7 +297,7 @@
         return Promise.resolve();
       };
       BrowserStorageDriver.prototype.setItem = function (key, value) {
-        return __awaiter(this, void 0, void 0, function () {
+        return __awaiter(this, undefined, undefined, function () {
           var normalizeKey, needDispatch, oldValue, serialized;
           return __generator(this, function (_a) {
             switch (_a.label) {
@@ -318,9 +320,9 @@
         });
       };
       BrowserStorageDriver.prototype.length = function () {
-        var _a, e_1, _b;
-        return __awaiter(this, void 0, void 0, function () {
-          var len, _d, _e, _f, e_1_1;
+        return __awaiter(this, undefined, undefined, function () {
+          var len, _a, _b, _c, e_1_1;
+          var _d, e_1, _e;
           return __generator(this, function (_g) {
             switch (_g.label) {
               case 0:
@@ -328,18 +330,18 @@
                 _g.label = 1;
               case 1:
                 _g.trys.push([1, 6, 7, 12]);
-                _d = true, _e = __asyncValues(this.keys());
+                _a = true, _b = __asyncValues(this.keys());
                 _g.label = 2;
               case 2:
-                return [4 /*yield*/, _e.next()];
+                return [4 /*yield*/, _b.next()];
               case 3:
-                if (!(_f = _g.sent(), _a = _f.done, !_a)) return [3 /*break*/, 5];
-                _f.value;
-                _d = false;
+                if (!(_c = _g.sent(), _d = _c.done, !_d)) return [3 /*break*/, 5];
+                _c.value;
+                _a = false;
                 len++;
                 _g.label = 4;
               case 4:
-                _d = true;
+                _a = true;
                 return [3 /*break*/, 2];
               case 5:
                 return [3 /*break*/, 12];
@@ -351,8 +353,8 @@
                 return [3 /*break*/, 12];
               case 7:
                 _g.trys.push([7,, 10, 11]);
-                if (!(!_d && !_a && (_b = _e.return))) return [3 /*break*/, 9];
-                return [4 /*yield*/, _b.call(_e)];
+                if (!(!_a && !_d && (_e = _b.return))) return [3 /*break*/, 9];
+                return [4 /*yield*/, _e.call(_b)];
               case 8:
                 _g.sent();
                 _g.label = 9;
@@ -370,9 +372,9 @@
         });
       };
       BrowserStorageDriver.prototype.keyAt = function (index) {
-        var _a, e_2, _b, _c;
-        return __awaiter(this, void 0, void 0, function () {
-          var i, _d, _e, _f, key, e_2_1;
+        return __awaiter(this, undefined, undefined, function () {
+          var i, _a, _b, _c, key, e_2_1;
+          var _d, e_2, _e, _f;
           return __generator(this, function (_g) {
             switch (_g.label) {
               case 0:
@@ -380,22 +382,22 @@
                 _g.label = 1;
               case 1:
                 _g.trys.push([1, 6, 7, 12]);
-                _d = true, _e = __asyncValues(this.keys());
+                _a = true, _b = __asyncValues(this.keys());
                 _g.label = 2;
               case 2:
-                return [4 /*yield*/, _e.next()];
+                return [4 /*yield*/, _b.next()];
               case 3:
-                if (!(_f = _g.sent(), _a = _f.done, !_a)) return [3 /*break*/, 5];
-                _c = _f.value;
-                _d = false;
-                key = _c;
+                if (!(_c = _g.sent(), _d = _c.done, !_d)) return [3 /*break*/, 5];
+                _f = _c.value;
+                _a = false;
+                key = _f;
                 if (i === index) {
                   return [2 /*return*/, key];
                 }
                 i++;
                 _g.label = 4;
               case 4:
-                _d = true;
+                _a = true;
                 return [3 /*break*/, 2];
               case 5:
                 return [3 /*break*/, 12];
@@ -407,8 +409,8 @@
                 return [3 /*break*/, 12];
               case 7:
                 _g.trys.push([7,, 10, 11]);
-                if (!(!_d && !_a && (_b = _e.return))) return [3 /*break*/, 9];
-                return [4 /*yield*/, _b.call(_e)];
+                if (!(!_a && !_d && (_e = _b.return))) return [3 /*break*/, 9];
+                return [4 /*yield*/, _e.call(_b)];
               case 8:
                 _g.sent();
                 _g.label = 9;
@@ -446,7 +448,7 @@
         });
       };
       BrowserStorageDriver.prototype.serialize = function (blob) {
-        return __awaiter(this, void 0, void 0, function () {
+        return __awaiter(this, undefined, undefined, function () {
           var text, buffer, u8a, hex_1;
           return __generator(this, function (_a) {
             switch (_a.label) {
@@ -478,12 +480,12 @@
       };
       BrowserStorageDriver.prototype.needDispatch = function (key) {
         var _a;
-        return !!((_a = this.observers.get(key)) === null || _a === void 0 ? void 0 : _a.length);
+        return !!((_a = this.observers.get(key)) === null || _a === undefined ? undefined : _a.length);
       };
       BrowserStorageDriver.prototype.dispatchChangeEvent = function (changeBy, actionType, key, newValue, oldValue) {
         var _this = this;
         var listeners = this.observers.get(key);
-        listeners === null || listeners === void 0 ? void 0 : listeners.forEach(function (listener) {
+        listeners === null || listeners === undefined ? undefined : listeners.forEach(function (listener) {
           listener({
             target: _this,
             key: key,
@@ -507,7 +509,7 @@
               case 1:
                 if (!(i < len)) return [3 /*break*/, 5];
                 key = this.storage.key(i);
-                if (!((key === null || key === void 0 ? void 0 : key.indexOf(prefix)) === 0)) return [3 /*break*/, 4];
+                if (!((key === null || key === undefined ? undefined : key.indexOf(prefix)) === 0)) return [3 /*break*/, 4];
                 return [4 /*yield*/, __await(key)];
               case 2:
                 return [4 /*yield*/, _a.sent()];
@@ -524,26 +526,26 @@
         });
       };
       BrowserStorageDriver.prototype.clear = function () {
-        var _a, e_3, _b, _c;
-        return __awaiter(this, void 0, void 0, function () {
-          var _d, _e, _f, key, e_3_1;
+        return __awaiter(this, undefined, undefined, function () {
+          var _a, _b, _c, key, e_3_1;
+          var _d, e_3, _e, _f;
           return __generator(this, function (_g) {
             switch (_g.label) {
               case 0:
                 _g.trys.push([0, 5, 6, 11]);
-                _d = true, _e = __asyncValues(this.keys());
+                _a = true, _b = __asyncValues(this.keys());
                 _g.label = 1;
               case 1:
-                return [4 /*yield*/, _e.next()];
+                return [4 /*yield*/, _b.next()];
               case 2:
-                if (!(_f = _g.sent(), _a = _f.done, !_a)) return [3 /*break*/, 4];
-                _c = _f.value;
-                _d = false;
-                key = _c;
+                if (!(_c = _g.sent(), _d = _c.done, !_d)) return [3 /*break*/, 4];
+                _f = _c.value;
+                _a = false;
+                key = _f;
                 this.storage.removeItem(key);
                 _g.label = 3;
               case 3:
-                _d = true;
+                _a = true;
                 return [3 /*break*/, 1];
               case 4:
                 return [3 /*break*/, 11];
@@ -555,8 +557,8 @@
                 return [3 /*break*/, 11];
               case 6:
                 _g.trys.push([6,, 9, 10]);
-                if (!(!_d && !_a && (_b = _e.return))) return [3 /*break*/, 8];
-                return [4 /*yield*/, _b.call(_e)];
+                if (!(!_a && !_d && (_e = _b.return))) return [3 /*break*/, 8];
+                return [4 /*yield*/, _e.call(_b)];
               case 7:
                 _g.sent();
                 _g.label = 8;
@@ -611,7 +613,7 @@
         return Promise.resolve(new Blob([u8a]));
       };
       DefaultSerializer.prototype.deserialize = function (data) {
-        return __awaiter(this, void 0, void 0, function () {
+        return __awaiter(this, undefined, undefined, function () {
           var buffer;
           return __generator(this, function (_a) {
             switch (_a.label) {
@@ -670,7 +672,7 @@
         configurable: true
       });
       IndexedDBStorageDriver.prototype.prepare = function () {
-        return __awaiter(this, void 0, void 0, function () {
+        return __awaiter(this, undefined, undefined, function () {
           var idb$1;
           return __generator(this, function (_a) {
             switch (_a.label) {
@@ -689,7 +691,7 @@
         });
       };
       IndexedDBStorageDriver.prototype.supports = function () {
-        return __awaiter(this, void 0, void 0, function () {
+        return __awaiter(this, undefined, undefined, function () {
           var checkDBName;
           return __generator(this, function (_a) {
             switch (_a.label) {
@@ -713,7 +715,7 @@
         });
       };
       IndexedDBStorageDriver.prototype.getItem = function (key) {
-        return __awaiter(this, void 0, void 0, function () {
+        return __awaiter(this, undefined, undefined, function () {
           var db, value;
           return __generator(this, function (_a) {
             switch (_a.label) {
@@ -733,7 +735,7 @@
         });
       };
       IndexedDBStorageDriver.prototype.removeItem = function (key) {
-        return __awaiter(this, void 0, void 0, function () {
+        return __awaiter(this, undefined, undefined, function () {
           var db, needDispatch, oldValue, _a;
           return __generator(this, function (_b) {
             switch (_b.label) {
@@ -764,7 +766,7 @@
         });
       };
       IndexedDBStorageDriver.prototype.setItem = function (key, value) {
-        return __awaiter(this, void 0, void 0, function () {
+        return __awaiter(this, undefined, undefined, function () {
           var db, buffer, needDispatch, oldValue, _a;
           return __generator(this, function (_b) {
             switch (_b.label) {
@@ -798,7 +800,7 @@
         });
       };
       IndexedDBStorageDriver.prototype.clear = function () {
-        return __awaiter(this, void 0, void 0, function () {
+        return __awaiter(this, undefined, undefined, function () {
           var db;
           return __generator(this, function (_a) {
             switch (_a.label) {
@@ -846,7 +848,7 @@
       };
       IndexedDBStorageDriver.prototype.needDispatch = function (key) {
         var _a;
-        return !!((_a = this.observers.get(key)) === null || _a === void 0 ? void 0 : _a.length);
+        return !!((_a = this.observers.get(key)) === null || _a === undefined ? undefined : _a.length);
       };
       return IndexedDBStorageDriver;
     }();
@@ -864,7 +866,7 @@
           for (var _i = 0; _i < arguments.length; _i++) {
             args[_i] = arguments[_i];
           }
-          return __awaiter(this, void 0, void 0, function () {
+          return __awaiter(this, undefined, undefined, function () {
             return __generator(this, function (_a) {
               switch (_a.label) {
                 case 0:
@@ -904,7 +906,7 @@
         }
       }
       Bucket.prototype[PREPARE] = function () {
-        return __awaiter(this, void 0, void 0, function () {
+        return __awaiter(this, undefined, undefined, function () {
           var supports;
           return __generator(this, function (_a) {
             switch (_a.label) {
@@ -929,7 +931,7 @@
         });
       };
       Bucket.prototype.setItem = function (key, value) {
-        return __awaiter(this, void 0, void 0, function () {
+        return __awaiter(this, undefined, undefined, function () {
           var blob;
           return __generator(this, function (_a) {
             switch (_a.label) {
@@ -943,7 +945,7 @@
         });
       };
       Bucket.prototype.getItem = function (key) {
-        return __awaiter(this, void 0, void 0, function () {
+        return __awaiter(this, undefined, undefined, function () {
           var blob;
           return __generator(this, function (_a) {
             switch (_a.label) {
@@ -971,7 +973,7 @@
       __decorate([Prepared(), __metadata("design:type", Function), __metadata("design:paramtypes", [String, Function]), __metadata("design:returntype", Function)], Bucket.prototype, "observe", null);
       __decorate([Prepared(), __metadata("design:type", Function), __metadata("design:paramtypes", [String, Object]), __metadata("design:returntype", Promise)], Bucket.prototype, "setItem", null);
       __decorate([Prepared(), __metadata("design:type", Function), __metadata("design:paramtypes", [String]), __metadata("design:returntype", Promise)], Bucket.prototype, "getItem", null);
-      __decorate([Prepared(), __metadata("design:type", Function), __metadata("design:paramtypes", []), __metadata("design:returntype", void 0)], Bucket.prototype, "clear", null);
+      __decorate([Prepared(), __metadata("design:type", Function), __metadata("design:paramtypes", []), __metadata("design:returntype", undefined)], Bucket.prototype, "clear", null);
       return Bucket;
     }();
 
@@ -1016,7 +1018,7 @@
           StorageConfigurationFactory.prototype.getConfiguration = function () {
             return configuration;
           };
-          __decorate([ioc.Factory(DEFAULT_BUCKET_CONFIGURATION), __metadata("design:type", Function), __metadata("design:paramtypes", []), __metadata("design:returntype", void 0)], StorageConfigurationFactory.prototype, "getConfiguration", null);
+          __decorate([ioc.Factory(DEFAULT_BUCKET_CONFIGURATION), __metadata("design:type", Function), __metadata("design:paramtypes", []), __metadata("design:returntype", undefined)], StorageConfigurationFactory.prototype, "getConfiguration", null);
           return StorageConfigurationFactory;
         })();
         return Persistence;
@@ -1027,7 +1029,7 @@
           StorageFactory.prototype.createStorage = function () {
             return new Bucket(configuration);
           };
-          __decorate([ioc.Factory(name), __metadata("design:type", Function), __metadata("design:paramtypes", []), __metadata("design:returntype", void 0)], StorageFactory.prototype, "createStorage", null);
+          __decorate([ioc.Factory(name), __metadata("design:type", Function), __metadata("design:paramtypes", []), __metadata("design:returntype", undefined)], StorageFactory.prototype, "createStorage", null);
           return StorageFactory;
         }();
         return StorageFactory;
@@ -1038,17 +1040,15 @@
       Persistence.prototype.init = function () {
         //
       };
-      __decorate([ioc.Inject(DEFAULT_BUCKET_CONFIGURATION), __metadata("design:type", Object)], Persistence.prototype, "configuration", void 0);
-      __decorate([ioc.Factory(DEFAULT_BUCKET), __metadata("design:type", Function), __metadata("design:paramtypes", []), __metadata("design:returntype", void 0)], Persistence.prototype, "getDefaultBucket", null);
-      __decorate([ioc.PostInject(), __metadata("design:type", Function), __metadata("design:paramtypes", []), __metadata("design:returntype", void 0)], Persistence.prototype, "init", null);
+      __decorate([ioc.Inject(DEFAULT_BUCKET_CONFIGURATION), __metadata("design:type", Object)], Persistence.prototype, "configuration", undefined);
+      __decorate([ioc.Factory(DEFAULT_BUCKET), __metadata("design:type", Function), __metadata("design:paramtypes", []), __metadata("design:returntype", undefined)], Persistence.prototype, "getDefaultBucket", null);
+      __decorate([ioc.PostInject(), __metadata("design:type", Function), __metadata("design:paramtypes", []), __metadata("design:returntype", undefined)], Persistence.prototype, "init", null);
       return Persistence;
     }();
 
     exports.DefaultSerializer = DefaultSerializer;
     exports.Persistence = Persistence;
     exports.Storage = Storage;
-
-    Object.defineProperty(exports, '__esModule', { value: true });
 
 }));
 //# sourceMappingURL=index.umd.js.map

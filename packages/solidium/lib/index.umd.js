@@ -1,7 +1,7 @@
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('@vgerbot/ioc'), require('solid-js'), require('solid-js/web')) :
     typeof define === 'function' && define.amd ? define(['exports', '@vgerbot/ioc', 'solid-js', 'solid-js/web'], factory) :
-    (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.Solidium = {}, global.ioc, global.solidJs, global.web));
+    (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.Solidium = {}, global.IOC, global.solidJs, global.web));
 })(this, (function (exports, ioc, solidJs, web) { 'use strict';
 
     /******************************************************************************

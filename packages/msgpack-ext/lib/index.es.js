@@ -277,13 +277,13 @@ class ReferenceCodec {
   constructor() {
     this.type = Types.Reference;
   }
-  encode(input, context) {
+  encode(input) {
     if (input instanceof Reference) {
       return encode$1(input.path);
     }
     return null;
   }
-  decode(data, extensionType, context) {
+  decode(data) {
     const result = decode$1(data);
     return new Reference(result);
   }

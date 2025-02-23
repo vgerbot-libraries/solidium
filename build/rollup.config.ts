@@ -1,7 +1,6 @@
 import { OutputOptions, RollupOptions } from 'rollup';
 import path from 'path';
 import { nodeResolve } from '@rollup/plugin-node-resolve';
-// const { nodeResolve } = require('@rollup/plugin-node-resolve');
 import commonjs from '@rollup/plugin-commonjs';
 import babel from '@rollup/plugin-babel';
 import typescript from 'rollup-plugin-typescript2';
@@ -26,7 +25,8 @@ const outputConfig = [
 
 const extensions = ['.ts', '.tsx', '.js', '.jsx'];
 
-const rollupConfig: RollupOptions[] = outputConfig.map(output => {
+// Main bundle configuration
+const mainConfig: RollupOptions[] = outputConfig.map((output, i) => {
     return {
         output: output,
         input: inputFile,
@@ -53,9 +53,11 @@ const rollupConfig: RollupOptions[] = outputConfig.map(output => {
                 tsconfig: path.resolve(process.cwd(), 'tsconfig.json'),
                 tsconfigOverride: {
                     compilerOptions: {
-                        target: output.format === 'es' ? 'es6' : 'es5'
+                        target: output.format === 'es' ? 'es6' : 'es5',
+                        declarationDir: 'lib/typings'
                     }
-                }
+                },
+                useTsconfigDeclarationDir: true
             }),
             babel({
                 extensions,
@@ -86,6 +88,27 @@ const rollupConfig: RollupOptions[] = outputConfig.map(output => {
                                 process.cwd(),
                                 '../../solidium/src/index.ts'
                             )
+                        },
+                        {
+                            find: '@vgerbot/http',
+                            replacement: path.resolve(
+                                process.cwd(),
+                                '../../http/src/index.ts'
+                            )
+                        },
+                        {
+                            find: '@vgerbot/solidium-persistence',
+                            replacement: path.resolve(
+                                process.cwd(),
+                                '../../persistence/src/index.ts'
+                            )
+                        },
+                        {
+                            find: '@vgerbot/msgpack-ext',
+                            replacement: path.resolve(
+                                process.cwd(),
+                                '../../msgpack-ext/src/index.ts'
+                            )
                         }
                     ]
                 })
@@ -95,7 +118,6 @@ const rollupConfig: RollupOptions[] = outputConfig.map(output => {
             : new RegExp('node_modules|@vgerbot\\/')
     } as RollupOptions;
 });
-export default rollupConfig;
 
 function createOutputConfig(
     file: string,
@@ -108,8 +130,19 @@ function createOutputConfig(
             format,
             sourcemap: true,
             name: pkg.library,
+            globals: {
+                '@msgpack/msgpack': 'MessagePack',
+                'is-plain-object': 'isPlainObject',
+                '@vgerbot/ioc': 'IOC',
+                '@vgerbot/solidium': 'Solidium',
+                '@vgerbot/persistence': 'SolidiumPersistence',
+                '@vgerbot/http': 'SolidiumHttp',
+                '@vgerbot/msgpack-ext': 'MPext'
+            },
             exports: 'named'
         },
         cfg || {}
     );
 }
+
+export default mainConfig;

@@ -1,7 +1,7 @@
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('@vgerbot/ioc')) :
     typeof define === 'function' && define.amd ? define(['exports', '@vgerbot/ioc'], factory) :
-    (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.SolidiumHttp = {}, global.ioc));
+    (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.SolidiumHttp = {}, global.IOC));
 })(this, (function (exports, ioc) { 'use strict';
 
     function isInterceptorFunction(value) {
@@ -1109,9 +1109,16 @@
       return TimeoutInterceptor;
     }();
 
+    /**
+     * Symbol constants used for endpoint instance storage and retrieval
+     */
+    /** Stores HTTP methods (GET, POST, etc.) associated with an endpoint */
     var METHODS = Symbol('endpoint-request-methods');
+    /** Stores interceptors that process requests/responses for an endpoint */
     var INTERCEPTORS = Symbol('endpoint-interceptors');
+    /** Stores the HTTP adapter configuration for an endpoint */
     var ADAPTER = Symbol('endpoint-adapter');
+    /** Stores the interceptor construction logic for an endpoint */
     var CONSTRUCT_INTERCEPTORS = Symbol('endpoint-construct-interceptors');
 
     var RequestMethod = /** @class */function () {

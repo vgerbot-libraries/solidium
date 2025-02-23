@@ -18,6 +18,8 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ***************************************************************************** */
+/* global Reflect, Promise, SuppressedError, Symbol, Iterator */
+
 
 function __decorate(decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
@@ -45,7 +47,7 @@ function __values(o) {
     if (m) return m.call(o);
     if (o && typeof o.length === "number") return {
         next: function () {
-            if (o && i >= o.length) o = void 0;
+            if (o && i >= o.length) o = undefined;
             return { value: o && o[i++], done: !o };
         }
     };
@@ -59,8 +61,9 @@ function __await(v) {
 function __asyncGenerator(thisArg, _arguments, generator) {
     if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
     var g = generator.apply(thisArg, _arguments || []), i, q = [];
-    return i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function () { return this; }, i;
-    function verb(n) { if (g[n]) i[n] = function (v) { return new Promise(function (a, b) { q.push([n, v, a, b]) > 1 || resume(n, v); }); }; }
+    return i = Object.create((typeof AsyncIterator === "function" ? AsyncIterator : Object).prototype), verb("next"), verb("throw"), verb("return", awaitReturn), i[Symbol.asyncIterator] = function () { return this; }, i;
+    function awaitReturn(f) { return function (v) { return Promise.resolve(v).then(f, reject); }; }
+    function verb(n, f) { if (g[n]) { i[n] = function (v) { return new Promise(function (a, b) { q.push([n, v, a, b]) > 1 || resume(n, v); }); }; if (f) i[n] = f(i[n]); } }
     function resume(n, v) { try { step(g[n](v)); } catch (e) { settle(q[0][3], e); } }
     function step(r) { r.value instanceof __await ? Promise.resolve(r.value.v).then(fulfill, reject) : settle(q[0][2], r); }
     function fulfill(value) { resume("next", value); }
@@ -84,13 +87,18 @@ typeof SuppressedError === "function" ? SuppressedError : function (error, suppr
 const DEFAULT_BUCKET_CONFIGURATION = Symbol('solidium-default-bucket-configuration');
 const DEFAULT_BUCKET = Symbol('solidium-default-bucket');
 
+function keep(...args) {
+  return args;
+}
+
 const Storage = (options = {}) => {
   return defineMemberDecoratorProcessor('storage', {
     afterInstantiation(instance, member, metadata, container) {
+      var _a;
       const [, set] = getSignal(instance, member);
-      const key = options.key || member.toString();
+      const key = (_a = options.key) !== null && _a !== undefined ? _a : member.toString();
       const bucketOrName = options.bucket || DEFAULT_BUCKET;
-      const bucket = typeof bucketOrName === 'string' || typeof bucketOrName === 'symbol' ? container.getInstance(bucketOrName) : bucketOrName;
+      const bucket = typeof bucketOrName != 'object' ? container.getInstance(bucketOrName) : bucketOrName;
       const observe = () => {
         return bucket.observe(key, event => {
           set(event.newValue);
@@ -176,7 +184,7 @@ class BrowserStorageDriver {
       const regex = new RegExp('^' + prefix + '.');
       for (let i = 0; i < len; i++) {
         const key = this.storage.key(i);
-        if (!(key === null || key === void 0 ? void 0 : key.match(regex))) {
+        if (!(key === null || key === undefined ? undefined : key.match(regex))) {
           continue;
         }
         const value = this.storage.getItem(key);
@@ -215,7 +223,7 @@ class BrowserStorageDriver {
     return Promise.resolve();
   }
   setItem(key, value) {
-    return __awaiter(this, void 0, void 0, function* () {
+    return __awaiter(this, undefined, undefined, function* () {
       const normalizeKey = this.normalizeKey(key);
       const needDispatch = this.needDispatch(key);
       let oldValue;
@@ -230,8 +238,8 @@ class BrowserStorageDriver {
     });
   }
   length() {
-    var _a, e_1, _b, _c;
-    return __awaiter(this, void 0, void 0, function* () {
+    return __awaiter(this, undefined, undefined, function* () {
+      var _a, e_1, _b, _c;
       let len = 0;
       try {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -256,8 +264,8 @@ class BrowserStorageDriver {
     });
   }
   keyAt(index) {
-    var _a, e_2, _b, _c;
-    return __awaiter(this, void 0, void 0, function* () {
+    return __awaiter(this, undefined, undefined, function* () {
+      var _a, e_2, _b, _c;
       let i = 0;
       try {
         for (var _d = true, _e = __asyncValues(this.keys()), _f; _f = yield _e.next(), _a = _f.done, !_a; _d = true) {
@@ -305,7 +313,7 @@ class BrowserStorageDriver {
     });
   }
   serialize(blob) {
-    return __awaiter(this, void 0, void 0, function* () {
+    return __awaiter(this, undefined, undefined, function* () {
       if (blob.type.indexOf('text/') > -1) {
         const text = yield blob.text();
         return JSON.stringify({
@@ -328,11 +336,11 @@ class BrowserStorageDriver {
   }
   needDispatch(key) {
     var _a;
-    return !!((_a = this.observers.get(key)) === null || _a === void 0 ? void 0 : _a.length);
+    return !!((_a = this.observers.get(key)) === null || _a === undefined ? undefined : _a.length);
   }
   dispatchChangeEvent(changeBy, actionType, key, newValue, oldValue) {
     const listeners = this.observers.get(key);
-    listeners === null || listeners === void 0 ? void 0 : listeners.forEach(listener => {
+    listeners === null || listeners === undefined ? undefined : listeners.forEach(listener => {
       listener({
         target: this,
         key,
@@ -349,15 +357,15 @@ class BrowserStorageDriver {
       const prefix = this.getKeyPrefix();
       for (let i = 0; i < len; i++) {
         const key = this.storage.key(i);
-        if ((key === null || key === void 0 ? void 0 : key.indexOf(prefix)) === 0) {
+        if ((key === null || key === undefined ? undefined : key.indexOf(prefix)) === 0) {
           yield yield __await(key);
         }
       }
     });
   }
   clear() {
-    var _a, e_3, _b, _c;
-    return __awaiter(this, void 0, void 0, function* () {
+    return __awaiter(this, undefined, undefined, function* () {
+      var _a, e_3, _b, _c;
       try {
         for (var _d = true, _e = __asyncValues(this.keys()), _f; _f = yield _e.next(), _a = _f.done, !_a; _d = true) {
           _c = _f.value;
@@ -411,7 +419,7 @@ class DefaultSerializer {
     return Promise.resolve(new Blob([u8a]));
   }
   deserialize(data) {
-    return __awaiter(this, void 0, void 0, function* () {
+    return __awaiter(this, undefined, undefined, function* () {
       const buffer = yield data.arrayBuffer();
       return decode(buffer);
     });
@@ -452,7 +460,7 @@ class IndexedDBStorageDriver {
     this.version = options.version;
   }
   prepare() {
-    return __awaiter(this, void 0, void 0, function* () {
+    return __awaiter(this, undefined, undefined, function* () {
       const idb = yield openDB(this.bucketName, this.version, {
         upgrade(db) {
           db.createObjectStore(STORE_NAME);
@@ -462,7 +470,7 @@ class IndexedDBStorageDriver {
     });
   }
   supports() {
-    return __awaiter(this, void 0, void 0, function* () {
+    return __awaiter(this, undefined, undefined, function* () {
       try {
         const checkDBName = '_vgerbot_check_idb';
         yield openDB(checkDBName);
@@ -474,7 +482,7 @@ class IndexedDBStorageDriver {
     });
   }
   getItem(key) {
-    return __awaiter(this, void 0, void 0, function* () {
+    return __awaiter(this, undefined, undefined, function* () {
       const db = yield this.idbPromise;
       const value = yield db.get(STORE_NAME, IDBKeyRange.only(key));
       if (!value) {
@@ -484,7 +492,7 @@ class IndexedDBStorageDriver {
     });
   }
   removeItem(key) {
-    return __awaiter(this, void 0, void 0, function* () {
+    return __awaiter(this, undefined, undefined, function* () {
       const db = yield this.idbPromise;
       const needDispatch = this.needDispatch(key);
       const oldValue = needDispatch ? yield this.getItem(key) : undefined;
@@ -495,7 +503,7 @@ class IndexedDBStorageDriver {
     });
   }
   setItem(key, value) {
-    return __awaiter(this, void 0, void 0, function* () {
+    return __awaiter(this, undefined, undefined, function* () {
       const db = yield this.idbPromise;
       const buffer = yield value.arrayBuffer();
       const needDispatch = this.needDispatch(key);
@@ -507,7 +515,7 @@ class IndexedDBStorageDriver {
     });
   }
   clear() {
-    return __awaiter(this, void 0, void 0, function* () {
+    return __awaiter(this, undefined, undefined, function* () {
       const db = yield this.idbPromise;
       yield db.clear(STORE_NAME);
     });
@@ -543,7 +551,7 @@ class IndexedDBStorageDriver {
   }
   needDispatch(key) {
     var _a;
-    return !!((_a = this.observers.get(key)) === null || _a === void 0 ? void 0 : _a.length);
+    return !!((_a = this.observers.get(key)) === null || _a === undefined ? undefined : _a.length);
   }
 }
 
@@ -556,7 +564,7 @@ function Prepared() {
     }
     let prepare_promise;
     descriptor.value = function (...args) {
-      return __awaiter(this, void 0, void 0, function* () {
+      return __awaiter(this, undefined, undefined, function* () {
         if (!prepare_promise) {
           prepare_promise = target[PREPARE]().finally(() => {
             descriptor.value = origin;
@@ -589,7 +597,7 @@ class Bucket {
     }
   }
   [PREPARE]() {
-    return __awaiter(this, void 0, void 0, function* () {
+    return __awaiter(this, undefined, undefined, function* () {
       const supports = yield this.driver.supports();
       if (!supports) {
         throw new Error(`Your current browser does not support this storage driver: ${this.driver.name}!`);
@@ -605,13 +613,13 @@ class Bucket {
     });
   }
   setItem(key, value) {
-    return __awaiter(this, void 0, void 0, function* () {
+    return __awaiter(this, undefined, undefined, function* () {
       const blob = yield this.serializer.serialize(value);
       return this.driver.setItem(key, blob);
     });
   }
   getItem(key) {
-    return __awaiter(this, void 0, void 0, function* () {
+    return __awaiter(this, undefined, undefined, function* () {
       const blob = yield this.driver.getItem(key);
       if (!blob) {
         return;
@@ -632,7 +640,7 @@ class Bucket {
 __decorate([Prepared(), __metadata("design:type", Function), __metadata("design:paramtypes", [String, Function]), __metadata("design:returntype", Function)], Bucket.prototype, "observe", null);
 __decorate([Prepared(), __metadata("design:type", Function), __metadata("design:paramtypes", [String, Object]), __metadata("design:returntype", Promise)], Bucket.prototype, "setItem", null);
 __decorate([Prepared(), __metadata("design:type", Function), __metadata("design:paramtypes", [String]), __metadata("design:returntype", Promise)], Bucket.prototype, "getItem", null);
-__decorate([Prepared(), __metadata("design:type", Function), __metadata("design:paramtypes", []), __metadata("design:returntype", void 0)], Bucket.prototype, "clear", null);
+__decorate([Prepared(), __metadata("design:type", Function), __metadata("design:paramtypes", []), __metadata("design:returntype", undefined)], Bucket.prototype, "clear", null);
 
 /**
  * ```jsx
@@ -675,7 +683,8 @@ class Persistence {
         return configuration;
       }
     }
-    __decorate([Factory(DEFAULT_BUCKET_CONFIGURATION), __metadata("design:type", Function), __metadata("design:paramtypes", []), __metadata("design:returntype", void 0)], StorageConfigurationFactory.prototype, "getConfiguration", null);
+    __decorate([Factory(DEFAULT_BUCKET_CONFIGURATION), __metadata("design:type", Function), __metadata("design:paramtypes", []), __metadata("design:returntype", undefined)], StorageConfigurationFactory.prototype, "getConfiguration", null);
+    keep(StorageConfigurationFactory);
     return Persistence;
   }
   static bucket(name, configuration) {
@@ -684,7 +693,7 @@ class Persistence {
         return new Bucket(configuration);
       }
     }
-    __decorate([Factory(name), __metadata("design:type", Function), __metadata("design:paramtypes", []), __metadata("design:returntype", void 0)], StorageFactory.prototype, "createStorage", null);
+    __decorate([Factory(name), __metadata("design:type", Function), __metadata("design:paramtypes", []), __metadata("design:returntype", undefined)], StorageFactory.prototype, "createStorage", null);
     return StorageFactory;
   }
   getDefaultBucket() {
@@ -694,9 +703,9 @@ class Persistence {
     //
   }
 }
-__decorate([Inject(DEFAULT_BUCKET_CONFIGURATION), __metadata("design:type", Object)], Persistence.prototype, "configuration", void 0);
-__decorate([Factory(DEFAULT_BUCKET), __metadata("design:type", Function), __metadata("design:paramtypes", []), __metadata("design:returntype", void 0)], Persistence.prototype, "getDefaultBucket", null);
-__decorate([PostInject(), __metadata("design:type", Function), __metadata("design:paramtypes", []), __metadata("design:returntype", void 0)], Persistence.prototype, "init", null);
+__decorate([Inject(DEFAULT_BUCKET_CONFIGURATION), __metadata("design:type", Object)], Persistence.prototype, "configuration", undefined);
+__decorate([Factory(DEFAULT_BUCKET), __metadata("design:type", Function), __metadata("design:paramtypes", []), __metadata("design:returntype", undefined)], Persistence.prototype, "getDefaultBucket", null);
+__decorate([PostInject(), __metadata("design:type", Function), __metadata("design:paramtypes", []), __metadata("design:returntype", undefined)], Persistence.prototype, "init", null);
 
 export { DefaultDrivers, DefaultSerializer, Persistence, Storage };
 //# sourceMappingURL=index.es.js.map

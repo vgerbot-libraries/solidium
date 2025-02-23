@@ -3,13 +3,11 @@
     "include": ["src"],
     "compilerOptions": {
         "composite": true,
+        "rootDir": "src",
         "paths": {
             "@/*": ["src/*"]
         },
-        "lib": ["DOM", "ESNext"],
-        "declarationDir": "lib",
         "declaration": true,
-        "experimentalDecorators": false,
         "emitDecoratorMetadata": false
     }
 }

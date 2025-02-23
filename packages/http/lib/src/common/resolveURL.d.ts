@@ -1,1 +1,0 @@
-export declare function resolveURL(routeTemplate: string, pathVariables: Record<string, string | number | boolean>, queryParameters: Record<string, string | number | boolean | Array<string | number | boolean>>): string;

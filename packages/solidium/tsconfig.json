@@ -3,10 +3,10 @@
     "include": ["src"],
     "compilerOptions": {
         "composite": true,
+        "rootDir": "src",
         "paths": {
             "@/*": ["src/*"]
         },
-        "declarationDir": "lib",
         "declaration": true
     }
 }

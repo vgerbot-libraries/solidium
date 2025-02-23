@@ -1,7 +1,7 @@
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('@msgpack/msgpack'), require('is-plain-object')) :
     typeof define === 'function' && define.amd ? define(['exports', '@msgpack/msgpack', 'is-plain-object'], factory) :
-    (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.MPext = {}, global.msgpack, global.isPlainObject));
+    (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.MPext = {}, global.MessagePack, global.isPlainObject));
 })(this, (function (exports, msgpack, isPlainObject) { 'use strict';
 
     /******************************************************************************
@@ -18,7 +18,7 @@
     OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
     PERFORMANCE OF THIS SOFTWARE.
     ***************************************************************************** */
-    /* global Reflect, Promise, SuppressedError, Symbol */
+    /* global Reflect, Promise, SuppressedError, Symbol, Iterator */
 
     var extendStatics = function(d, b) {
         extendStatics = Object.setPrototypeOf ||
@@ -40,7 +40,7 @@
         if (m) return m.call(o);
         if (o && typeof o.length === "number") return {
             next: function () {
-                if (o && i >= o.length) o = void 0;
+                if (o && i >= o.length) o = undefined;
                 return { value: o && o[i++], done: !o };
             }
         };
@@ -374,13 +374,13 @@
       function ReferenceCodec() {
         this.type = Types.Reference;
       }
-      ReferenceCodec.prototype.encode = function (input, context) {
+      ReferenceCodec.prototype.encode = function (input) {
         if (input instanceof Reference) {
           return msgpack.encode(input.path);
         }
         return null;
       };
-      ReferenceCodec.prototype.decode = function (data, extensionType, context) {
+      ReferenceCodec.prototype.decode = function (data) {
         var result = msgpack.decode(data);
         return new Reference(result);
       };
@@ -449,8 +449,6 @@
 
     exports.decode = decode;
     exports.encode = encode;
-
-    Object.defineProperty(exports, '__esModule', { value: true });
 
 }));
 //# sourceMappingURL=index.umd.js.map

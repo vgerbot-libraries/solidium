@@ -1,7 +1,5 @@
 'use strict';
 
-Object.defineProperty(exports, '__esModule', { value: true });
-
 var msgpack = require('@msgpack/msgpack');
 var isPlainObject = require('is-plain-object');
 
@@ -19,7 +17,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ***************************************************************************** */
-/* global Reflect, Promise, SuppressedError, Symbol */
+/* global Reflect, Promise, SuppressedError, Symbol, Iterator */
 
 var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf ||
@@ -41,7 +39,7 @@ function __values(o) {
     if (m) return m.call(o);
     if (o && typeof o.length === "number") return {
         next: function () {
-            if (o && i >= o.length) o = void 0;
+            if (o && i >= o.length) o = undefined;
             return { value: o && o[i++], done: !o };
         }
     };
@@ -375,13 +373,13 @@ var ReferenceCodec = /** @class */function () {
   function ReferenceCodec() {
     this.type = Types.Reference;
   }
-  ReferenceCodec.prototype.encode = function (input, context) {
+  ReferenceCodec.prototype.encode = function (input) {
     if (input instanceof Reference) {
       return msgpack.encode(input.path);
     }
     return null;
   };
-  ReferenceCodec.prototype.decode = function (data, extensionType, context) {
+  ReferenceCodec.prototype.decode = function (data) {
     var result = msgpack.decode(data);
     return new Reference(result);
   };

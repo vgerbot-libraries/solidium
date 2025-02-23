@@ -1107,9 +1107,16 @@ var TimeoutInterceptor = /** @class */function () {
   return TimeoutInterceptor;
 }();
 
+/**
+ * Symbol constants used for endpoint instance storage and retrieval
+ */
+/** Stores HTTP methods (GET, POST, etc.) associated with an endpoint */
 var METHODS = Symbol('endpoint-request-methods');
+/** Stores interceptors that process requests/responses for an endpoint */
 var INTERCEPTORS = Symbol('endpoint-interceptors');
+/** Stores the HTTP adapter configuration for an endpoint */
 var ADAPTER = Symbol('endpoint-adapter');
+/** Stores the interceptor construction logic for an endpoint */
 var CONSTRUCT_INTERCEPTORS = Symbol('endpoint-construct-interceptors');
 
 var RequestMethod = /** @class */function () {

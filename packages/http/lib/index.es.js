@@ -779,9 +779,16 @@ class TimeoutInterceptor {
   }
 }
 
+/**
+ * Symbol constants used for endpoint instance storage and retrieval
+ */
+/** Stores HTTP methods (GET, POST, etc.) associated with an endpoint */
 const METHODS = Symbol('endpoint-request-methods');
+/** Stores interceptors that process requests/responses for an endpoint */
 const INTERCEPTORS = Symbol('endpoint-interceptors');
+/** Stores the HTTP adapter configuration for an endpoint */
 const ADAPTER = Symbol('endpoint-adapter');
+/** Stores the interceptor construction logic for an endpoint */
 const CONSTRUCT_INTERCEPTORS = Symbol('endpoint-construct-interceptors');
 
 class RequestMethod {
