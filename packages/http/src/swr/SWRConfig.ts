@@ -147,7 +147,7 @@ export interface SWRConfig {
      * Revalidation configuration
      */
     revalidate: {
-        on: RevalidateOptions;
+        on: Partial<RevalidateOptions>;
         strategy?: Newable<RevalidateStrategy> | RevalidateStrategyFunction;
     };
     /**

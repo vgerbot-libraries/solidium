@@ -6,7 +6,8 @@ import {
     METHODS,
     INTERCEPTORS,
     ADAPTER,
-    CONSTRUCT_INTERCEPTORS
+    CONSTRUCT_INTERCEPTORS,
+    SWR_INSTANCES
 } from './EndpointMembers';
 import {
     Interceptor,
@@ -15,6 +16,9 @@ import {
     isInterceptor
 } from './Interceptor';
 import { RequestAdapterConstructor } from '../adapter/RequestAdapter';
+import { SWRInstance } from '../swr/SWRInstance';
+import { lazyMember } from '@vgerbot/lazy';
+import { HttpResponse } from './HttpResponse';
 
 export interface EndpointInstance {
     [METHODS]: Map<string | symbol, RequestMethod>;
@@ -23,6 +27,7 @@ export interface EndpointInstance {
     [CONSTRUCT_INTERCEPTORS]: (
         interceptors: Array<InterceptorTypeIdentifier | Interceptor>
     ) => Interceptor[];
+    [SWR_INSTANCES]: Map<string | symbol, SWRInstance<HttpResponse>>;
 }
 
 export function buildEndpointClass(
@@ -68,4 +73,6 @@ export function buildEndpointClass(
                 .flat();
         };
     })(endpointClass.prototype, CONSTRUCT_INTERCEPTORS);
+
+    lazyMember(() => new Map())(endpointClass.prototype, SWR_INSTANCES);
 }

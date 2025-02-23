@@ -1,3 +1,4 @@
+import { SWRInstance } from '@vgerbot/http';
 import { CounterService } from './CounterService';
 import { useService } from '@vgerbot/solidium';
 
@@ -25,6 +26,26 @@ export function Counter() {
 
 export function CounterControl() {
     const service = useService(CounterService);
+    const instance = new SWRInstance(
+        '',
+        async () => {
+            const data = new Date().toISOString();
+            console.log('revalidate', data);
+            return data;
+        },
+        {
+            revalidate: {
+                on: {
+                    focus: true
+                }
+            },
+            refresh: {
+                interval: 0,
+                whenHidden: false,
+                whenOffline: false
+            }
+        }
+    );
     return (
         <>
             <button
@@ -40,6 +61,13 @@ export function CounterControl() {
                 }}
             >
                 Decrement
+            </button>
+            <button
+                onClick={() => {
+                    instance.mutate('User Click');
+                }}
+            >
+                Mutate
             </button>
         </>
     );
