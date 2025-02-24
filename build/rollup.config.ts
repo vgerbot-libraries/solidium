@@ -26,7 +26,7 @@ const outputConfig = [
 const extensions = ['.ts', '.tsx', '.js', '.jsx'];
 
 // Main bundle configuration
-const mainConfig: RollupOptions[] = outputConfig.map((output, i) => {
+const mainConfig: RollupOptions[] = outputConfig.map(output => {
     return {
         output: output,
         input: inputFile,
@@ -54,7 +54,8 @@ const mainConfig: RollupOptions[] = outputConfig.map((output, i) => {
                 tsconfigOverride: {
                     compilerOptions: {
                         target: output.format === 'es' ? 'es6' : 'es5',
-                        declarationDir: 'lib/typings'
+                        declarationDir: 'lib/typings',
+                        paths: {}
                     }
                 },
                 useTsconfigDeclarationDir: true
