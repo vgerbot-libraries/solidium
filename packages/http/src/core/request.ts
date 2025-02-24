@@ -1,5 +1,5 @@
 import { METHODS } from './EndpointMembers';
-import { getExecutionContext } from './executeRequest';
+import { getExecutionContext } from './execution-context';
 
 export function request(...args: unknown[]) {
     const context = getExecutionContext();

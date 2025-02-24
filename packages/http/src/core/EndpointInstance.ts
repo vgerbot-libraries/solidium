@@ -7,7 +7,8 @@ import {
     INTERCEPTORS,
     ADAPTER,
     CONSTRUCT_INTERCEPTORS,
-    SWR_INSTANCES
+    SWR_INSTANCES,
+    ABORT_CONTROLLER
 } from './EndpointMembers';
 import {
     Interceptor,
@@ -28,6 +29,7 @@ export interface EndpointInstance {
         interceptors: Array<InterceptorTypeIdentifier | Interceptor>
     ) => Interceptor[];
     [SWR_INSTANCES]: Map<string | symbol, SWRInstance<HttpResponse>>;
+    [ABORT_CONTROLLER]: AbortController;
 }
 
 export function buildEndpointClass(
@@ -75,4 +77,8 @@ export function buildEndpointClass(
     })(endpointClass.prototype, CONSTRUCT_INTERCEPTORS);
 
     lazyMember(() => new Map())(endpointClass.prototype, SWR_INSTANCES);
+    lazyMember(() => new AbortController())(
+        endpointClass.prototype,
+        ABORT_CONTROLLER
+    );
 }

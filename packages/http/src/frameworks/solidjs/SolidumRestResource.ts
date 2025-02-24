@@ -1,13 +1,13 @@
 import { Signal } from '@vgerbot/solidium';
-import { SET_DATA, SET_ERROR } from './Resource';
-import { ResourceStatus } from './ResourceStatus';
-import { RestfulResource } from './RestfulResource';
+import { SET_DATA, SET_ERROR } from '../../resource/Resource';
+import { ResourceStatus } from '../../resource/ResourceStatus';
+import { RestfulResource } from '../../resource/RestfulResource';
 
 const DATA = Symbol('data');
 const ERROR = Symbol('error');
 const STATUS = Symbol('status');
 
-export class SolidiumResource<T> extends RestfulResource<T> {
+export class SolidiumRestResource<T> extends RestfulResource<T> {
     @Signal()
     private [DATA]!: T;
     @Signal()

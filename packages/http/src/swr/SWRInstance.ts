@@ -27,7 +27,7 @@ export interface SWROptions extends Partial<SWRConfig> {
 
 export class DefaultRevalidateStrategy implements RevalidateStrategy {
     constructor(private readonly options: SWRConfig['revalidate']['on']) {}
-    invoke(revalidate: (reason?: string) => void): void {
+    execute(signal: AbortSignal, revalidate: (reason?: string) => void): void {
         if (typeof window !== 'undefined') {
             if (this.options.focus !== false) {
                 window.addEventListener('focus', () => revalidate('focus'));
@@ -92,6 +92,7 @@ export class SWRInstance<T> {
 
     constructor(
         public readonly key: string,
+        private readonly signal: AbortSignal,
         private readonly fetcher: () => Promise<T>,
         private readonly options: SWROptions = {}
     ) {
@@ -102,7 +103,7 @@ export class SWRInstance<T> {
             isValidating: false
         } as SWRState<T>;
 
-        this.setupRevalidationStrategy();
+        this.executeRevalidationStrategy();
         this.setupRefreshInterval();
         (() => {
             this.revalidate(); // Initial fetch
@@ -175,17 +176,26 @@ export class SWRInstance<T> {
         }
     }
 
-    private setupRevalidationStrategy() {
-        const rawStrategy = this.config.revalidate?.strategy;
-        if (this.config.revalidate?.strategy) {
-            const strategy = isRevalidateStrategyFunction(rawStrategy)
-                ? { invoke: rawStrategy }
-                : new DefaultRevalidateStrategy(this.config.revalidate.on);
-
-            strategy.invoke((reason?: string) => {
-                this.revalidate(reason);
-            });
+    private executeRevalidationStrategy() {
+        const revalidateOn = this.config.revalidate?.on;
+        const customStrategy = this.config.revalidate?.strategy;
+        let strategy: RevalidateStrategy | undefined;
+        if (customStrategy) {
+            strategy = isRevalidateStrategyFunction(customStrategy)
+                ? { execute: customStrategy }
+                : undefined;
         }
+        strategy =
+            strategy ??
+            new DefaultRevalidateStrategy({
+                focus: true,
+                reconnect: true,
+                ifStale: true,
+                ...revalidateOn
+            });
+        strategy.execute(this.signal, (reason?: string) => {
+            this.revalidate(reason);
+        });
     }
 
     private setupRefreshInterval() {

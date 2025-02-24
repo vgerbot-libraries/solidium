@@ -2,7 +2,6 @@ import { AdapterOptions } from '../adapter/AdapterOptions';
 import { XMLHttpRequestAdapter } from '../adapter/XMLHTTPRequestAdapter';
 import { isURL } from '../common/isURL';
 import { joinPath } from '../common/joinPath';
-import { mergeAbortSignal } from '../common/mergeAbortSignal';
 import { resolveURL } from '../common/resolveURL';
 import { ErrorContextInterceptor } from '../interceptors/ErrorContextInterceptor';
 import { RetryInterceptor } from '../interceptors/RetryInterceptor';
@@ -12,12 +11,14 @@ import { RequestMethodMetadata } from '../metadata/RequestMethodMetadata';
 import {
     INTERCEPTORS,
     ADAPTER,
-    CONSTRUCT_INTERCEPTORS
+    CONSTRUCT_INTERCEPTORS,
+    ABORT_CONTROLLER
 } from './EndpointMembers';
 import { type EndpointInstance } from './EndpointInstance';
 import { ExecuteRequestMethodParams } from './ExecuteRequestParams';
 import { HttpResponse } from './HttpResponse';
 import { Interceptor } from './Interceptor';
+import { mergeAbortSignal } from '../common/mergeAbortSignal';
 
 export class RequestMethod {
     private readonly url: string;
@@ -91,7 +92,7 @@ export class RequestMethod {
         const method = this.metadata.getHttpMethod();
         const headers = this.metadata.getHeaders();
         const signal = mergeAbortSignal(
-            this.metadata.getSignal(),
+            instance[ABORT_CONTROLLER].signal,
             params.signal
         );
         const options: AdapterOptions = {

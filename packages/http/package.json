@@ -13,14 +13,12 @@
     "main": "lib/index.cjs.js",
     "browser": "lib/index.umd.js",
     "module": "lib/index.es.js",
-    "typings": "lib/typings/index.d.ts",
-    "types": "lib/typings/index.d.ts",
+    "types": "lib/typings/index",
     "exports": {
       ".": {
         "import": "./lib/index.es.js",
         "browser": "./lib/index.umd.js",
-        "require": "./lib/index.cjs.js",
-        "types": "./lib/typings/index.d.ts"
+        "require": "./lib/index.cjs.js"
       }
     },
     "library": "SolidiumHttp",

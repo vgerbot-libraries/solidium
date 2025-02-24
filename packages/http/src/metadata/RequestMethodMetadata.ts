@@ -16,14 +16,11 @@ export type ExecutionHandler = (
 
 export class RequestMethodMetadata {
     private readonly executionHandlers: ExecutionHandler[] = [];
-    private signal: AbortSignal;
     private swrConfig?: SWRConfig;
     constructor(
         public readonly name: string | symbol,
         private readonly options: RequestOptions
-    ) {
-        this.signal = new AbortSignal();
-    }
+    ) {}
     appendSWRConfig(config: SWRConfig) {
         this.swrConfig = {
             ...this.swrConfig,
@@ -41,12 +38,6 @@ export class RequestMethodMetadata {
     }
     getExecutionHandlers() {
         return this.executionHandlers.slice(0);
-    }
-    appendSignal(signal: AbortSignal) {
-        this.signal = signal;
-    }
-    getSignal() {
-        return this.signal;
     }
     getPath() {
         return this.options.path;

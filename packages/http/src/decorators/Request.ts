@@ -1,6 +1,7 @@
 import { RequestAdapterConstructor } from '../adapter/RequestAdapter';
 import { EndpointInstance } from '../core/EndpointInstance';
-import { executeRequest } from '../core/executeRequest';
+import { ExecuteRequestMethodParams } from '../core/ExecuteRequestParams';
+import { setExecutionContext } from '../core/execution-context';
 import {
     Interceptor,
     InterceptorFunction,
@@ -51,7 +52,18 @@ export function Request(options: RequestOptions) {
         }
         function deletator(originFunction: Function) {
             return function (this: EndpointInstance, ...args: unknown[]) {
-                return executeRequest(this, method, args, originFunction);
+                const params: ExecuteRequestMethodParams = {
+                    headers: method.getHeaders().clone(),
+                    pathVariables: {},
+                    queryParams: {},
+                    adapter: method.getAdapter()
+                };
+                setExecutionContext({
+                    instance: this,
+                    method,
+                    params
+                });
+                return originFunction.apply(this, args);
             };
         }
     };

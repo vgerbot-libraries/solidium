@@ -1,6 +1,10 @@
 import { cloneParams } from '../common/cloneParams';
-import { METHODS, SWR_INSTANCES } from '../core/EndpointMembers';
-import { getExecutionContext } from '../core/executeRequest';
+import {
+    ABORT_CONTROLLER,
+    METHODS,
+    SWR_INSTANCES
+} from '../core/EndpointMembers';
+import { getExecutionContext } from '../core/execution-context';
 import { ExecuteRequestMethodParams } from '../core/ExecuteRequestParams';
 import { SWRInstance } from '../swr/SWRInstance';
 import {
@@ -60,8 +64,12 @@ export abstract class RestfulResource<T>
         if (swrConfig) {
             const swrInstance = new SWRInstance(
                 methodMetadata.name.toString(),
+                instance[ABORT_CONTROLLER].signal,
                 () => {
-                    return executeRequest(cloneParams(params));
+                    const clonedParams = cloneParams(params);
+                    return executeRequest({
+                        ...clonedParams
+                    });
                 },
                 swrConfig
             );

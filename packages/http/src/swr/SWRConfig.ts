@@ -85,11 +85,12 @@ export interface SWRRetryConfig {
 }
 
 export type RevalidateStrategyFunction = (
+    signal: AbortSignal,
     revalidate: (reason?: string) => void
 ) => void;
 
 export interface RevalidateStrategy {
-    invoke(revalidate: (reason?: string) => void): void;
+    execute(signal: AbortSignal, revalidate: (reason?: string) => void): void;
 }
 
 export function isRevalidateStrategyClass(
