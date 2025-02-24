@@ -7,6 +7,6 @@ export interface AdapterOptions {
     method: HttpMethod;
     url: string;
     headers: HttpHeaders;
-    payload: FormData | string | Blob | undefined;
+    payload: BodyInit | undefined;
     signal: AbortSignal;
 }

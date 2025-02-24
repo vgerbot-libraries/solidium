@@ -43,6 +43,7 @@ export * from './decorators/Header';
 export * from './decorators/PathVariable';
 export * from './decorators/Query';
 export * from './decorators/Request';
+export * from './decorators/Payload';
 
 // Progress tracking
 export * from './progress/Progress';
@@ -52,3 +53,8 @@ export * from './progress/ProgressHandler';
 
 export * from './swr/SWRInstance';
 export * from './swr/SWRConfig';
+
+export * from './frameworks/solidjs/restful';
+export * from './frameworks/solidjs/SolidumRestResource';
+export * from './resource/Resource';
+export * from './resource/ResourceStatus';

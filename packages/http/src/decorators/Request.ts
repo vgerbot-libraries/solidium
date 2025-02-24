@@ -11,6 +11,7 @@ import { HttpMethod } from '../http/HttpMethod';
 import { RetryConfig } from '../interceptors/RetryInterceptor';
 import { EndpointMetadata } from '../metadata/EndpointMetadata';
 import { RequestMethodMetadata } from '../metadata/RequestMethodMetadata';
+import { AnyResource } from '../resource/Resource';
 
 export interface RequestOptions {
     path: string;
@@ -24,10 +25,16 @@ export interface RequestOptions {
     adapter?: RequestAdapterConstructor;
 }
 export function Request(options: RequestOptions) {
-    return (
-        target: EndpointInstance,
-        context: ClassMethodDecoratorContext | string | symbol
-    ) => {
+    return function decorateMethod(
+        target: object,
+        context:
+            | ClassMethodDecoratorContext<
+                  object,
+                  (...args: unknown[]) => AnyResource
+              >
+            | string
+            | symbol
+    ) {
         if (!target || !('constructor' in target)) {
             return;
         }
@@ -37,7 +44,8 @@ export function Request(options: RequestOptions) {
         if (typeof context === 'string' || typeof context === 'symbol') {
             setupMethodMetadata();
             Reflect.defineProperty(target, propertyKey, {
-                value: deletator(Reflect.get(target, context))
+                configurable: false,
+                value: delegator(Reflect.get(target, context))
             });
             return;
         }
@@ -45,25 +53,30 @@ export function Request(options: RequestOptions) {
             return;
         }
         setupMethodMetadata();
-        return deletator(Reflect.get(target, context.name));
+        Object.defineProperty(target, context.name, {
+            configurable: false,
+            enumerable: true,
+            writable: false,
+            value: delegator(Reflect.get(target, context.name))
+        });
         function setupMethodMetadata() {
             const endpointMetadata = EndpointMetadata.from(target.constructor);
             endpointMetadata.setMethodMetadata(propertyKey, method);
         }
-        function deletator(originFunction: Function) {
-            return function (this: EndpointInstance, ...args: unknown[]) {
+        function delegator(originFunction: Function) {
+            return function (this: unknown, ...args: unknown[]) {
                 const params: ExecuteRequestMethodParams = {
                     headers: method.getHeaders().clone(),
                     pathVariables: {},
-                    queryParams: {},
+                    queryParams: new URLSearchParams(),
                     adapter: method.getAdapter()
                 };
                 setExecutionContext({
-                    instance: this,
+                    instance: this as EndpointInstance,
                     method,
                     params
                 });
-                return originFunction.apply(this, args);
+                return originFunction.apply(this, args) as AnyResource;
             };
         }
     };

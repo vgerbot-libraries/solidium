@@ -7,7 +7,7 @@ export function cloneParams(
         signal: params.signal,
         headers: params.headers.clone(),
         pathVariables: { ...params.pathVariables },
-        queryParams: { ...params.queryParams },
+        queryParams: new URLSearchParams(params.queryParams),
         payload: clonePayload(params.payload),
         adapter: params.adapter
     };

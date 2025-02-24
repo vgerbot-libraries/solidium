@@ -87,7 +87,7 @@ export class RequestMethod {
         const url = resolveURL(
             this.url,
             params.pathVariables ?? {},
-            params.queryParams ?? {}
+            params.queryParams
         );
         const method = this.metadata.getHttpMethod();
         const headers = this.metadata.getHeaders();

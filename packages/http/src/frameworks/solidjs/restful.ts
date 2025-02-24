@@ -1,8 +1,8 @@
-import { EXECUTE } from '../../resource/Resource';
+import { EXECUTE, Resource } from '../../resource/Resource';
 import { SolidiumRestResource } from './SolidumRestResource';
 
-export function restfull<T>(args: unknown[]): SolidiumRestResource<T> {
+export function restfull<T>(...args: unknown[]): Resource<T> {
     const resource = new SolidiumRestResource<T>();
-    resource[EXECUTE](args);
+    resource[EXECUTE](Array.from(args));
     return resource;
 }

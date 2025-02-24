@@ -40,13 +40,28 @@ export class XMLHttpRequestAdapter implements RequestAdapter {
             }
             this.events.emit('upload', new Progress(event.total, event.loaded));
         });
-        this.executeRequestIfNeed = () => {
+        this.executeRequestIfNeed = async () => {
             this.executeRequestIfNeed = () => void 0;
             if (this.isAborted) {
                 return;
             }
             if (options.payload) {
-                xhr.send(options.payload);
+                if (options.payload instanceof ReadableStream) {
+                    const reader = options.payload.getReader();
+                    const chunks = [];
+                    while (true) {
+                        const { value, done } = await reader.read();
+                        if (value) {
+                            chunks.push(value);
+                        }
+                        if (done) {
+                            break;
+                        }
+                    }
+                    xhr.send(new Blob(chunks));
+                } else {
+                    xhr.send(options.payload);
+                }
             }
         };
         xhr.addEventListener('readystatechange', () => {

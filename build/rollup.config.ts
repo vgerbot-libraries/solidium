@@ -54,8 +54,7 @@ const mainConfig: RollupOptions[] = outputConfig.map(output => {
                 tsconfigOverride: {
                     compilerOptions: {
                         target: output.format === 'es' ? 'es6' : 'es5',
-                        declarationDir: 'lib/typings',
-                        paths: {}
+                        declarationDir: 'lib/typings'
                     }
                 },
                 useTsconfigDeclarationDir: true

@@ -5,7 +5,7 @@ export interface ExecuteRequestMethodParams {
     readonly signal?: AbortSignal;
     readonly headers: HttpHeaders;
     readonly pathVariables: Record<string, string | number | boolean>;
-    readonly queryParams: Record<string, string | number | boolean>;
-    payload?: string | Blob | FormData;
+    readonly queryParams: URLSearchParams;
+    payload?: BodyInit;
     adapter?: RequestAdapterConstructor;
 }

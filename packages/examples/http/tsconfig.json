@@ -1,0 +1,18 @@
+{
+    "compilerOptions": {
+        "jsx": "preserve",
+        "jsxImportSource": "solid-js",
+        "noImplicitThis": false,
+        "experimentalDecorators": true,
+        "emitDecoratorMetadata": true,
+        "useDefineForClassFields": false,
+        "moduleResolution": "bundler",
+        "downlevelIteration": true
+    },
+    "extends": "../tsconfig.json",
+    "include": ["./src/"],
+    "references": [{
+        "path": "../../http/"
+    }]
+    
+}

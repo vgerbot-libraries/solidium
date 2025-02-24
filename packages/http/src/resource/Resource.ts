@@ -4,6 +4,9 @@ export const EXECUTE = Symbol('execute');
 export const SET_DATA = Symbol('setData');
 export const SET_ERROR = Symbol('setError');
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type AnyResource = Resource<any>;
+
 export abstract class Resource<T> {
     abstract get data(): T;
     abstract get error(): unknown;

@@ -1,10 +1,7 @@
 export function resolveURL(
     routeTemplate: string,
     pathVariables: Record<string, string | number | boolean>,
-    queryParameters: Record<
-        string,
-        string | number | boolean | Array<string | number | boolean>
-    >
+    queryParameters: URLSearchParams
 ) {
     const pathParamReplacedURL = routeTemplate.replace(
         /(:([a-z]+))/gi,
@@ -17,16 +14,15 @@ export function resolveURL(
     );
 
     const urlObject = new URL(pathParamReplacedURL);
-
-    for (const [paramKey, paramValue] of Object.entries(queryParameters)) {
-        if (Array.isArray(paramValue)) {
-            paramValue.forEach(arrayItem => {
-                urlObject.searchParams.append(paramKey, arrayItem.toString());
+    queryParameters.forEach((value, key) => {
+        if (Array.isArray(value)) {
+            value.forEach(arrayItem => {
+                urlObject.searchParams.append(key, arrayItem.toString());
             });
         } else {
-            urlObject.searchParams.append(paramKey, paramValue.toString());
+            urlObject.searchParams.append(key, value.toString());
         }
-    }
+    });
 
     return urlObject.toString();
 }
