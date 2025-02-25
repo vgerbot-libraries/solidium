@@ -19,3 +19,5 @@ export const CONSTRUCT_INTERCEPTORS: unique symbol = Symbol(
 export const SWR_INSTANCES: unique symbol = Symbol('swr-instances');
 
 export const ABORT_CONTROLLER = Symbol('abort-controller');
+
+export const APPLICATION_CONTEXT = Symbol('application-context');

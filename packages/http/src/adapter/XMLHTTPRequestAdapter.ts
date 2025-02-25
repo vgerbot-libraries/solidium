@@ -62,6 +62,8 @@ export class XMLHttpRequestAdapter implements RequestAdapter {
                 } else {
                     xhr.send(options.payload);
                 }
+            } else {
+                xhr.send();
             }
         };
         xhr.addEventListener('readystatechange', () => {

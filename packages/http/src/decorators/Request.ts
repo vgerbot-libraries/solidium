@@ -25,45 +25,48 @@ export interface RequestOptions {
     adapter?: RequestAdapterConstructor;
 }
 export function Request(options: RequestOptions) {
-    return function decorateMethod(
-        target: object,
+    return function decorateMethod<R, Args extends unknown[]>(
+        target: object | ((...args: Args) => R),
         context:
-            | ClassMethodDecoratorContext<
-                  object,
-                  (...args: unknown[]) => AnyResource
-              >
+            | ClassMethodDecoratorContext<object, (...args: Args) => R>
             | string
-            | symbol
+            | symbol,
+        descriptor?: TypedPropertyDescriptor<(...args: Args) => R>
     ) {
-        if (!target || !('constructor' in target)) {
-            return;
-        }
-        const propertyKey =
-            typeof context === 'object' ? context.name : context;
-        const method = new RequestMethodMetadata(propertyKey, options);
-        if (typeof context === 'string' || typeof context === 'symbol') {
-            setupMethodMetadata();
-            Reflect.defineProperty(target, propertyKey, {
-                configurable: false,
-                value: delegator(Reflect.get(target, context))
+        if (typeof target === 'function' && typeof context === 'object') {
+            const propertyKey = context.name;
+            context.addInitializer(function () {
+                const clazz = this.constructor;
+                const method = new RequestMethodMetadata(propertyKey, options);
+                EndpointMetadata.from(clazz).setMethodMetadata(
+                    propertyKey,
+                    method
+                );
+                Reflect.set(
+                    this,
+                    propertyKey,
+                    delegator(Reflect.get(this, propertyKey), method)
+                );
             });
-            return;
+        } else if (
+            typeof target === 'object' &&
+            typeof context !== 'object' &&
+            typeof descriptor === 'object'
+        ) {
+            const propertyKey = context;
+            const clazz = target.constructor;
+            const method = new RequestMethodMetadata(propertyKey, options);
+            EndpointMetadata.from(clazz).setMethodMetadata(propertyKey, method);
+            return {
+                ...descriptor,
+                value: delegator(Reflect.get(target, propertyKey), method)
+            };
         }
-        if (context.kind !== 'method') {
-            return;
-        }
-        setupMethodMetadata();
-        Object.defineProperty(target, context.name, {
-            configurable: false,
-            enumerable: true,
-            writable: false,
-            value: delegator(Reflect.get(target, context.name))
-        });
-        function setupMethodMetadata() {
-            const endpointMetadata = EndpointMetadata.from(target.constructor);
-            endpointMetadata.setMethodMetadata(propertyKey, method);
-        }
-        function delegator(originFunction: Function) {
+
+        function delegator(
+            originFunction: (...args: unknown[]) => AnyResource,
+            method: RequestMethodMetadata
+        ) {
             return function (this: unknown, ...args: unknown[]) {
                 const params: ExecuteRequestMethodParams = {
                     headers: method.getHeaders().clone(),
@@ -76,7 +79,7 @@ export function Request(options: RequestOptions) {
                     method,
                     params
                 });
-                return originFunction.apply(this, args) as AnyResource;
+                return originFunction.apply(this, args) as R;
             };
         }
     };

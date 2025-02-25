@@ -1,4 +1,4 @@
-import { ApplicationContext, Generate } from '@vgerbot/ioc';
+import { ApplicationContext, Generate, Inject } from '@vgerbot/ioc';
 import { Class } from '../common/Class';
 import { EndpointMetadata } from '../metadata/EndpointMetadata';
 import { RequestMethod } from './RequestMethod';
@@ -8,7 +8,8 @@ import {
     ADAPTER,
     CONSTRUCT_INTERCEPTORS,
     SWR_INSTANCES,
-    ABORT_CONTROLLER
+    ABORT_CONTROLLER,
+    APPLICATION_CONTEXT
 } from './EndpointMembers';
 import {
     Interceptor,
@@ -30,6 +31,7 @@ export interface EndpointInstance {
     ) => Interceptor[];
     [SWR_INSTANCES]: Map<string | symbol, SWRInstance<HttpResponse>>;
     [ABORT_CONTROLLER]: AbortController;
+    [APPLICATION_CONTEXT]: ApplicationContext;
 }
 
 export function buildEndpointClass(
@@ -49,15 +51,6 @@ export function buildEndpointClass(
     })(endpointClass.prototype, INTERCEPTORS);
 
     Reflect.set(endpointClass.prototype, ADAPTER, metadata.getAdaptor());
-
-    const methods = new Map();
-    metadata.getMethods().forEach((methodMetadata, methodName) => {
-        methods.set(
-            methodName,
-            new RequestMethod(methodName, metadata, methodMetadata)
-        );
-    });
-    Reflect.set(endpointClass.prototype, METHODS, methods);
 
     Generate<
         EndpointInstance,
@@ -81,4 +74,16 @@ export function buildEndpointClass(
         endpointClass.prototype,
         ABORT_CONTROLLER
     );
+    lazyMember(() => {
+        const methods = new Map();
+        metadata.getMethods().forEach((methodMetadata, methodName) => {
+            methods.set(
+                methodName,
+                new RequestMethod(methodName, metadata, methodMetadata)
+            );
+        });
+        return methods;
+    })(endpointClass.prototype, METHODS);
+
+    Inject(ApplicationContext)(endpointClass.prototype, APPLICATION_CONTEXT);
 }
