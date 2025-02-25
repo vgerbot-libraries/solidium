@@ -43,7 +43,7 @@
         "url": "https://github.com/vgerbot-libraries/solidium/issues"
     },
     "dependencies": {
-        "@vgerbot/ioc": "^1.2.1",
+        "@vgerbot/ioc": "^1.2.2",
         "@vgerbot/lazy": "^1.0.7",
         "@vgerbot/solidium": "workspace:1.0.0",
         "solid-js": "^1.9.4",

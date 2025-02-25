@@ -40,7 +40,7 @@
     "url": "https://github.com/vgerbot-libraries/solidium/issues"
   },
   "dependencies": {
-    "@vgerbot/ioc": "^1.2.1",
+    "@vgerbot/ioc": "^1.2.2",
     "@vgerbot/lazy": "^1.0.7",
     "@vgerbot/msgpack-ext": "workspace:1.0.0",
     "@vgerbot/solidium": "workspace:1.0.0",
@@ -50,7 +50,7 @@
     "tslib": "^2.8.1"
   },
   "peerDependencies": {
-    "@vgerbot/ioc": ">=1.1.2",
+    "@vgerbot/ioc": ">=1.2.2",
     "@vgerbot/solidium": ">=1.0.0",
     "solid-js": ">=1.0.0"
   },
