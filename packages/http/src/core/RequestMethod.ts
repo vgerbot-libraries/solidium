@@ -73,7 +73,6 @@ export class RequestMethod {
                 const adapter = method.createAdapter(instance, params);
                 const source = await adapter.execute();
                 return new HttpResponse(source, {
-                    status: source.status,
                     method: this
                 });
             }

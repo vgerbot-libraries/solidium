@@ -37,6 +37,7 @@ export class NativeReadableStream extends ProgressiveByteStream {
         const stream = this.stream;
         const total = this.contentLength;
         let loaded = 0;
+        // eslint-disable-next-line @typescript-eslint/no-this-alias
         const that = this;
         return new ReadableStream({
             start(controller) {
@@ -54,5 +55,19 @@ export class NativeReadableStream extends ProgressiveByteStream {
                 });
             }
         });
+    }
+    async readAsBlob(
+        contentType: string = 'application/octet-stream'
+    ): Promise<Blob> {
+        const reader = this.readAsStream().getReader();
+        const chunks: Blob[] = [];
+        while (true) {
+            const { value: chunk, done } = await reader.read();
+            if (done) {
+                break;
+            }
+            chunks.push(new Blob([chunk]));
+        }
+        return new Blob(chunks, { type: contentType });
     }
 }

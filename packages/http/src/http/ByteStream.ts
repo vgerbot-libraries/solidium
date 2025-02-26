@@ -5,4 +5,5 @@ export interface ByteStream {
     onProgress(handler: ProgressHandler): () => void;
     readAsBuffer(): Promise<ArrayBuffer>;
     readAsStream(): ReadableStream<ArrayBuffer>;
+    readAsBlob(contentType?: string): Promise<Blob>;
 }

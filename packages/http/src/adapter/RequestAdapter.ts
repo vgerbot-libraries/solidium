@@ -1,13 +1,10 @@
-import { ProgressHandler } from '../progress/ProgressHandler';
-import { AdapterExecutionResult } from './AdapterExecutionResult';
+import { HttpSource } from '../http/HttpSource';
 import { AdapterOptions } from './AdapterOptions';
 
 export interface RequestAdapter {
     abort(): void;
 
-    onDownload(listener: ProgressHandler): () => void;
-    onUpload(listener: ProgressHandler): () => void;
-    execute(): Promise<AdapterExecutionResult>;
+    execute(): Promise<HttpSource>;
 }
 export type RequestAdapterConstructor = new (
     options: AdapterOptions

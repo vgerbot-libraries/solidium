@@ -14,4 +14,5 @@ export abstract class ProgressiveByteStream implements ByteStream {
     }
     abstract readAsBuffer(): Promise<ArrayBuffer>;
     abstract readAsStream(): ReadableStream<ArrayBuffer>;
+    abstract readAsBlob(contentType?: string): Promise<Blob>;
 }

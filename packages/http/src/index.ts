@@ -22,7 +22,6 @@ export * from './http/HttpSource';
 // Adapters
 export * from './adapter/RequestAdapter';
 export * from './adapter/AdapterOptions';
-export * from './adapter/AdapterExecutionResult';
 export * from './adapter/FetchRequestAdapter';
 export * from './adapter/XMLHTTPRequestAdapter';
 

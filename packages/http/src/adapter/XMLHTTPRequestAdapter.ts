@@ -6,9 +6,8 @@ import { ByteStream } from '../http/ByteStream';
 import { HttpHeaders } from '../http/HttpHeaders';
 import { BlobByteStream } from '../http/streams/BlobByteStream';
 import { Progress } from '../progress/Progress';
-import { ProgressHandler } from '../progress/ProgressHandler';
-import { AdapterExecutionResult } from './AdapterExecutionResult';
 import { parseHeaders } from '../common/parseHeaders';
+import { HttpSource } from '../http/HttpSource';
 
 export class XMLHttpRequestAdapter implements RequestAdapter {
     private readonly xhr: XMLHttpRequest;
@@ -16,6 +15,7 @@ export class XMLHttpRequestAdapter implements RequestAdapter {
     private readonly events = new Events();
     private readonly headersDefer = new Defer<HttpHeaders>();
     private readonly bodyDefer = new Defer<ByteStream>();
+    private readonly statusDefer = new Defer<number>();
     private isAborted = false;
 
     constructor(options: AdapterOptions) {
@@ -71,6 +71,7 @@ export class XMLHttpRequestAdapter implements RequestAdapter {
                 const rawHeaders = xhr.getAllResponseHeaders();
                 const headers = new HttpHeaders(parseHeaders(rawHeaders));
                 this.headersDefer.resolve(headers);
+                this.statusDefer.resolve(xhr.status);
             } else if (xhr.readyState === XMLHttpRequest.DONE) {
                 this.bodyDefer.resolve(new BlobByteStream(xhr.response));
             }
@@ -90,22 +91,24 @@ export class XMLHttpRequestAdapter implements RequestAdapter {
         this.isAborted = true;
         this.xhr.abort();
     }
-    onDownload(listener: ProgressHandler): () => void {
-        return this.events.on('download', listener);
-    }
-    onUpload(listener: ProgressHandler): () => void {
-        return this.events.on('upload', listener);
-    }
-    async execute(): Promise<AdapterExecutionResult> {
+    async execute(): Promise<HttpSource> {
         this.executeRequestIfNeed();
-        const { headersDefer, bodyDefer } = this;
+        const { headersDefer, bodyDefer, statusDefer, events } = this;
         return {
-            status: this.xhr.status,
+            status() {
+                return statusDefer.promise;
+            },
             headers() {
                 return headersDefer.promise;
             },
             body() {
                 return bodyDefer.promise;
+            },
+            onDownload(listener) {
+                return events.on('download', listener);
+            },
+            onUpload(listener) {
+                return events.on('upload', listener);
             }
         };
     }

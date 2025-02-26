@@ -2,11 +2,11 @@ import { Defer } from '../common/Defer';
 import { Events } from '../common/Events';
 import { ByteStream } from '../http/ByteStream';
 import { HttpHeaders } from '../http/HttpHeaders';
+import { HttpSource } from '../http/HttpSource';
 import { BlobByteStream } from '../http/streams/BlobByteStream';
 import { NativeReadableStream } from '../http/streams/NativeReadableStream';
 import { Progress } from '../progress/Progress';
 import { ProgressHandler } from '../progress/ProgressHandler';
-import { AdapterExecutionResult } from './AdapterExecutionResult';
 import { AdapterOptions } from './AdapterOptions';
 import { RequestAdapter } from './RequestAdapter';
 
@@ -15,7 +15,7 @@ export class FetchRequestAdapter implements RequestAdapter {
     private readonly events = new Events();
     private readonly headersDefer = new Defer<HttpHeaders>();
     private readonly bodyDefer = new Defer<ByteStream>();
-    private status = 0;
+    private readonly statusDefer = new Defer<number>();
     private readonly abortController = new AbortController();
     constructor(options: AdapterOptions) {
         this.executeRequestIfNeed = () => {
@@ -32,7 +32,7 @@ export class FetchRequestAdapter implements RequestAdapter {
                 body: options.payload,
                 signal: this.abortController.signal
             }).then(response => {
-                this.status = response.status;
+                this.statusDefer.resolve(response.status);
                 this.headersDefer.resolve(new HttpHeaders(response.headers));
                 if (!response.body) {
                     this.bodyDefer.resolve(new BlobByteStream(new Blob([])));
@@ -67,26 +67,25 @@ export class FetchRequestAdapter implements RequestAdapter {
     abort(): void {
         this.abortController.abort();
     }
-    onDownload(listener: ProgressHandler): () => void {
-        return this.events.on('download', listener);
-    }
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    onUpload(_listener: ProgressHandler): () => void {
-        return () => void 0;
-    }
-    async execute(): Promise<AdapterExecutionResult> {
+    async execute(): Promise<HttpSource> {
         this.executeRequestIfNeed();
-        const { headersDefer, bodyDefer } = this;
-        const getStatus = () => this.status;
+        const { headersDefer, bodyDefer, statusDefer, events } = this;
         return {
-            get status() {
-                return getStatus();
+            status() {
+                return statusDefer.promise;
             },
             headers() {
                 return headersDefer.promise;
             },
             body() {
                 return bodyDefer.promise;
+            },
+            onDownload(listener: ProgressHandler): () => void {
+                return events.on('download', listener);
+            },
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            onUpload(_listener: ProgressHandler): () => void {
+                return () => void 0;
             }
         };
     }

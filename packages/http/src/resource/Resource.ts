@@ -1,3 +1,7 @@
+import { mergeAbortSignal } from '../common/mergeAbortSignal';
+import { METHODS } from '../core/EndpointMembers';
+import { getExecutionContext } from '../core/execution-context';
+import { HttpResponse } from '../core/HttpResponse';
 import { ResourceStatus } from './ResourceStatus';
 
 export const EXECUTE = Symbol('execute');
@@ -16,6 +20,12 @@ export abstract class Resource<T> {
 
     protected abstract get status(): ResourceStatus;
     protected abstract set status(status: ResourceStatus);
+    protected readonly abortController = new AbortController();
+    constructor() {
+        this.abortController.signal.addEventListener('abort', () => {
+            this.status = ResourceStatus.ABORTED;
+        });
+    }
 
     get idle() {
         return this.status === ResourceStatus.IDLE;
@@ -32,8 +42,47 @@ export abstract class Resource<T> {
     get failure() {
         return this.status === ResourceStatus.ERROR;
     }
-}
-
-export interface ExecutableResource {
-    [EXECUTE](args: unknown[]): void;
+    abort() {
+        this.abortController.abort();
+    }
+    protected async [EXECUTE](args: unknown[]) {
+        const context = getExecutionContext();
+        if (!context) {
+            throw new Error(
+                'No request context. Make sure to call `request` only within endpoint methods.'
+            );
+        }
+        const { instance, method: methodMetadata, params } = context;
+        const method = instance[METHODS].get(methodMetadata.name);
+        if (!method) {
+            throw new Error(
+                `Not found method ${methodMetadata.name.toString()}`
+            );
+        }
+        const executionHandlers = methodMetadata.getExecutionHandlers();
+        executionHandlers.forEach(handler => {
+            handler(instance, methodMetadata, params, args);
+        });
+        this.status = ResourceStatus.PENDING;
+        let signal = params.signal;
+        if (signal) {
+            signal = mergeAbortSignal(
+                params.signal,
+                this.abortController.signal
+            );
+        }
+        try {
+            const response = await method.invoke(instance, {
+                ...params,
+                signal
+            });
+            this.status = ResourceStatus.SUCCESS;
+            await this.handleResponse(response);
+        } catch (error) {
+            this.status = ResourceStatus.ERROR;
+            this[SET_ERROR](error);
+            throw error;
+        }
+    }
+    protected abstract handleResponse(response: HttpResponse): Promise<void>;
 }
