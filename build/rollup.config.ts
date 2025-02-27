@@ -33,7 +33,7 @@ const mainConfig: RollupOptions[] = outputConfig.map(output => {
         watch: isServingExamples
             ? {
                   chokidar: {
-                      ignored: '*/node_moduless/**'
+                      ignored: '*/node_moduless/(!@vgerbot/)/**'
                   }
               }
             : false,
