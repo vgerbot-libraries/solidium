@@ -1,7 +1,8 @@
 import {
+    Accessor,
     Endpoint,
     Get,
-    Observerable,
+    PathVariable,
     Payload,
     Post,
     Query,
@@ -23,7 +24,7 @@ export class ObjectsEndpoint {
         return restfull<ObjectDef[]>();
     }
     @Get('objects/:id')
-    getItem(id: Observerable<string | undefined>) {
+    getItem(@PathVariable('id') id: Accessor<string | undefined>) {
         return restfull<ObjectDef>(id);
     }
     @Get('objects')

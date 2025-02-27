@@ -5,12 +5,12 @@ export function PathVariable(
     defaultValue?: string | number | boolean
 ) {
     return function (
-        target: Function,
+        target: object,
         methodName: string,
         parameterIndex: number
     ) {
         appendExecHandler(
-            target,
+            target.constructor,
             methodName,
             (instance, metadata, params, args) => {
                 const value = args[parameterIndex];

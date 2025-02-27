@@ -17,10 +17,11 @@ export type ExecutionHandler = (
 export class RequestMethodMetadata {
     private readonly executionHandlers: ExecutionHandler[] = [];
     private swrConfig?: SWRConfig;
-    constructor(
-        public readonly name: string | symbol,
-        private readonly options: RequestOptions
-    ) {}
+    private readonly options: RequestOptions = { path: '/', method: 'GET' };
+    constructor(public readonly name: string | symbol) {}
+    setOptions(options: RequestOptions) {
+        Object.assign(this.options, options);
+    }
     appendSWRConfig(config: SWRConfig) {
         this.swrConfig = {
             ...this.swrConfig,

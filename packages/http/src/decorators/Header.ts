@@ -2,12 +2,12 @@ import { appendExecHandler } from '../common/appendExecHandler';
 
 export function Header(name: string, defaultValue?: string | string[]) {
     return function (
-        target: Function,
+        target: object,
         methodName: string,
         parameterIndex: number
     ) {
         appendExecHandler(
-            target,
+            target.constructor,
             methodName,
             (instance, metadata, params, args) => {
                 const value =

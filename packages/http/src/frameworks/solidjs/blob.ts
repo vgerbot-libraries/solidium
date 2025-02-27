@@ -2,6 +2,7 @@ import { APPLICATION_CONTEXT } from '../../core/EndpointMembers';
 import { getExecutionContext } from '../../core/execution-context';
 import { EXECUTE } from '../../resource/Resource';
 import { SolidiumBlobResource } from './SolidiumDownloadResource';
+import { Tracker } from './Tracker';
 
 export function blob(...args: unknown[]) {
     const context = getExecutionContext();
@@ -12,6 +13,10 @@ export function blob(...args: unknown[]) {
     const resource = appCtx.getInstance(
         SolidiumBlobResource
     ) as SolidiumBlobResource;
-    resource[EXECUTE](Array.from(args));
+
+    const tracker = appCtx.getInstance(Tracker);
+    tracker.track(args, args => {
+        resource[EXECUTE](args);
+    });
     return resource;
 }

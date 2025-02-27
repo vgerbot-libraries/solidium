@@ -1,7 +1,6 @@
 import { Solidium, useService } from '@vgerbot/solidium';
 import { ObjectsEndpoint } from './ObjectEndpoint';
 import { createEffect, createSignal, Show } from 'solid-js';
-import { Observer } from '@vgerbot/http';
 
 export function App() {
     return (
@@ -15,7 +14,7 @@ export function App() {
 function ObjectItem() {
     const [id, setId] = createSignal<string>();
     const endpoint = useService(ObjectsEndpoint);
-    const res = endpoint.getItem(Observer.of(id));
+    const res = endpoint.getItem(id);
     return (
         <div>
             <form>
@@ -25,6 +24,8 @@ function ObjectItem() {
                         onChange={e => {
                             setId(e.target.value);
                         }}
+                        type="number"
+                        value="0"
                     ></input>
                 </label>
             </form>

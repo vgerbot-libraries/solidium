@@ -1,5 +1,8 @@
 import { RequestAdapterConstructor } from '../adapter/RequestAdapter';
+import { Class } from '../common/Class';
 import { buildEndpointClass, EndpointInstance } from '../core/EndpointInstance';
+import { ExecuteRequestMethodParams } from '../core/ExecuteRequestParams';
+import { HttpResponse } from '../core/HttpResponse';
 import {
     Interceptor,
     InterceptorConstructor,
@@ -7,12 +10,9 @@ import {
     InterceptorTypeIdentifier,
     isInterceptorFunction
 } from '../core/Interceptor';
+import { RequestMethod } from '../core/RequestMethod';
 import { HttpHeaders } from '../http/HttpHeaders';
 import { RequestMethodMetadata } from './RequestMethodMetadata';
-import { RequestMethod } from '../core/RequestMethod';
-import { ExecuteRequestMethodParams } from '../core/ExecuteRequestParams';
-import { HttpResponse } from '../core/HttpResponse';
-import { Class } from '../common/Class';
 
 interface BaseEndpointOptions {
     baseURL: string;
@@ -56,6 +56,7 @@ export class EndpointMetadata {
     private interceptors?: Array<
         InterceptorTypeIdentifier | Interceptor | InterceptorFunction
     >;
+
     private constructor() {}
 
     setOptions(endpointOptions: EndpointOptions) {
@@ -95,9 +96,14 @@ export class EndpointMetadata {
         }
     }
     getMethodMetadata(methodName: string | symbol) {
-        if (this.methods.has(methodName)) {
-            return this.methods.get(methodName);
+        let metadata = this.methods.get(methodName);
+        if (!metadata) {
+            this.methods.set(
+                methodName,
+                (metadata = new RequestMethodMetadata(methodName))
+            );
         }
+        return metadata;
     }
     setMethodMetadata(
         methodName: string | symbol,

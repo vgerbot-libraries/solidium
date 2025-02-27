@@ -58,4 +58,4 @@ export * from './frameworks/solidjs/SolidumRestResource';
 export * from './resource/Resource';
 export * from './resource/ResourceStatus';
 
-export * from './observer/Observer';
+export * from './core/Acessor';

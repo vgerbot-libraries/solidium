@@ -11,6 +11,7 @@ import { HttpMethod } from '../http/HttpMethod';
 import { RetryConfig } from '../interceptors/RetryInterceptor';
 import { EndpointMetadata } from '../metadata/EndpointMetadata';
 import { RequestMethodMetadata } from '../metadata/RequestMethodMetadata';
+import { Accessor } from '../core/Acessor';
 import { AnyResource } from '../resource/Resource';
 
 export interface RequestOptions {
@@ -25,7 +26,10 @@ export interface RequestOptions {
     adapter?: RequestAdapterConstructor;
 }
 export function Request(options: RequestOptions) {
-    return function decorateMethod<R, Args extends unknown[]>(
+    return function decorateMethod<
+        R,
+        Args extends Array<unknown | Accessor<unknown>>
+    >(
         target: object | ((...args: Args) => R),
         context:
             | ClassMethodDecoratorContext<object, (...args: Args) => R>
@@ -37,11 +41,9 @@ export function Request(options: RequestOptions) {
             const propertyKey = context.name;
             context.addInitializer(function () {
                 const clazz = this.constructor;
-                const method = new RequestMethodMetadata(propertyKey, options);
-                EndpointMetadata.from(clazz).setMethodMetadata(
-                    propertyKey,
-                    method
-                );
+                const method =
+                    EndpointMetadata.from(clazz).getMethodMetadata(propertyKey);
+                method.setOptions(options);
                 Reflect.set(
                     this,
                     propertyKey,
@@ -55,11 +57,15 @@ export function Request(options: RequestOptions) {
         ) {
             const propertyKey = context;
             const clazz = target.constructor;
-            const method = new RequestMethodMetadata(propertyKey, options);
-            EndpointMetadata.from(clazz).setMethodMetadata(propertyKey, method);
+            const methodMetadata =
+                EndpointMetadata.from(clazz).getMethodMetadata(propertyKey);
+            methodMetadata.setOptions(options);
             return {
                 ...descriptor,
-                value: delegator(Reflect.get(target, propertyKey), method)
+                value: delegator(
+                    Reflect.get(target, propertyKey),
+                    methodMetadata
+                )
             };
         }
 
