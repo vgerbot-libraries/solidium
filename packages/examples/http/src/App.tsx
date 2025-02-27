@@ -1,12 +1,40 @@
 import { Solidium, useService } from '@vgerbot/solidium';
 import { ObjectsEndpoint } from './ObjectEndpoint';
-import { createEffect, Show } from 'solid-js';
+import { createEffect, createSignal, Show } from 'solid-js';
+import { Observer } from '@vgerbot/http';
 
 export function App() {
     return (
         <Solidium>
             Data: <Objects></Objects>
+            Object Item: <ObjectItem></ObjectItem>
         </Solidium>
+    );
+}
+
+function ObjectItem() {
+    const [id, setId] = createSignal<string>();
+    const endpoint = useService(ObjectsEndpoint);
+    const res = endpoint.getItem(Observer.of(id));
+    return (
+        <div>
+            <form>
+                <label>
+                    Object ID:
+                    <input
+                        onChange={e => {
+                            setId(e.target.value);
+                        }}
+                    ></input>
+                </label>
+            </form>
+            <Show when={res.pending}>
+                <span>Loading...</span>
+            </Show>
+            <Show when={res.success}>
+                <code>{JSON.stringify(res.data)}</code>
+            </Show>
+        </div>
     );
 }
 

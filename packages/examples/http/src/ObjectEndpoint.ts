@@ -1,4 +1,12 @@
-import { Endpoint, Get, Payload, Post, Query, restfull } from '@vgerbot/http';
+import {
+    Endpoint,
+    Get,
+    Observerable,
+    Payload,
+    Post,
+    Query,
+    restfull
+} from '@vgerbot/http';
 
 export interface ObjectDef {
     id: string;
@@ -15,7 +23,7 @@ export class ObjectsEndpoint {
         return restfull<ObjectDef[]>();
     }
     @Get('objects/:id')
-    getItem(id: string) {
+    getItem(id: Observerable<string | undefined>) {
         return restfull<ObjectDef>(id);
     }
     @Get('objects')
