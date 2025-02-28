@@ -71,7 +71,13 @@ export default tseslint.config(
             }
         },
         {
-            ignores: ['**/lib', '.github', '.husky', '**/dist'],
+            ignores: [
+                '**/lib',
+                '.github',
+                '.husky',
+                '**/dist',
+                'packages/ioc/**'
+            ],
             plugins: {
                 prettier: prettier
             },

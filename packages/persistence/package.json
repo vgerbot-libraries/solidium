@@ -40,10 +40,10 @@
     "url": "https://github.com/vgerbot-libraries/solidium/issues"
   },
   "dependencies": {
-    "@vgerbot/ioc": "^1.2.2",
+    "@vgerbot/ioc": "workspace:*",
     "@vgerbot/lazy": "^1.0.7",
-    "@vgerbot/msgpack-ext": "workspace:1.0.0",
-    "@vgerbot/solidium": "workspace:1.0.0",
+    "@vgerbot/msgpack-ext": "workspace:*",
+    "@vgerbot/solidium": "workspace:*",
     "idb": "^8.0.2",
     "reflect-metadata": "^0.2.2",
     "solid-js": "^1.9.4",

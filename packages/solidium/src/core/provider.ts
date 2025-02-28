@@ -2,7 +2,8 @@ import {
     ApplicationContext,
     ClassMetadata,
     InstanceScope,
-    Newable
+    Newable,
+    Identifier
 } from '@vgerbot/ioc';
 import {
     Owner,
@@ -13,7 +14,6 @@ import {
 } from 'solid-js';
 import { createComponent } from 'solid-js/web';
 import { afterInstantiation, beforeInstantiation } from './processor';
-import { Identifier } from '@vgerbot/ioc/dist/types/Identifier';
 import { COMPONENT_TREE_SCOPE } from '../decorators/ComponentTreeScope';
 import { ComponentTreeScopeInstanceResolution } from '../ioc/ScopedInstanceResolution';
 import { setupOwner } from './owner';

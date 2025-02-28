@@ -1,0 +1,3 @@
+[submodule "packages/ioc"]
+	path = packages/ioc
+	url = git@github.com:vgerbot-libraries/ioc.git
