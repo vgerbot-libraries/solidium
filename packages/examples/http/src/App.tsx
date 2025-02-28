@@ -1,12 +1,14 @@
 import { Solidium, useService } from '@vgerbot/solidium';
-import { ObjectsEndpoint } from './ObjectEndpoint';
 import { createEffect, createSignal, Show } from 'solid-js';
+import { ObjectsEndpoint } from './ObjectEndpoint';
+import { SSEEndpoint } from './SSEEndpoint';
 
 export function App() {
     return (
         <Solidium>
             Data: <Objects></Objects>
             Object Item: <ObjectItem></ObjectItem>
+            SSE: <SSE></SSE>
         </Solidium>
     );
 }
@@ -68,4 +70,12 @@ function Objects() {
             <Show when={listRes.aborted}>Aborted</Show>
         </>
     );
+}
+
+function SSE() {
+    const endpoint = useService(SSEEndpoint);
+
+    const eventsResource = endpoint.events();
+
+    return <ul>{JSON.stringify(eventsResource.data)}</ul>;
 }

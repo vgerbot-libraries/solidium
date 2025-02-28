@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type EventListener = (...args: any[]) => void;
 export class Events {
     private readonly listeners = new Map<string, Set<EventListener>>();

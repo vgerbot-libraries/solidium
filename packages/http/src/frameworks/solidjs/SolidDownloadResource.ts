@@ -1,4 +1,5 @@
-import { Signal } from 'packages/solidium/lib/typings';
+import { Signal } from '@vgerbot/solidium';
+import { Scope, InstanceScope } from '@vgerbot/ioc';
 import { Progress } from '../../progress/Progress';
 import { DownloadResource } from '../../resource/DownloadResource';
 import { ResourceStatus } from '../../resource/ResourceStatus';
@@ -9,7 +10,8 @@ const DATA = Symbol('data');
 const ERROR = Symbol('error');
 const STATUS = Symbol('status');
 
-export abstract class SolidiumDownloadResource<
+@Scope(InstanceScope.TRANSIENT)
+export abstract class SolidDownloadResource<
     T extends Blob | ArrayBuffer
 > extends DownloadResource<T> {
     @Signal()
@@ -42,7 +44,7 @@ export abstract class SolidiumDownloadResource<
         return this[ERROR];
     }
 }
-export class SolidiumBlobResource extends SolidiumDownloadResource<Blob> {
+export class SolidiumBlobResource extends SolidDownloadResource<Blob> {
     protected async handleResponse(response: HttpResponse): Promise<void> {
         await super.handleResponse(response);
         const body = await response.body();
@@ -51,7 +53,7 @@ export class SolidiumBlobResource extends SolidiumDownloadResource<Blob> {
     }
 }
 
-export class SolidiumArrayBufferResource extends SolidiumDownloadResource<ArrayBuffer> {
+export class SolidiumArrayBufferResource extends SolidDownloadResource<ArrayBuffer> {
     protected async handleResponse(response: HttpResponse): Promise<void> {
         await super.handleResponse(response);
         const body = await response.body();

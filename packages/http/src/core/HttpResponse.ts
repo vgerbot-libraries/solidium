@@ -46,9 +46,13 @@ export class HttpResponse implements HttpSource {
         }
     }
     async *jsonStream<T>(encoding: string = 'UTF-8') {
+        const regex = /event:\s*?([^\s\n\r]+?)[\n\r\s]*data:\s*?(.*?)\s*$/i;
         for await (const chunk of this.textStream(encoding)) {
-            const json = chunk.replace(/^data:\s+/, '');
-            yield JSON.parse(json) as T;
+            const [, event, data] = regex.exec(chunk) ?? [];
+            if (event !== 'message' || !data) {
+                continue;
+            }
+            yield JSON.parse(data) as T;
         }
     }
     onUpload(listener: ProgressHandler): () => void {
