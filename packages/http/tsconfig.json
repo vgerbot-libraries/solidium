@@ -3,8 +3,13 @@
     "include": ["src"],
     "compilerOptions": {
         "composite": true,
-        "rootDir": "src",
+        "rootDir": "./src",
         "declaration": true,
         "emitDecoratorMetadata": false
-    }
+    },
+    "references": [{
+        "path": "../solidium/"
+    }, {
+        "path": "../ioc/"
+    }]
 }

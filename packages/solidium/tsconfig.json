@@ -5,5 +5,8 @@
         "composite": true,
         "rootDir": "src",
         "declaration": true
-    }
+    },
+    "references": [{
+        "path": "../ioc/"
+    }]
 }

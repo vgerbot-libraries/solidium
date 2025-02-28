@@ -24,8 +24,7 @@
             "@vgerbot/http": ["packages/http/src"],
             "@vgerbot/solidium": ["packages/solidium/src"],
             "@vgerbot/persistence": ["packages/persistence/src"],
-            "@vgerbot/msgpack-ext": ["packages/msgpack-ext/src"],
-            "@vgerbot/ioc": ["packages/ioc"]
+            "@vgerbot/msgpack-ext": ["packages/msgpack-ext/src"]
         }
     },
     "exclude": ["**/__tests__", "node_modules", "**/lib"],
@@ -38,6 +37,9 @@
         },
         {
             "path": "./packages/persistence/tsconfig.json"
+        },
+        {
+            "path": "./packages/ioc/tsconfig.json"
         }
     ]
 }
