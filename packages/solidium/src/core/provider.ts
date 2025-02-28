@@ -1,10 +1,4 @@
-import {
-    ApplicationContext,
-    ClassMetadata,
-    InstanceScope,
-    Newable,
-    Identifier
-} from '@vgerbot/ioc';
+import { ApplicationContext, Identifier, Newable } from '@vgerbot/ioc';
 import {
     Owner,
     ParentProps,
@@ -13,10 +7,10 @@ import {
     getOwner
 } from 'solid-js';
 import { createComponent } from 'solid-js/web';
-import { afterInstantiation, beforeInstantiation } from './processor';
 import { COMPONENT_TREE_SCOPE } from '../decorators/ComponentTreeScope';
 import { ComponentTreeScopeInstanceResolution } from '../ioc/ScopedInstanceResolution';
 import { setupOwner } from './owner';
+import { afterInstantiation, beforeInstantiation } from './processor';
 
 export const IoCContext = createContext<ApplicationContext>();
 
@@ -25,40 +19,36 @@ export type SolidiumProps = ParentProps<{
     autoRegisterClasses?: Array<Newable<unknown>>;
 }>;
 
-class ServiceInstanceStatusManager {
-    private store = new WeakMap<Newable<unknown>, true>();
-    record<T>(cls: Newable<T>) {
-        this.store.set(cls, true);
-    }
-    isInstantiated<T>(cls: Newable<T>) {
-        return this.store.has(cls);
-    }
-}
-
 export function Solidium(props: SolidiumProps) {
+    const owner = getOwner();
     const appCtx = new ApplicationContext();
-    const manager = appCtx.getInstance(ServiceInstanceStatusManager);
+    const IS_MANAGED = Symbol('IS_MANAGED');
     const originGetInstance = appCtx.getInstance;
     appCtx.getInstance = function <T, O>(
         this: ApplicationContext,
         id: Identifier,
-        owner?: O
+        instanceOwner?: O
     ): T {
-        if (typeof id === 'function') {
-            const metadata = ClassMetadata.getInstance(id).reader();
-            if (metadata.getScope() === InstanceScope.TRANSIENT) {
-                return originGetInstance.call(this, id, owner) as T;
-            }
-            if (manager.isInstantiated(id)) {
-                return originGetInstance.call(this, id, owner) as T;
-            }
-        }
         const [dispose, instance] = createRoot(dispose => {
-            return [dispose, originGetInstance.call(this, id, owner)];
-        });
-        this.onPreDestroy(() => {
-            queueMicrotask(dispose);
-        });
+            return [dispose, originGetInstance.call(this, id, instanceOwner)];
+        }, owner);
+        if (instance !== null && typeof instance === 'object') {
+            const isManaged = Reflect.getMetadata(
+                IS_MANAGED,
+                instance
+            ) as boolean;
+            if (isManaged) {
+                dispose();
+            } else {
+                Reflect.defineMetadata(IS_MANAGED, true, instance);
+            }
+            const removeListener = this.onPreDestroyThat(it => {
+                if (it === instance) {
+                    dispose();
+                    removeListener();
+                }
+            });
+        }
         return instance as T;
     };
 
@@ -67,7 +57,6 @@ export function Solidium(props: SolidiumProps) {
     ) {
         return beforeInstantiation(constructor, appCtx);
     });
-    const owner = getOwner();
     appCtx.registerAfterInstantiationProcessor(
         <T extends object>(instance: T) => {
             setupOwner(instance, owner as Owner);
