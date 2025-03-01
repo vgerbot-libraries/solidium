@@ -53,7 +53,11 @@ const mainConfig: RollupOptions[] = outputConfig.map(output => {
                 tsconfig: path.resolve(process.cwd(), 'tsconfig.json'),
                 tsconfigOverride: {
                     compilerOptions: {
-                        target: output.format === 'es' ? 'es6' : 'es5',
+                        target: isServingExamples
+                            ? 'esnext'
+                            : output.format === 'es'
+                              ? 'es6'
+                              : 'es5',
                         declarationDir: 'lib/typings'
                     }
                 },
