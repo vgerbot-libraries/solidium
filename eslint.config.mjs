@@ -71,6 +71,12 @@ export default tseslint.config(
             }
         },
         {
+            files: ['packages/mock-server/src/*.ts'],
+            languageOptions: {
+                globals: globals.node
+            }
+        },
+        {
             ignores: [
                 '**/lib',
                 '.github',
