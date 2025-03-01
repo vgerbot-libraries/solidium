@@ -6,17 +6,23 @@ import { ResourceStatus } from '../../resource/ResourceStatus';
 import { JSONSSEResource } from '../../resource/JSONSSEResource';
 
 const DATA = Symbol('data');
+const MESSAGES = Symbol('messages');
 const ERROR = Symbol('error');
 const STATUS = Symbol('status');
 
 @Scope(InstanceScope.TRANSIENT)
 export class SolidJSONSSEResource<T> extends JSONSSEResource<T> {
     @Signal()
+    private [MESSAGES]: T[] = [];
+    @Signal()
     private [DATA]!: T;
     @Signal()
     private [ERROR]!: unknown;
     @Signal()
     private [STATUS]: ResourceStatus = ResourceStatus.IDLE;
+    get messages() {
+        return this[MESSAGES];
+    }
     get data(): T {
         return this[DATA];
     }
@@ -30,6 +36,7 @@ export class SolidJSONSSEResource<T> extends JSONSSEResource<T> {
         this[STATUS] = status;
     }
     protected [SET_DATA](data: T): void {
+        this[MESSAGES] = this[MESSAGES].concat(data);
         this[DATA] = data;
     }
     protected [SET_ERROR](error: unknown): void {

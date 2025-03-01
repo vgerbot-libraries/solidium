@@ -17,7 +17,7 @@ export function solidjsRequest<T, R extends Resource<T>>(
 
     const tracker = appCtx.getInstance(Tracker);
     tracker.track(args, args => {
-        resource[EXECUTE](Array.from(args));
+        resource[EXECUTE](context, Array.from(args));
     });
 
     return resource;

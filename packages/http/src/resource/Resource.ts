@@ -1,6 +1,6 @@
 import { mergeAbortSignal } from '../common/mergeAbortSignal';
 import { METHODS } from '../core/EndpointMembers';
-import { getExecutionContext } from '../core/execution-context';
+import { ExecutionContext } from '../core/execution-context';
 import { HttpResponse } from '../core/HttpResponse';
 import { ResourceStatus } from './ResourceStatus';
 
@@ -45,13 +45,7 @@ export abstract class Resource<T> {
     abort() {
         this.abortController.abort();
     }
-    protected async [EXECUTE](args: unknown[]) {
-        const context = getExecutionContext();
-        if (!context) {
-            throw new Error(
-                'No request context. Make sure to call `request` only within endpoint methods.'
-            );
-        }
+    protected async [EXECUTE](context: ExecutionContext, args: unknown[]) {
         const { instance, method: methodMetadata, params } = context;
         const method = instance[METHODS].get(methodMetadata.name);
         if (!method) {

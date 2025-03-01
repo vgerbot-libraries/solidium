@@ -3,6 +3,7 @@ import { Resource, SET_DATA, SET_ERROR } from './Resource';
 import { ResourceStatus } from './ResourceStatus';
 
 export abstract class JSONSSEResource<T> extends Resource<T> {
+    abstract get messages(): T[];
     abstract get data(): T;
     abstract get error(): unknown;
 

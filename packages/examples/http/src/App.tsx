@@ -14,7 +14,7 @@ export function App() {
 }
 
 function ObjectItem() {
-    const [id, setId] = createSignal<string>();
+    const [id, setId] = createSignal<string>('0');
     const endpoint = useService(ObjectsEndpoint);
     const res = endpoint.getItem(id);
     return (
@@ -77,5 +77,11 @@ function SSE() {
 
     const eventsResource = endpoint.events();
 
-    return <ul>{JSON.stringify(eventsResource.data)}</ul>;
+    return (
+        <ul>
+            {eventsResource.messages.map(it => {
+                return <li>{JSON.stringify(it)}</li>;
+            })}
+        </ul>
+    );
 }
