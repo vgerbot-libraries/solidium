@@ -15,6 +15,7 @@ export interface RequestOptions {
     method: HttpMethod;
     headers?: Record<string, string | string[]>;
     interceptors?: Array<InterceptorTypeIdentifier | Interceptor>;
+    excludeInterceptors?: Array<InterceptorTypeIdentifier | Interceptor>;
     timeout?: number;
     retry?: RetryConfig;
     adapter?: RequestAdapterConstructor;

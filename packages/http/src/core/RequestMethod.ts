@@ -9,7 +9,7 @@ import { TimeoutInterceptor } from '../interceptors/TimeoutInterceptor';
 import { EndpointMetadata } from '../metadata/EndpointMetadata';
 import { RequestMethodMetadata } from '../metadata/RequestMethodMetadata';
 import {
-    INTERCEPTORS,
+    GET_INTERCEPTORS,
     ADAPTER,
     CONSTRUCT_INTERCEPTORS,
     ABORT_CONTROLLER
@@ -50,16 +50,20 @@ export class RequestMethod {
         } else if (timeout !== 0) {
             extInterceptors.push(new TimeoutInterceptor());
         }
-        const endpointInterceptors = instance[INTERCEPTORS];
+        const excludeInterceptors = this.metadata.getExcludeInterceptors();
+        const endpointInterceptors =
+            instance[GET_INTERCEPTORS](excludeInterceptors);
         const methodInterceptors = instance[CONSTRUCT_INTERCEPTORS](
             this.metadata.getInterceptors()
         );
-        return [
+
+        const allInterceptors = [
             ...this.baseInterceptors,
             ...extInterceptors,
             ...endpointInterceptors,
             ...methodInterceptors
         ];
+        return allInterceptors;
     }
 
     async invoke(

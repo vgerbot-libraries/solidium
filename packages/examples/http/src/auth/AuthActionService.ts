@@ -2,7 +2,7 @@ import { Inject } from '@vgerbot/ioc';
 import { AuthAPI } from '../apis/AuthAPI';
 import { AuthStateService } from './AuthStateService';
 
-export class AuthActionservice {
+export class AuthActionService {
     @Inject()
     private authAPI!: AuthAPI;
     @Inject()
@@ -14,7 +14,7 @@ export class AuthActionservice {
             const { data } = await resource;
             this.authService.token = data.accessToken;
             this.authService.refreshToken = data.refreshToken;
-            this.authService.expiresIn = data.expiresIn * 1000 + startTime;
+            this.authService.expiresAt = data.expiresIn * 1000 + startTime;
         } catch (e: unknown) {
             console.error(e);
         }
@@ -28,5 +28,8 @@ export class AuthActionservice {
             refreshToken
         });
         console.log(data);
+    }
+    profile() {
+        return this.authAPI.profile();
     }
 }

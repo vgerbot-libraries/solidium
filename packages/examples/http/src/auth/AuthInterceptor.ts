@@ -5,10 +5,13 @@ import {
     InterceptorNextFunction,
     RequestMethod
 } from '@vgerbot/http';
-import { Inject } from '@vgerbot/ioc';
+import { ApplicationContext, Inject } from '@vgerbot/ioc';
 import { AuthStateService } from './AuthStateService';
+import { AuthActionService } from './AuthActionService';
 
 export class AuthInterceptor implements Interceptor {
+    @Inject()
+    appCtx!: ApplicationContext;
     @Inject()
     service!: AuthStateService;
     async invoke(
@@ -16,15 +19,15 @@ export class AuthInterceptor implements Interceptor {
         params: ExecuteRequestMethodParams,
         next: InterceptorNextFunction
     ): Promise<HttpResponse> {
-        if (method.url.endsWith('/login')) {
-            const response = await next(method, params);
-            return response;
+        if (this.service.isExpired) {
+            const service = this.appCtx.getInstance(AuthActionService);
+            await service.refresh();
+            return next(method, params);
+        } else if (!this.service.token) {
+            throw new Error('Not authenticated');
         } else {
-            if (!this.service.token) {
-                throw new Error('Not authenticated');
-            } else {
-                return next(method, params);
-            }
+            params.headers.set('Authorization', `Bearer ${this.service.token}`);
+            return next(method, params);
         }
     }
 }

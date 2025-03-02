@@ -6,7 +6,9 @@
 export const METHODS: unique symbol = Symbol('endpoint-request-methods');
 
 /** Stores interceptors that process requests/responses for an endpoint */
-export const INTERCEPTORS: unique symbol = Symbol('endpoint-interceptors');
+export const GET_INTERCEPTORS: unique symbol = Symbol(
+    'endpoint-get-interceptors'
+);
 
 /** Stores the HTTP adapter configuration for an endpoint */
 export const ADAPTER: unique symbol = Symbol('endpoint-adapter');

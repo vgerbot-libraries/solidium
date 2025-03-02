@@ -54,6 +54,9 @@ export class RequestMethodMetadata {
     getInterceptors() {
         return this.options.interceptors ?? [];
     }
+    getExcludeInterceptors() {
+        return this.options.excludeInterceptors ?? [];
+    }
     getAdapter() {
         return this.options.adapter;
     }

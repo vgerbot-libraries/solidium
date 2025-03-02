@@ -14,9 +14,18 @@ export class AuthStateService {
     })
     refreshToken?: string;
 
-    expiresIn: number = Date.now();
+    @Signal()
+    @Storage({
+        key: 'token-expires-at'
+    })
+    expiresAt: number = Date.now();
 
     get isAuthenticated() {
         return !!this.token;
+    }
+
+    get isExpired() {
+        return true;
+        // return Date.now() >= this.expiresAt;
     }
 }

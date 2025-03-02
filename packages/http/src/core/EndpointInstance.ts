@@ -4,7 +4,7 @@ import { EndpointMetadata } from '../metadata/EndpointMetadata';
 import { RequestMethod } from './RequestMethod';
 import {
     METHODS,
-    INTERCEPTORS,
+    GET_INTERCEPTORS,
     ADAPTER,
     CONSTRUCT_INTERCEPTORS,
     SWR_INSTANCES,
@@ -24,7 +24,9 @@ import { HttpResponse } from './HttpResponse';
 
 export interface EndpointInstance {
     [METHODS]: Map<string | symbol, RequestMethod>;
-    [INTERCEPTORS]: Interceptor[];
+    [GET_INTERCEPTORS]: (
+        exclude?: Array<InterceptorTypeIdentifier | Interceptor>
+    ) => Interceptor[];
     [ADAPTER]?: RequestAdapterConstructor;
     [CONSTRUCT_INTERCEPTORS]: (
         interceptors: Array<InterceptorTypeIdentifier | Interceptor>
@@ -38,17 +40,25 @@ export function buildEndpointClass(
     endpointClass: Class<EndpointInstance>,
     metadata: EndpointMetadata
 ) {
-    Generate<EndpointInstance, Interceptor[]>((appCtx: ApplicationContext) => {
-        return metadata
-            .getInterceptors()
-            .map(identifier => {
-                if (isInterceptor(identifier)) {
-                    return identifier;
-                }
-                return appCtx.getInstance(identifier);
-            })
-            .flat();
-    })(endpointClass.prototype, INTERCEPTORS);
+    Reflect.set(
+        endpointClass.prototype,
+        GET_INTERCEPTORS,
+        function (
+            this: EndpointInstance,
+            exclude?: Array<InterceptorTypeIdentifier | Interceptor>
+        ) {
+            return metadata
+                .getInterceptors()
+                .filter(it => !exclude?.includes(it))
+                .map(identifier => {
+                    if (isInterceptor(identifier)) {
+                        return identifier;
+                    }
+                    return this[APPLICATION_CONTEXT].getInstance(identifier);
+                })
+                .flat();
+        }
+    );
 
     Reflect.set(endpointClass.prototype, ADAPTER, metadata.getAdaptor());
 

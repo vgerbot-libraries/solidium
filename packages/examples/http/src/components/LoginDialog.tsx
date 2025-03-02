@@ -1,14 +1,14 @@
 import { useService } from '@vgerbot/solidium';
 import { AuthStateService } from '../auth/AuthStateService';
 import { Button, Form, Modal } from 'solid-bootstrap';
-import { AuthActionservice } from '../auth/AuthActionService';
+import { AuthActionService } from '../auth/AuthActionService';
 import { createSignal } from 'solid-js';
 
 export function LoginDialog() {
     const [username, setUserName] = createSignal('');
     const [password, setPassword] = createSignal('');
     const authService = useService(AuthStateService);
-    const authActionService = useService(AuthActionservice);
+    const authActionService = useService(AuthActionService);
 
     return (
         <Modal show={!authService.isAuthenticated} centered>
