@@ -56,12 +56,12 @@ export class ParseError extends HttpError {
 /**
  * Error thrown when the server returns an error status code
  */
-export class HttpStatusError extends HttpError {
+export class HttpStatusError<E = unknown> extends HttpError {
     constructor(
         public readonly status: number,
         public readonly statusText: string,
         public readonly headers: HttpHeaders,
-        public readonly responseBody?: unknown,
+        public readonly responseBody?: E | string,
         message?: string
     ) {
         super(message || `HTTP Error ${status}: ${statusText}`);
@@ -85,42 +85,42 @@ export class HttpStatusError extends HttpError {
 /**
  * Specific HTTP status errors for common cases
  */
-export class UnauthorizedError extends HttpStatusError {
+export class UnauthorizedError<E = unknown> extends HttpStatusError<E> {
     constructor(
         headers: HttpHeaders,
-        responseBody?: unknown,
+        responseBody?: E | string,
         message = 'Unauthorized'
     ) {
         super(401, 'Unauthorized', headers, responseBody, message);
     }
 }
 
-export class ForbiddenError extends HttpStatusError {
+export class ForbiddenError<E = unknown> extends HttpStatusError<E> {
     constructor(
         headers: HttpHeaders,
-        responseBody?: unknown,
+        responseBody?: E | string,
         message = 'Forbidden'
     ) {
         super(403, 'Forbidden', headers, responseBody, message);
     }
 }
 
-export class NotFoundError extends HttpStatusError {
+export class NotFoundError<E = unknown> extends HttpStatusError<E> {
     constructor(
         headers: HttpHeaders,
-        responseBody?: unknown,
+        responseBody?: E | string,
         message = 'Not Found'
     ) {
         super(404, 'Not Found', headers, responseBody, message);
     }
 }
 
-export class ServerError extends HttpStatusError {
+export class ServerError<E = unknown> extends HttpStatusError<E> {
     constructor(
         status: number,
         statusText: string,
         headers: HttpHeaders,
-        responseBody?: unknown,
+        responseBody?: E | string,
         message?: string
     ) {
         super(

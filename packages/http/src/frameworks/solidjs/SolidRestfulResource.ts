@@ -10,11 +10,14 @@ const ERROR = Symbol('error');
 const STATUS = Symbol('status');
 
 @Scope(InstanceScope.TRANSIENT)
-export class SolidRestfulResource<T> extends RestfulResource<T> {
+export class SolidRestfulResource<T, E = unknown> extends RestfulResource<
+    T,
+    E
+> {
     @Signal()
     private [DATA]!: T;
     @Signal()
-    private [ERROR]!: ResourceError | null;
+    private [ERROR]!: ResourceError<E> | null;
     @Signal()
     private [STATUS]: ResourceStatus = ResourceStatus.IDLE;
     get data(): T {
@@ -32,7 +35,7 @@ export class SolidRestfulResource<T> extends RestfulResource<T> {
     protected [SET_DATA](data: T): void {
         this[DATA] = data;
     }
-    protected [SET_ERROR](error: ResourceError | null): void {
+    protected [SET_ERROR](error: ResourceError<E> | null): void {
         this[ERROR] = error;
     }
 }

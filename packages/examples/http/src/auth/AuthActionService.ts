@@ -9,11 +9,15 @@ export class AuthActionservice {
     private authService!: AuthStateService;
     async login(data: { username: string; password: string }) {
         const startTime = Date.now();
-        const ret = await this.authAPI.login(data);
-        console.log(ret);
-        this.authService.token = ret.data.accessToken;
-        this.authService.refreshToken = ret.data.refreshToken;
-        this.authService.expiresIn = ret.data.expiresIn * 1000 + startTime;
+        const resource = this.authAPI.login(data);
+        try {
+            const { data } = await resource;
+            this.authService.token = data.accessToken;
+            this.authService.refreshToken = data.refreshToken;
+            this.authService.expiresIn = data.expiresIn * 1000 + startTime;
+        } catch (e: unknown) {
+            console.error(e);
+        }
     }
     async refresh() {
         const refreshToken = this.authService.refreshToken;

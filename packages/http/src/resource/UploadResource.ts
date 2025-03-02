@@ -6,14 +6,14 @@ import { Resource, SET_DATA, SET_ERROR } from './Resource';
 import { ResourceError } from './ResourceError';
 import { ResourceStatus } from './ResourceStatus';
 
-export abstract class UploadResource<T extends Blob | ArrayBuffer>
-    extends Resource<T>
+export abstract class UploadResource<T extends Blob | ArrayBuffer, E = unknown>
+    extends Resource<T, E>
     implements ProgressiveResource<T>
 {
     abstract progress: Progress;
 
     protected abstract [SET_DATA](data: T): void;
-    protected abstract [SET_ERROR](error: ResourceError): void;
+    protected abstract [SET_ERROR](error: ResourceError<E>): void;
 
     protected abstract get status(): ResourceStatus;
     protected abstract set status(status: ResourceStatus);

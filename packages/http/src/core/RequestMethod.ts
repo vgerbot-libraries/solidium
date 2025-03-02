@@ -41,7 +41,7 @@ export class RequestMethod {
         }
     }
 
-    invoke(instance: EndpointInstance, params: ExecuteRequestMethodParams) {
+    getAlInterceptors(instance: EndpointInstance) {
         const timeout =
             this.metadata.getTimeout() || this.endpointMetadata.getTimeout();
         const extInterceptors: Interceptor[] = [];
@@ -54,30 +54,23 @@ export class RequestMethod {
         const methodInterceptors = instance[CONSTRUCT_INTERCEPTORS](
             this.metadata.getInterceptors()
         );
-        const allInterceptors = [
+        return [
             ...this.baseInterceptors,
             ...extInterceptors,
             ...endpointInterceptors,
             ...methodInterceptors
         ];
+    }
 
-        const sendRequest = allInterceptors.reduceRight(
-            (next, interceptor) =>
-                (method: RequestMethod, params: ExecuteRequestMethodParams) => {
-                    return interceptor.invoke(method, params, next);
-                },
-            async (
-                method: RequestMethod,
-                params: ExecuteRequestMethodParams
-            ): Promise<HttpResponse> => {
-                const adapter = method.createAdapter(instance, params);
-                const source = await adapter.execute();
-                return new HttpResponse(source, {
-                    method: this
-                });
-            }
-        );
-        return sendRequest(this, params);
+    async invoke(
+        instance: EndpointInstance,
+        params: ExecuteRequestMethodParams
+    ) {
+        const adapter = this.createAdapter(instance, params);
+        const source = await adapter.execute();
+        return new HttpResponse(source, {
+            method: this
+        });
     }
     private createAdapter(
         instance: EndpointInstance,

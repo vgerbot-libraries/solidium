@@ -16,36 +16,36 @@ export abstract class JSONSSEResource<T> extends Resource<T> {
     protected abstract set status(status: ResourceStatus);
 
     protected async handleResponse(response: HttpResponse): Promise<void> {
-        const httpStatus = await response.status();
-
-        if (httpStatus >= 200 && httpStatus < 400) {
-            try {
-                for await (const data of response.jsonStream()) {
-                    this[SET_DATA](data as T);
-                }
-            } catch (error) {
-                if (error instanceof SyntaxError) {
-                    // Handle JSON parsing error
-                    const parseError = new ParseError(
-                        'Failed to parse SSE JSON stream',
-                        error
-                    );
-                    this.status = ResourceStatus.ERROR;
-                    this[SET_ERROR](new ResourceError(parseError));
-                    throw parseError;
-                } else {
-                    // Re-wrap other errors in ResourceError
-                    this.status = ResourceStatus.ERROR;
-                    this[SET_ERROR](new ResourceError(error));
-                    throw error;
-                }
+        try {
+            for await (const data of response.jsonStream()) {
+                this[SET_DATA](data as T);
             }
-        } else {
-            // Create generic HTTP status error
-            const httpError = new Error(`HTTP Error ${httpStatus}`);
-            this.status = ResourceStatus.ERROR;
-            this[SET_ERROR](new ResourceError(httpError));
-            throw httpError;
+        } catch (error) {
+            if (error instanceof SyntaxError) {
+                // Handle JSON parsing error
+                const parseError = new ParseError(
+                    'Failed to parse SSE JSON stream',
+                    error
+                );
+                this.status = ResourceStatus.ERROR;
+                this[SET_ERROR](new ResourceError(parseError));
+                throw parseError;
+            } else {
+                // Re-wrap other errors in ResourceError
+                this.status = ResourceStatus.ERROR;
+                this[SET_ERROR](new ResourceError(error));
+                throw error;
+            }
         }
+    }
+    protected async handleHttpErrorResponse(
+        response: HttpResponse
+    ): Promise<void> {
+        const httpStatus = await response.status();
+        // Create generic HTTP status error
+        const httpError = new Error(`HTTP Error ${httpStatus}`);
+        this.status = ResourceStatus.ERROR;
+        this[SET_ERROR](new ResourceError(httpError));
+        throw httpError;
     }
 }

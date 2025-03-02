@@ -1,16 +1,8 @@
 import { RequestAdapterConstructor } from '../adapter/RequestAdapter';
 import { Class } from '../common/Class';
+import { joinPath } from '../common/joinPath';
 import { buildEndpointClass, EndpointInstance } from '../core/EndpointInstance';
-import { ExecuteRequestMethodParams } from '../core/ExecuteRequestParams';
-import { HttpResponse } from '../core/HttpResponse';
-import {
-    Interceptor,
-    InterceptorConstructor,
-    InterceptorFunction,
-    InterceptorTypeIdentifier,
-    isInterceptorFunction
-} from '../core/Interceptor';
-import { RequestMethod } from '../core/RequestMethod';
+import { Interceptor, InterceptorTypeIdentifier } from '../core/Interceptor';
 import { HttpHeaders } from '../http/HttpHeaders';
 import { RequestMethodMetadata } from './RequestMethodMetadata';
 
@@ -20,9 +12,7 @@ interface BaseEndpointOptions {
     timeout?: number;
     headers?: Record<string, string | string[]>;
     adapter?: RequestAdapterConstructor;
-    interceptors?: Array<
-        InterceptorTypeIdentifier | Interceptor | InterceptorFunction
-    >;
+    interceptors?: Array<InterceptorTypeIdentifier | Interceptor>;
 }
 export type EndpointOptions =
     | ({
@@ -53,28 +43,29 @@ export class EndpointMetadata {
         RequestMethodMetadata
     >();
     private adapter?: RequestAdapterConstructor;
-    private interceptors?: Array<
-        InterceptorTypeIdentifier | Interceptor | InterceptorFunction
-    >;
+    private interceptors?: Array<InterceptorTypeIdentifier | Interceptor>;
 
     private constructor() {}
 
     setOptions(endpointOptions: EndpointOptions) {
         if ('extends' in endpointOptions) {
             const parent = EndpointMetadata.from(endpointOptions.extends);
-            this.baseURL = parent.baseURL;
+            this.baseURL = endpointOptions.baseURL ?? parent.baseURL;
             this.timeout = parent.timeout;
             this.headers = this.headers.concat(parent.headers);
             this.interceptors = parent.interceptors;
             this.adapter = parent.adapter;
-        }
-        if (endpointOptions.baseURL) {
-            this.baseURL = endpointOptions.baseURL;
-        } else if (typeof document === 'object') {
-            this.baseURL = document.baseURI;
         } else {
-            throw new Error('baseURL is not set');
+            this.baseURL = endpointOptions.baseURL;
         }
+        if (!this.baseURL) {
+            if (typeof document === 'object') {
+                this.baseURL = document.baseURI;
+            } else {
+                throw new Error('baseURL is not set');
+            }
+        }
+        this.baseURL = joinPath(this.baseURL, endpointOptions.path ?? '');
         if (endpointOptions.timeout) {
             this.timeout = endpointOptions.timeout;
         }
@@ -115,25 +106,7 @@ export class EndpointMetadata {
         return this.methods;
     }
     getInterceptors(): Array<InterceptorTypeIdentifier | Interceptor> {
-        return (
-            this.interceptors?.map(interceptor => {
-                if (isInterceptorFunction(interceptor)) {
-                    return class {
-                        invoke(
-                            method: RequestMethod,
-                            params: ExecuteRequestMethodParams,
-                            next: (
-                                method: RequestMethod,
-                                params: ExecuteRequestMethodParams
-                            ) => Promise<HttpResponse>
-                        ): Promise<HttpResponse> {
-                            return interceptor(method, params, next);
-                        }
-                    } as InterceptorConstructor;
-                }
-                return interceptor;
-            }) ?? []
-        );
+        return this.interceptors ?? [];
     }
     getAdaptor(): RequestAdapterConstructor | undefined {
         return this.adapter;

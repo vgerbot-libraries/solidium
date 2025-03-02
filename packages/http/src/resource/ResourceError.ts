@@ -4,7 +4,7 @@ import { ResourceStatus } from './ResourceStatus';
 /**
  * Represents an error that occurred during resource processing
  */
-export class ResourceError {
+export class ResourceError<E = unknown> {
     /**
      * The original error that caused this resource error
      */
@@ -28,7 +28,7 @@ export class ResourceError {
     /**
      * Response body if available
      */
-    readonly responseBody?: unknown;
+    readonly responseBody?: E;
 
     /**
      * Error message

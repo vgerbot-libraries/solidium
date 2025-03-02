@@ -1,9 +1,9 @@
 import { Endpoint, Payload, Post, restfull } from '@vgerbot/http';
-import { AuthInterceptor } from '../auth/AuthInterceptor';
+import { BaseAPIEndpoint } from './BaseAPIEndpoint';
 
 @Endpoint({
-    baseURL: 'http://localhost:3000/api/auth',
-    interceptors: [AuthInterceptor]
+    extends: BaseAPIEndpoint,
+    path: 'auth'
 })
 export class AuthAPI {
     @Post({

@@ -21,7 +21,7 @@ export function LoginDialog() {
                         <Form.Label>Username</Form.Label>
                         <Form.Control
                             type="text"
-                            placeholder="admin"
+                            placeholder="Username"
                             value={username()}
                             onChange={e => {
                                 setUserName(e.target.value);

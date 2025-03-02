@@ -1,26 +1,20 @@
 import { RequestAdapterConstructor } from '../adapter/RequestAdapter';
+import { Accessor } from '../core/Acessor';
 import { EndpointInstance } from '../core/EndpointInstance';
 import { ExecuteRequestMethodParams } from '../core/ExecuteRequestParams';
 import { setExecutionContext } from '../core/execution-context';
-import {
-    Interceptor,
-    InterceptorFunction,
-    InterceptorTypeIdentifier
-} from '../core/Interceptor';
+import { Interceptor, InterceptorTypeIdentifier } from '../core/Interceptor';
 import { HttpMethod } from '../http/HttpMethod';
 import { RetryConfig } from '../interceptors/RetryInterceptor';
 import { EndpointMetadata } from '../metadata/EndpointMetadata';
 import { RequestMethodMetadata } from '../metadata/RequestMethodMetadata';
-import { Accessor } from '../core/Acessor';
 import { AnyResource } from '../resource/Resource';
 
 export interface RequestOptions {
     path: string;
     method: HttpMethod;
     headers?: Record<string, string | string[]>;
-    interceptors?: Array<
-        InterceptorTypeIdentifier | Interceptor | InterceptorFunction
-    >;
+    interceptors?: Array<InterceptorTypeIdentifier | Interceptor>;
     timeout?: number;
     retry?: RetryConfig;
     adapter?: RequestAdapterConstructor;

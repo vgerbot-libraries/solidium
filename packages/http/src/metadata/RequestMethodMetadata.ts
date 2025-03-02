@@ -1,8 +1,5 @@
 import { EndpointInstance } from '../core/EndpointInstance';
 import { ExecuteRequestMethodParams } from '../core/ExecuteRequestParams';
-import { HttpResponse } from '../core/HttpResponse';
-import { Interceptor, isInterceptorFunction } from '../core/Interceptor';
-import { RequestMethod } from '../core/RequestMethod';
 import { RequestOptions } from '../decorators/Request';
 import { HttpHeaders } from '../http/HttpHeaders';
 import { SWRConfig } from '../swr/SWRConfig';
@@ -55,29 +52,7 @@ export class RequestMethodMetadata {
         return this.options.timeout ?? 0;
     }
     getInterceptors() {
-        return (this.options.interceptors ?? []).map(interceptor => {
-            if (isInterceptorFunction(interceptor)) {
-                return class implements Interceptor {
-                    invoke(
-                        method: RequestMethod,
-                        params: ExecuteRequestMethodParams,
-                        next: {
-                            (
-                                method: RequestMethod,
-                                params: ExecuteRequestMethodParams
-                            ): Promise<HttpResponse>;
-                            (
-                                method: RequestMethod,
-                                params: ExecuteRequestMethodParams
-                            ): Promise<HttpResponse>;
-                        }
-                    ) {
-                        return interceptor(method, params, next);
-                    }
-                };
-            }
-            return interceptor;
-        });
+        return this.options.interceptors ?? [];
     }
     getAdapter() {
         return this.options.adapter;
