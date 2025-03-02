@@ -141,11 +141,11 @@ export abstract class BrowserStorageDriver implements StorageDriver {
         if (text) {
             return createBlob([text], { type });
         }
-        const len = hexData.length / 2;
-        const u8a = new Uint8Array(len);
-        for (let i = 0; i < len; i += 2) {
-            const hex = hexData.substring(i * 2, i * 2 + 2);
-            u8a[i] = parseInt(hex, 16);
+        const u8a = new Uint8Array(hexData.length / 2);
+        const view = new DataView(u8a.buffer);
+        for (let i = 0; i < hexData.length; i += 2) {
+            const hex = hexData.substring(i, i + 2);
+            view.setUint8(i / 2, parseInt(hex, 16));
         }
         return createBlob([u8a], { type });
     }
@@ -159,10 +159,11 @@ export abstract class BrowserStorageDriver implements StorageDriver {
         } else {
             const buffer = await blob.arrayBuffer();
             const u8a = new Uint8Array(buffer);
-            let hex = '';
-            u8a.forEach(v => {
-                hex += v.toString(16).padStart(2, '0');
-            });
+            const hexArray = new Array(u8a.length);
+            for (let i = 0; i < u8a.length; i++) {
+                hexArray[i] = u8a[i].toString(16).padStart(2, '0');
+            }
+            const hex = hexArray.join('');
             return JSON.stringify({
                 type: blob.type,
                 hex
