@@ -1,4 +1,4 @@
-import { isPlainObject } from 'is-plain-object';
+import { isPlainObject } from '../utils/isPlainObject';
 import { ObjectPath } from '../core/ObjectPath';
 import { IterableMapper } from './IterableMapper';
 

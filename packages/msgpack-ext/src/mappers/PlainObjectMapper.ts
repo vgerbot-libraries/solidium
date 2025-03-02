@@ -1,4 +1,4 @@
-import { isPlainObject } from 'is-plain-object';
+import { isPlainObject } from '../utils/isPlainObject';
 import { EncodeContext } from '../context/EncodeContext';
 import { ObjectPath } from '../core/ObjectPath';
 import { ObjectMapper } from '../core/ObjectMapper';

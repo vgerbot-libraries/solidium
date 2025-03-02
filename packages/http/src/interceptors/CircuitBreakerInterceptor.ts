@@ -55,17 +55,7 @@ export class CircuitBreakerInterceptor implements Interceptor {
             if (this.shouldReset()) {
                 this.state = 'HALF_OPEN';
             } else {
-                throw new HttpError(
-                    'Circuit breaker is open',
-                    503,
-                    'CIRCUIT_OPEN',
-                    {
-                        resetIn:
-                            this.config.resetTimeout -
-                            (Date.now() - this.lastFailureTime),
-                        failures: this.failures
-                    }
-                );
+                throw new CircuitBreakerError();
             }
         }
 
@@ -88,5 +78,10 @@ export class CircuitBreakerInterceptor implements Interceptor {
 
             throw error;
         }
+    }
+}
+export class CircuitBreakerError extends HttpError {
+    constructor(message = 'Circuit breaker is open') {
+        super(message);
     }
 }

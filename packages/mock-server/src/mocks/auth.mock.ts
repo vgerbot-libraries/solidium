@@ -27,7 +27,8 @@ const validateToken = (token: string): { valid: boolean; userId?: number } => {
             return { valid: false };
         }
         return { valid: true, userId: payload.userId };
-    } catch (err) {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (_) {
         return { valid: false };
     }
 };
@@ -41,7 +42,10 @@ export default [
         path: '/api/auth/login',
         description: 'Login with username and password',
         handler: (ctx: Context) => {
-            const { username, password } = ctx.request.body as any;
+            const { username, password } = ctx.request.body as {
+                username?: string;
+                password?: string;
+            };
 
             if (!username || !password) {
                 ctx.status = 400;
@@ -98,7 +102,9 @@ export default [
         path: '/api/auth/token',
         description: 'Refresh access token using refresh token',
         handler: (ctx: Context) => {
-            const { refreshToken } = ctx.request.body as any;
+            const { refreshToken } = ctx.request.body as {
+                refreshToken?: string;
+            };
 
             if (!refreshToken) {
                 ctx.status = 400;
@@ -140,7 +146,9 @@ export default [
         path: '/api/auth/logout',
         description: 'Logout and invalidate refresh token',
         handler: (ctx: Context) => {
-            const { refreshToken } = ctx.request.body as any;
+            const { refreshToken } = ctx.request.body as {
+                refreshToken?: string;
+            };
 
             if (refreshToken) {
                 refreshTokens.delete(refreshToken);

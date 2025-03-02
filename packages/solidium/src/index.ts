@@ -6,4 +6,5 @@ export * from './core/DecoratorProcessor';
 export * from './core/defineClassDecoratorProcessor';
 export * from './core/defineMemberDecoratorProcessor';
 export * from './helper';
+export * from './services';
 export { runWithSolidiumOwner } from './core/owner';

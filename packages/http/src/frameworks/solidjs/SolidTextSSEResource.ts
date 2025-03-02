@@ -4,6 +4,7 @@ import { Resource, SET_DATA, SET_ERROR } from '../../resource/Resource';
 import { ResourceStatus } from '../../resource/ResourceStatus';
 
 import { HttpResponse } from '../../core/HttpResponse';
+import { ResourceError } from '../../resource/ResourceError';
 
 const DATA = Symbol('data');
 const ERROR = Symbol('error');
@@ -14,13 +15,13 @@ export class SolidTextSSEResource<T> extends Resource<T> {
     @Signal()
     private [DATA]!: T;
     @Signal()
-    private [ERROR]!: unknown;
+    private [ERROR]!: ResourceError | null;
     @Signal()
     private [STATUS]: ResourceStatus = ResourceStatus.IDLE;
     get data(): T {
         return this[DATA];
     }
-    get error(): unknown {
+    get error(): ResourceError | null {
         return this[ERROR];
     }
     protected get status(): ResourceStatus {
@@ -32,7 +33,7 @@ export class SolidTextSSEResource<T> extends Resource<T> {
     protected [SET_DATA](data: T): void {
         this[DATA] = data;
     }
-    protected [SET_ERROR](error: unknown): void {
+    protected [SET_ERROR](error: ResourceError | null): void {
         this[ERROR] = error;
     }
     protected async handleResponse(response: HttpResponse): Promise<void> {

@@ -1,35 +1,35 @@
 {
-    "name": "@vgerbot/solidium-mock-server",
-    "version": "0.1.0",
-    "description": "HTTP mock server for testing different request scenarios",
-    "type": "module",
-    "main": "lib/index.js",
-    "types": "lib/typings/index.d.ts",
-    "scripts": {
-      "start": "tsx src/cli.ts",
-      "build": "tsc",
-      "dev": "nodemon --watch src -e ts --exec tsx src/cli.ts",
-      "test": "echo \"Error: no test specified\" && exit 1",
-      "lint": "eslint 'src/**/*.ts'"
-    },
-    "bin": {
-      "mock-server": "lib/cli.js"
-    },
-    "dependencies": {
-      "chalk": "^5.4.1",
-      "glob": "^11.0.1",
-      "koa": "^2.16.0",
-      "koa-body": "^6.0.1",
-      "koa-router": "^13.0.1"
-    },
-    "devDependencies": {
-      "@types/koa": "^2.15.0",
-      "@types/koa-router": "^7.4.8",
-      "@types/node": "^20.10.5",
-      "nodemon": "^3.1.9",
-      "ts-node": "^10.9.2",
-      "tsx": "^4.19.3",
-      "typescript": "^5.7.3"
-    }
+  "name": "@vgerbot/solidium-mock-server",
+  "version": "0.1.0",
+  "description": "HTTP mock server for testing different request scenarios",
+  "type": "module",
+  "main": "lib/index.js",
+  "types": "lib/typings/index.d.ts",
+  "scripts": {
+    "start": "tsx src/cli.ts",
+    "build": "tsc",
+    "dev": "nodemon --watch src -e ts --exec tsx src/cli.ts",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "eslint 'src/**/*.ts'"
+  },
+  "bin": {
+    "mock-server": "lib/cli.js"
+  },
+  "dependencies": {
+    "@koa/cors": "^5.0.0",
+    "chalk": "^5.4.1",
+    "glob": "^11.0.1",
+    "koa": "^2.16.0",
+    "koa-body": "^6.0.1",
+    "koa-router": "^13.0.1"
+  },
+  "devDependencies": {
+    "@types/koa": "^2.15.0",
+    "@types/koa-router": "^7.4.8",
+    "@types/node": "^20.10.5",
+    "nodemon": "^3.1.9",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.19.3",
+    "typescript": "^5.7.3"
   }
-  
+}

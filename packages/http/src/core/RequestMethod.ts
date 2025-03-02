@@ -21,7 +21,7 @@ import { Interceptor } from './Interceptor';
 import { mergeAbortSignal } from '../common/mergeAbortSignal';
 
 export class RequestMethod {
-    private readonly url: string;
+    public readonly url: string;
     private readonly baseInterceptors: Interceptor[] = [];
     constructor(
         public readonly name: string | symbol,

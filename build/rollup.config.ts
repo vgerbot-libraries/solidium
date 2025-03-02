@@ -5,6 +5,7 @@ import commonjs from '@rollup/plugin-commonjs';
 import babel from '@rollup/plugin-babel';
 import typescript from 'rollup-plugin-typescript2';
 import html from '@rollup/plugin-html';
+import { makeHtmlAttributes } from '@rollup/plugin-html';
 import serve from '@rollup-extras/plugin-serve';
 import alias from '@rollup/plugin-alias';
 
@@ -77,7 +78,68 @@ const mainConfig: RollupOptions[] = outputConfig.map(output => {
                     ]
                 ]
             }),
-            isServingExamples && html(),
+            isServingExamples &&
+                html({
+                    template: async ({
+                        attributes,
+                        files,
+                        meta,
+                        publicPath,
+                        title,
+                        addScriptsToHead
+                    }) => {
+                        // Only directly <script>-load entry chunks; others are loaded indirectly
+                        let scripts = (files.js || [])
+                            .filter(
+                                file => file.type === 'chunk' && file.isEntry
+                            )
+                            .map(file => {
+                                const attrs = makeHtmlAttributes(
+                                    attributes.script
+                                );
+                                return `<script src="${publicPath}${file.fileName}"${attrs}></script>`;
+                            })
+                            .join('\n');
+                        let links = (files.css || [])
+                            .map(({ fileName }) => {
+                                const attrs = makeHtmlAttributes(
+                                    attributes.link
+                                );
+                                return `<link href="${publicPath}${fileName}" rel="stylesheet"${attrs}>`;
+                            })
+                            .concat(
+                                `<link
+                                    href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" 
+                                    rel="stylesheet" 
+                                    integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC"
+                                    crossorigin="anonymous"
+                                >`
+                            )
+                            .join('\n');
+                        if (addScriptsToHead === true) {
+                            links += scripts;
+                            scripts = '';
+                        }
+                        const metas = meta
+                            .map(input => {
+                                const attrs = makeHtmlAttributes(input);
+                                return `<meta${attrs}>`;
+                            })
+                            .join('\n');
+                        return `
+                <!doctype html>
+                <html${makeHtmlAttributes(attributes.html)}>
+                  <head>
+                    ${metas}
+                    <title>${title}</title>
+                    ${links}
+                  </head>
+                  <body>
+                    ${scripts}
+                  </body>
+                </html>`;
+                    }
+                }),
             isServingExamples &&
                 serve({
                     port: Number(process.env.SERVE_PORT),

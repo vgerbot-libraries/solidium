@@ -32,7 +32,7 @@ import { Bucket } from './bucket/Bucket';
  * ```
  */
 export class Persistence {
-    static default(configuration?: BucketConfiguration) {
+    static default(configuration?: Omit<BucketConfiguration, 'name'>) {
         class StorageConfigurationFactory {
             @Factory(DEFAULT_BUCKET_CONFIGURATION)
             getConfiguration() {

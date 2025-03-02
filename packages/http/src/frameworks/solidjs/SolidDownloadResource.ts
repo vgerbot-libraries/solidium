@@ -5,6 +5,7 @@ import { DownloadResource } from '../../resource/DownloadResource';
 import { ResourceStatus } from '../../resource/ResourceStatus';
 import { SET_DATA, SET_ERROR } from '../../resource/Resource';
 import { HttpResponse } from '../../core/HttpResponse';
+import { ResourceError } from '../../resource/ResourceError';
 
 const DATA = Symbol('data');
 const ERROR = Symbol('error');
@@ -17,7 +18,7 @@ export abstract class SolidDownloadResource<
     @Signal()
     private [DATA]!: T;
     @Signal()
-    private [ERROR]: unknown;
+    private [ERROR]!: ResourceError | null;
     @Signal()
     progress: Progress = new Progress(0, 0);
     @Signal()
@@ -34,13 +35,13 @@ export abstract class SolidDownloadResource<
     protected [SET_DATA](data: T): void {
         this[DATA] = data;
     }
-    protected [SET_ERROR](error: unknown): void {
+    protected [SET_ERROR](error: ResourceError | null): void {
         this[ERROR] = error;
     }
     get data(): T {
         return this[DATA];
     }
-    get error(): unknown {
+    get error(): ResourceError | null {
         return this[ERROR];
     }
 }

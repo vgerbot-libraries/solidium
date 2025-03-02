@@ -1,9 +1,10 @@
-import Koa from 'koa';
+import Koa, { Context } from 'koa';
 import Router from 'koa-router';
 import { koaBody } from 'koa-body';
 import { glob } from 'glob';
 import path from 'path';
 import chalk from 'chalk';
+import cors from '@koa/cors';
 
 interface MockConfig {
     method: 'get' | 'post' | 'put' | 'delete' | 'patch';
@@ -30,6 +31,14 @@ class MockServer {
                 multipart: true,
                 formidable: {
                     maxFileSize: 200 * 1024 * 1024 // 200MB
+                }
+            })
+        );
+
+        this.app.use(
+            cors({
+                origin(ctx: Context) {
+                    return ctx.get('Origin') || '*';
                 }
             })
         );

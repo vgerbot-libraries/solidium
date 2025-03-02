@@ -1,5 +1,5 @@
 import { defineMemberDecoratorProcessor, getSignal } from '@vgerbot/solidium';
-import { createEffect, on } from 'solid-js';
+import { createEffect, getOwner, on, runWithOwner } from 'solid-js';
 import {
     ApplicationContext,
     ClassMetadataReader,
@@ -35,20 +35,28 @@ export const Storage = (options: StorageOptions = {}) => {
                     set(event.newValue);
                 });
             };
-            let unobserve = observe();
-            createEffect(
-                on(
-                    () => {
-                        return instance[member];
-                    },
-                    newValue => {
-                        unobserve();
-                        bucket.setItem(key, newValue as Data).finally(() => {
-                            unobserve = observe();
-                        });
-                    }
-                )
-            );
+            const owner = getOwner();
+            bucket.getItem(key).then(value => {
+                set(value);
+                runWithOwner(owner, () => {
+                    let unobserve = observe();
+                    createEffect(
+                        on(
+                            () => {
+                                return instance[member];
+                            },
+                            newValue => {
+                                unobserve();
+                                bucket
+                                    .setItem(key, newValue as Data)
+                                    .finally(() => {
+                                        unobserve = observe();
+                                    });
+                            }
+                        )
+                    );
+                });
+            });
         }
     });
 };

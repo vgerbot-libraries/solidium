@@ -1,51 +1,134 @@
-export class HttpError extends Error {
+import { HttpHeaders } from '../http/HttpHeaders';
+
+/**
+ * Base class for all HTTP-related errors
+ */
+export abstract class HttpError extends Error {
     constructor(
         message: string,
-        public status: number,
-        public code: string,
-        public context: Record<string, unknown>
+        public readonly cause?: Error
     ) {
         super(message);
-        this.name = 'HttpError';
+        this.name = this.constructor.name;
     }
 }
 
-export class NetworkError extends HttpError {
-    constructor(message: string, context: Record<string, unknown> = {}) {
-        super(message, 0, 'NETWORK_ERROR', context);
-        this.name = 'NetworkError';
-    }
-}
-
+/**
+ * Error thrown when a request times out
+ */
 export class TimeoutError extends HttpError {
-    constructor(message: string, context: Record<string, unknown> = {}) {
-        super(message, 408, 'REQUEST_TIMEOUT', context);
-        this.name = 'TimeoutError';
-    }
-}
-
-export class ValidationError extends HttpError {
-    constructor(message: string, context: Record<string, unknown> = {}) {
-        super(message, 400, 'VALIDATION_ERROR', context);
-        this.name = 'ValidationError';
-    }
-}
-
-export class AuthenticationError extends HttpError {
-    constructor(message: string, context: Record<string, unknown> = {}) {
-        super(message, 401, 'AUTHENTICATION_ERROR', context);
-        this.name = 'AuthenticationError';
-    }
-}
-
-export class ApiError extends HttpError {
     constructor(
-        message: string,
-        status: number,
-        code: string,
-        context: Record<string, unknown> = {}
+        message = 'Request timed out',
+        public readonly context: Record<string, unknown>,
+        cause?: Error
     ) {
-        super(message, status, code, context);
-        this.name = 'ApiError';
+        super(message, cause);
+    }
+}
+
+/**
+ * Error thrown when there's a network issue
+ */
+export class NetworkError extends HttpError {
+    constructor(message = 'Network error occurred', cause?: Error) {
+        super(message, cause);
+    }
+}
+
+/**
+ * Error thrown when a request is aborted
+ */
+export class AbortError extends HttpError {
+    constructor(message = 'Request was aborted', cause?: Error) {
+        super(message, cause);
+    }
+}
+
+/**
+ * Error thrown when there's an issue parsing the response
+ */
+export class ParseError extends HttpError {
+    constructor(message = 'Failed to parse response', cause?: Error) {
+        super(message, cause);
+    }
+}
+
+/**
+ * Error thrown when the server returns an error status code
+ */
+export class HttpStatusError extends HttpError {
+    constructor(
+        public readonly status: number,
+        public readonly statusText: string,
+        public readonly headers: HttpHeaders,
+        public readonly responseBody?: unknown,
+        message?: string
+    ) {
+        super(message || `HTTP Error ${status}: ${statusText}`);
+    }
+
+    /**
+     * Check if this is a client error (4xx)
+     */
+    get isClientError(): boolean {
+        return this.status >= 400 && this.status < 500;
+    }
+
+    /**
+     * Check if this is a server error (5xx)
+     */
+    get isServerError(): boolean {
+        return this.status >= 500;
+    }
+}
+
+/**
+ * Specific HTTP status errors for common cases
+ */
+export class UnauthorizedError extends HttpStatusError {
+    constructor(
+        headers: HttpHeaders,
+        responseBody?: unknown,
+        message = 'Unauthorized'
+    ) {
+        super(401, 'Unauthorized', headers, responseBody, message);
+    }
+}
+
+export class ForbiddenError extends HttpStatusError {
+    constructor(
+        headers: HttpHeaders,
+        responseBody?: unknown,
+        message = 'Forbidden'
+    ) {
+        super(403, 'Forbidden', headers, responseBody, message);
+    }
+}
+
+export class NotFoundError extends HttpStatusError {
+    constructor(
+        headers: HttpHeaders,
+        responseBody?: unknown,
+        message = 'Not Found'
+    ) {
+        super(404, 'Not Found', headers, responseBody, message);
+    }
+}
+
+export class ServerError extends HttpStatusError {
+    constructor(
+        status: number,
+        statusText: string,
+        headers: HttpHeaders,
+        responseBody?: unknown,
+        message?: string
+    ) {
+        super(
+            status,
+            statusText,
+            headers,
+            responseBody,
+            message || `Server Error: ${status} ${statusText}`
+        );
     }
 }

@@ -2,7 +2,7 @@ import { Interceptor, InterceptorNextFunction } from '../core/Interceptor';
 import { RequestMethod } from '../core/RequestMethod';
 import { ExecuteRequestMethodParams } from '../core/ExecuteRequestParams';
 import { HttpResponse } from '../core/HttpResponse';
-import { HttpError } from '../errors/HttpError';
+import { HttpError, HttpStatusError } from '../errors/HttpError';
 
 export interface RetryConfig {
     maxAttempts: number;
@@ -20,7 +20,7 @@ const DEFAULT_CONFIG: RetryConfig = {
     maxDelay: 10000,
     retryableStatuses: [408, 500, 502, 503, 504],
     async retryable(error) {
-        if (error instanceof HttpError) {
+        if (error instanceof HttpStatusError) {
             return this.retryableStatuses.includes(error.status);
         }
         return true;
@@ -71,16 +71,15 @@ export class RetryInterceptor implements Interceptor {
         throw new Error('Unexpected retry loop exit');
 
         function throwMaxRetryAttempsReachedError(error: unknown) {
-            throw new HttpError(
-                'Max retry attempts reached',
-                error instanceof HttpError ? error.status : 0,
-                'MAX_RETRY_EXCEEDED',
-                {
-                    attempts: attempt,
-                    originalError:
-                        error instanceof Error ? error.message : String(error)
-                }
-            );
+            throw new MaxRetryAttemptsReachedError(attempt, error);
         }
+    }
+}
+export class MaxRetryAttemptsReachedError extends HttpError {
+    constructor(
+        public readonly attempts: number,
+        public readonly originalError: unknown
+    ) {
+        super('Max retry attempts reached');
     }
 }

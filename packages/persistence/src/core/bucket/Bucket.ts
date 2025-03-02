@@ -21,22 +21,24 @@ function Prepared(): MethodDecorator {
     return ((
         target: PrivateBucketAPI & Bucket,
         propertyKey: BucketMethods,
-        descriptor: TypedPropertyDescriptor<(...args: unknown[]) => unknown>
+        descriptor: TypedPropertyDescriptor<
+            (...args: unknown[]) => Promise<unknown>
+        >
     ) => {
         const origin = descriptor.value;
         if (!origin) {
             return;
         }
         let prepare_promise: Promise<void>;
-        descriptor.value = async function (...args: unknown[]) {
+        descriptor.value = async function (this: Bucket, ...args: unknown[]) {
             if (!prepare_promise) {
-                prepare_promise = target[PREPARE]().finally(() => {
+                prepare_promise = this[PREPARE]().finally(() => {
                     descriptor.value = origin;
-                    Object.defineProperty(target, propertyKey, descriptor);
+                    Object.defineProperty(this, propertyKey, descriptor);
                 });
             }
             await prepare_promise;
-            return origin.apply(target, args) as unknown;
+            return origin.apply(this, args) as unknown;
         };
         Object.defineProperty(target, propertyKey, descriptor);
     }) as unknown as MethodDecorator;
@@ -76,13 +78,20 @@ export class Bucket {
         return this.driver.prepare();
     }
     @Prepared()
+    private async prepared() {
+        return void 0;
+    }
     observe(key: string, onChange: (event: ChangeEvent) => void): () => void {
-        return this.driver.observe(key, event => {
+        const preparePromise = this.prepared();
+        const unobserve = this.driver.observe(key, event => {
             return onChange({
                 ...event,
                 target: this
             });
         });
+        return () => {
+            preparePromise.then(unobserve);
+        };
     }
     @Prepared()
     async setItem(key: string, value: Data): Promise<void> {

@@ -15,14 +15,15 @@ export class ErrorContextInterceptor implements Interceptor {
         } catch (error) {
             if (error instanceof HttpError) {
                 // Enhance error context with request details
-                error.context = {
-                    ...error.context,
-                    methodName: method.name.toString(),
-                    timestamp: new Date().toISOString(),
-                    headers: params.headers.toJSON(),
-                    pathVariables: params.pathVariables,
-                    queryParams: params.queryParams
-                };
+                Object.defineProperty(error, 'context', {
+                    value: {
+                        methodName: method.name.toString(),
+                        timestamp: new Date().toISOString(),
+                        headers: params.headers.toJSON(),
+                        pathVariables: params.pathVariables,
+                        queryParams: params.queryParams
+                    }
+                });
             }
             throw error;
         }
