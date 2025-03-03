@@ -7,7 +7,7 @@ export function Profile() {
     return (
         <div>
             <div>ID: {profile.data?.data?.id}</div>
-            <div>Name: {profile.data?.data?.name}</div>
+            <div>Name: {profile.data?.data?.username}</div>
             <div>Role: {profile.data?.data?.role}</div>
         </div>
     );

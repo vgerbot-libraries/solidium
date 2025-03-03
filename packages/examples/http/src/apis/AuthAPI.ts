@@ -37,6 +37,8 @@ export class AuthAPI {
     }
     @Get('profile')
     profile() {
-        return restfull<{ data: { id: string; name: string; role: string } }>();
+        return restfull<{
+            data: { id: string; username: string; role: string };
+        }>();
     }
 }

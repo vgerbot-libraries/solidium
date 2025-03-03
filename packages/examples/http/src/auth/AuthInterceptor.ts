@@ -24,10 +24,9 @@ export class AuthInterceptor implements Interceptor {
             await service.refresh();
             return next(method, params);
         } else if (!this.service.token) {
-            throw new Error('Not authenticated');
-        } else {
-            params.headers.set('Authorization', `Bearer ${this.service.token}`);
-            return next(method, params);
+            await this.service.waitUntilAuthenticated();
         }
+        params.headers.set('Authorization', `Bearer ${this.service.token}`);
+        return next(method, params);
     }
 }

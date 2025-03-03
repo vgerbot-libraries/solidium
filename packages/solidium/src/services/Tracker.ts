@@ -14,4 +14,14 @@ export class Tracker {
             return dispose;
         });
     }
+    until(contition: () => boolean) {
+        return new Promise<void>(resolve => {
+            this.track(dispose => {
+                if (contition()) {
+                    resolve();
+                    dispose();
+                }
+            });
+        });
+    }
 }

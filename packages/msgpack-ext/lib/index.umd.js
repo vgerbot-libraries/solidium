@@ -1,8 +1,8 @@
 (function (global, factory) {
-    typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('@msgpack/msgpack'), require('is-plain-object')) :
-    typeof define === 'function' && define.amd ? define(['exports', '@msgpack/msgpack', 'is-plain-object'], factory) :
-    (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.MPext = {}, global.MessagePack, global.isPlainObject));
-})(this, (function (exports, msgpack, isPlainObject) { 'use strict';
+    typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('@msgpack/msgpack')) :
+    typeof define === 'function' && define.amd ? define(['exports', '@msgpack/msgpack'], factory) :
+    (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.MPext = {}, global.MessagePack));
+})(this, (function (exports, msgpack) { 'use strict';
 
     /******************************************************************************
     Copyright (c) Microsoft Corporation.
@@ -137,6 +137,24 @@
       return ArrayMapper;
     }(IterableMapper);
 
+    function isObject(o) {
+      return Object.prototype.toString.call(o) === '[object Object]';
+    }
+    function isPlainObject(o) {
+      if (isObject(o) === false) return false;
+      // If has modified constructor
+      var ctor = o.constructor;
+      if (ctor === undefined) return true;
+      // If has modified prototype
+      var prot = ctor.prototype;
+      if (isObject(prot) === false) return false;
+      if (Object.prototype.hasOwnProperty.call(prot, 'isPrototypeOf') === false) {
+        return false;
+      }
+      // Most likely a plain Object
+      return true;
+    }
+
     var MapMapper = /** @class */function (_super) {
       __extends(MapMapper, _super);
       function MapMapper() {
@@ -164,7 +182,7 @@
         });
       };
       MapMapper.prototype.canRevive = function (object) {
-        return isPlainObject.isPlainObject(object) && '$' in object && '_' in object && object.$ === 2 && Array.isArray(object._);
+        return isPlainObject(object) && '$' in object && '_' in object && object.$ === 2 && Array.isArray(object._);
       };
       return MapMapper;
     }(IterableMapper);
@@ -172,7 +190,7 @@
     var PlainObjectMapper = /** @class */function () {
       function PlainObjectMapper() {}
       PlainObjectMapper.prototype.canTransform = function (object) {
-        return isPlainObject.isPlainObject(object);
+        return isPlainObject(object);
       };
       PlainObjectMapper.prototype.transform = function (object, context, path) {
         context.recording(object, path);
@@ -187,7 +205,7 @@
         return result;
       };
       PlainObjectMapper.prototype.canRevive = function (object) {
-        return isPlainObject.isPlainObject(object);
+        return isPlainObject(object);
       };
       PlainObjectMapper.prototype.revive = function (object, context, path) {
         this.map(object, context, path, function (key, value, path, mapper) {
@@ -225,7 +243,7 @@
         });
       };
       SetMapper.prototype.canRevive = function (object) {
-        return isPlainObject.isPlainObject(object) && '$' in object && '_' in object && object.$ === 1 && Array.isArray(object._);
+        return isPlainObject(object) && '$' in object && '_' in object && object.$ === 1 && Array.isArray(object._);
       };
       SetMapper.prototype.append = function (target, value) {
         target.add(value);

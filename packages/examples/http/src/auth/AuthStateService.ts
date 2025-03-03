@@ -1,5 +1,6 @@
-import { Signal } from '@vgerbot/solidium';
+import { Signal, Tracker } from '@vgerbot/solidium';
 import { Storage } from '@vgerbot/persistence';
+import { Inject } from '@vgerbot/ioc';
 
 export class AuthStateService {
     @Signal()
@@ -19,13 +20,20 @@ export class AuthStateService {
         key: 'token-expires-at'
     })
     expiresAt: number = Date.now();
+    @Inject()
+    tracker!: Tracker;
 
     get isAuthenticated() {
         return !!this.token;
     }
 
     get isExpired() {
-        return true;
-        // return Date.now() >= this.expiresAt;
+        return this.isAuthenticated && Date.now() >= this.expiresAt;
+    }
+    waitUntilAuthenticated() {
+        if (this.isAuthenticated) {
+            return Promise.resolve();
+        }
+        return this.tracker.until(() => this.isAuthenticated);
     }
 }
