@@ -19,11 +19,11 @@ export class AuthInterceptor implements Interceptor {
         params: ExecuteRequestMethodParams,
         next: InterceptorNextFunction
     ): Promise<HttpResponse> {
-        if (this.service.isExpired) {
+        if (this.service.hasToken && this.service.isExpired) {
             const service = this.appCtx.getInstance(AuthActionService);
             await service.refresh();
             return next(method, params);
-        } else if (!this.service.token) {
+        } else if (!this.service.hasToken) {
             await this.service.waitUntilAuthenticated();
         }
         params.headers.set('Authorization', `Bearer ${this.service.token}`);

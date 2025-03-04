@@ -3,6 +3,7 @@ import { Solidium } from '@vgerbot/solidium';
 import { AlertDialog } from './components/AlertDialog';
 import { LoginDialog } from './components/LoginDialog';
 import { Profile } from './components/Profile';
+import { UploadExample } from './upload/UploadExample';
 
 export function App() {
     return (
@@ -14,6 +15,7 @@ export function App() {
             ]}
         >
             <Profile></Profile>
+            <UploadExample></UploadExample>
             <AlertDialog></AlertDialog>
             <LoginDialog></LoginDialog>
         </Solidium>

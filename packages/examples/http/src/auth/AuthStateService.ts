@@ -35,11 +35,15 @@ export class AuthStateService {
     }
 
     get isAuthenticated() {
+        return this.hasToken && !this.isExpired;
+    }
+
+    get hasToken() {
         return !!this.token;
     }
 
     get isExpired() {
-        return this.isAuthenticated && Date.now() >= this.expiresAt;
+        return Date.now() >= this.expiresAt;
     }
     waitUntilAuthenticated() {
         if (this.isAuthenticated) {
