@@ -11,7 +11,10 @@ export function LoginDialog() {
     const authActionService = useService(AuthActionService);
 
     return (
-        <Modal show={!authService.isAuthenticated} centered>
+        <Modal
+            show={authService.isInitialized && !authService.isAuthenticated}
+            centered
+        >
             <Modal.Header>
                 <Modal.Title>Login</Modal.Title>
             </Modal.Header>

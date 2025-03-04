@@ -8,6 +8,7 @@ import {
 import { Data } from '../types/Data';
 import { Bucket } from '../core/bucket/Bucket';
 import { DEFAULT_BUCKET } from '../core/constants';
+import { notifyStorageLoad } from './StorageLoadNotify';
 
 export interface StorageOptions {
     bucket?: string | symbol | Bucket;
@@ -38,6 +39,12 @@ export const Storage = (options: StorageOptions = {}) => {
             const owner = getOwner();
             bucket.getItem(key).then(value => {
                 set(value);
+                notifyStorageLoad({
+                    instance,
+                    member,
+                    value,
+                    timestamp: Date.now()
+                });
                 runWithOwner(owner, () => {
                     let unobserve = observe();
                     createEffect(

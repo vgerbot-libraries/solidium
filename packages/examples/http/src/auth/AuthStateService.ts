@@ -1,5 +1,9 @@
 import { Signal, Tracker } from '@vgerbot/solidium';
-import { Storage } from '@vgerbot/persistence';
+import {
+    Storage,
+    StorageLoadEvent,
+    StorageLoadNotify
+} from '@vgerbot/persistence';
 import { Inject } from '@vgerbot/ioc';
 
 export class AuthStateService {
@@ -23,6 +27,13 @@ export class AuthStateService {
     @Inject()
     tracker!: Tracker;
 
+    @Signal()
+    private _initialized = false;
+
+    get isInitialized() {
+        return this._initialized;
+    }
+
     get isAuthenticated() {
         return !!this.token;
     }
@@ -35,5 +46,16 @@ export class AuthStateService {
             return Promise.resolve();
         }
         return this.tracker.until(() => this.isAuthenticated);
+    }
+    @StorageLoadNotify({
+        members: ['token', 'expiresAt']
+    })
+    onLoadDataFromStorage(event: StorageLoadEvent<AuthStateService>) {
+        if (this._initialized) {
+            return;
+        }
+        this._initialized =
+            event.loadedMembers.has('token') &&
+            event.loadedMembers.has('expiresAt');
     }
 }

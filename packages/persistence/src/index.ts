@@ -7,4 +7,5 @@ export * from './core/driver/ChangeEvent';
 export * from './core/serializer/DataSerializer';
 export * from './core/serializer/DefaultSerializer';
 export * from './decorators/Storage';
+export * from './decorators/StorageLoadNotify';
 export * from './drivers/DefaultDrivers';
