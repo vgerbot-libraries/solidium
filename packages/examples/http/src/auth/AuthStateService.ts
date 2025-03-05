@@ -43,7 +43,7 @@ export class AuthStateService {
     }
 
     get isExpired() {
-        return Date.now() >= this.expiresAt;
+        return !this.expiresAt || Date.now() >= this.expiresAt;
     }
     waitUntilAuthenticated() {
         if (this.isAuthenticated) {
