@@ -1,5 +1,4 @@
 import { HttpResponse } from '../core/HttpResponse';
-import { HttpStatusError } from '../errors/HttpError';
 import { Progress } from '../progress/Progress';
 import { ProgressiveResource } from './ProgressiveResource';
 import { Resource, SET_DATA, SET_ERROR } from './Resource';
@@ -24,34 +23,7 @@ export abstract class DownloadResource<T extends Blob | ArrayBuffer>
             this.updateProgress(progress);
         });
 
-        try {
-            // For download resources, we might want to get the data as blob or arrayBuffer
-            // This would depend on the specific implementation
-            // Here we're just setting up the progress tracking
-        } catch (error) {
-            this.status = ResourceStatus.ERROR;
-            this[SET_ERROR](new ResourceError(error));
-            throw error;
-        }
-    }
-
-    protected async handleHttpErrorResponse(
-        response: HttpResponse
-    ): Promise<void> {
-        const httpStatus = await response.status();
-        // Handle error status
-        const headers = await response.headers();
-
-        // Create appropriate HTTP status error
-        const httpError = new HttpStatusError(
-            httpStatus,
-            response.init.method.toString(),
-            headers
-        );
-
-        this.status = ResourceStatus.ERROR;
-        this[SET_ERROR](new ResourceError(httpError));
-        throw httpError;
+        return super.handleResponse(response);
     }
 
     protected abstract updateProgress(progress: Progress): void;

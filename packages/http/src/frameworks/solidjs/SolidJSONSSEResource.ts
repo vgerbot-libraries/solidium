@@ -1,9 +1,8 @@
+import { InstanceScope, Scope } from '@vgerbot/ioc';
 import { Signal } from '@vgerbot/solidium';
-import { Scope, InstanceScope } from '@vgerbot/ioc';
-import { SET_DATA, SET_ERROR } from '../../resource/Resource';
+import { Resource, SET_DATA, SET_ERROR } from '../../resource/Resource';
 import { ResourceStatus } from '../../resource/ResourceStatus';
 
-import { JSONSSEResource } from '../../resource/JSONSSEResource';
 import { ResourceError } from '../../resource/ResourceError';
 
 const DATA = Symbol('data');
@@ -12,7 +11,7 @@ const ERROR = Symbol('error');
 const STATUS = Symbol('status');
 
 @Scope(InstanceScope.TRANSIENT)
-export class SolidJSONSSEResource<T> extends JSONSSEResource<T> {
+export class SolidJSONSSEResource<T> extends Resource<T> {
     @Signal()
     private [MESSAGES]: T[] = [];
     @Signal()

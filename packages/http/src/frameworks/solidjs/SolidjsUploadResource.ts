@@ -1,11 +1,10 @@
-import { Scope, InstanceScope } from '@vgerbot/ioc';
-import { UploadResource } from '../../resource/UploadResource';
-import { HttpResponse } from '../../core/HttpResponse';
+import { InstanceScope, Scope } from '@vgerbot/ioc';
+import { Signal } from '@vgerbot/solidium';
 import { Progress } from '../../progress/Progress';
+import { SET_DATA, SET_ERROR } from '../../resource/Resource';
 import { ResourceError } from '../../resource/ResourceError';
 import { ResourceStatus } from '../../resource/ResourceStatus';
-import { Signal } from '@vgerbot/solidium';
-import { SET_DATA, SET_ERROR } from '../../resource/Resource';
+import { UploadResource } from '../../resource/UploadResource';
 
 const DATA = Symbol('data');
 const ERROR = Symbol('error');
@@ -15,6 +14,9 @@ const STATUS = Symbol('status');
 export class SolidjsUploadResource<
     T extends BodyInit
 > extends UploadResource<T> {
+    get messages(): T[] {
+        return [this.data];
+    }
     @Signal()
     private [DATA]!: T;
     @Signal()
@@ -43,16 +45,5 @@ export class SolidjsUploadResource<
     }
     get error(): ResourceError | null {
         return this[ERROR];
-    }
-    protected async handleHttpErrorResponse(
-        response: HttpResponse
-    ): Promise<void> {
-        try {
-            await response.json();
-        } catch (error) {
-            this.status = ResourceStatus.ERROR;
-            this[SET_ERROR](new ResourceError(error));
-            throw error;
-        }
     }
 }

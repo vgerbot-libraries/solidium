@@ -19,6 +19,7 @@ import { ExecuteRequestMethodParams } from './ExecuteRequestParams';
 import { HttpResponse } from './HttpResponse';
 import { Interceptor } from './Interceptor';
 import { mergeAbortSignal } from '../common/mergeAbortSignal';
+import { ErrorWrappingInterceptor } from '../interceptors/ErrorWrappingInterceptor';
 
 export class RequestMethod {
     public readonly url: string;
@@ -34,6 +35,7 @@ export class RequestMethod {
         } else {
             this.url = joinPath(this.endpointMetadata.getBaseURL(), pathOrURL);
         }
+        this.baseInterceptors.push(new ErrorWrappingInterceptor());
         this.baseInterceptors.push(new ErrorContextInterceptor());
         const retryConfig = this.metadata.getRetryConfig();
         if (retryConfig) {

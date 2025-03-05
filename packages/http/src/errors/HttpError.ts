@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { HttpHeaders } from '../http/HttpHeaders';
 
 /**
@@ -56,12 +57,12 @@ export class ParseError extends HttpError {
 /**
  * Error thrown when the server returns an error status code
  */
-export class HttpStatusError<E = unknown> extends HttpError {
+export class HttpStatusError extends HttpError {
     constructor(
         public readonly status: number,
         public readonly statusText: string,
         public readonly headers: HttpHeaders,
-        public readonly responseBody?: E | string,
+        public readonly responseBody?: any,
         message?: string
     ) {
         super(message || `HTTP Error ${status}: ${statusText}`);
@@ -85,42 +86,42 @@ export class HttpStatusError<E = unknown> extends HttpError {
 /**
  * Specific HTTP status errors for common cases
  */
-export class UnauthorizedError<E = unknown> extends HttpStatusError<E> {
+export class UnauthorizedError extends HttpStatusError {
     constructor(
         headers: HttpHeaders,
-        responseBody?: E | string,
+        responseBody?: any,
         message = 'Unauthorized'
     ) {
         super(401, 'Unauthorized', headers, responseBody, message);
     }
 }
 
-export class ForbiddenError<E = unknown> extends HttpStatusError<E> {
+export class ForbiddenError extends HttpStatusError {
     constructor(
         headers: HttpHeaders,
-        responseBody?: E | string,
+        responseBody?: any,
         message = 'Forbidden'
     ) {
         super(403, 'Forbidden', headers, responseBody, message);
     }
 }
 
-export class NotFoundError<E = unknown> extends HttpStatusError<E> {
+export class NotFoundError extends HttpStatusError {
     constructor(
         headers: HttpHeaders,
-        responseBody?: E | string,
+        responseBody?: any,
         message = 'Not Found'
     ) {
         super(404, 'Not Found', headers, responseBody, message);
     }
 }
 
-export class ServerError<E = unknown> extends HttpStatusError<E> {
+export class ServerError extends HttpStatusError {
     constructor(
         status: number,
         statusText: string,
         headers: HttpHeaders,
-        responseBody?: E | string,
+        responseBody?: any,
         message?: string
     ) {
         super(

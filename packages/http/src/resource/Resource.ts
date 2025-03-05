@@ -1,19 +1,22 @@
-import {
-    AbortError,
-    HttpError,
-    NetworkError,
-    ParseError,
-    TimeoutError
-} from '../errors/HttpError';
+import { Defer } from '../common/Defer';
 import { mergeAbortSignal } from '../common/mergeAbortSignal';
+import { isJSON, isText, isTextEventStream } from '../common/mime-utils';
 import { METHODS } from '../core/EndpointMembers';
+import { ExecuteRequestMethodParams } from '../core/ExecuteRequestParams';
 import { ExecutionContext } from '../core/execution-context';
 import { HttpResponse } from '../core/HttpResponse';
+import { RequestMethod } from '../core/RequestMethod';
+import {
+    AbortError,
+    ForbiddenError,
+    HttpStatusError,
+    NotFoundError,
+    ParseError,
+    ServerError,
+    UnauthorizedError
+} from '../errors/HttpError';
 import { ResourceError } from './ResourceError';
 import { ResourceStatus } from './ResourceStatus';
-import { Defer } from '../common/Defer';
-import { RequestMethod } from '../core/RequestMethod';
-import { ExecuteRequestMethodParams } from '../core/ExecuteRequestParams';
 
 export const EXECUTE = Symbol('execute');
 export const SET_DATA = Symbol('setData');
@@ -22,12 +25,13 @@ export const SET_ERROR = Symbol('setError');
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type AnyResource = Resource<any, unknown>;
 
-export abstract class Resource<T, E = unknown> {
+export abstract class Resource<T, B = unknown> {
     abstract get data(): T;
-    abstract get error(): ResourceError | null;
+    abstract get error(): ResourceError<B> | null;
+    abstract get messages(): T[];
 
     protected abstract [SET_DATA](data: T): void;
-    protected abstract [SET_ERROR](error: ResourceError<E>): void;
+    protected abstract [SET_ERROR](error: ResourceError<B>): void;
 
     protected abstract get status(): ResourceStatus;
     protected abstract set status(status: ResourceStatus);
@@ -86,8 +90,20 @@ export abstract class Resource<T, E = unknown> {
         const allInterceptors = method.getAlInterceptors(instance);
         const sendRequest = allInterceptors
             .concat({
-                invoke(method, params, next) {
-                    return next(method, params);
+                invoke: async (method, params, next) => {
+                    try {
+                        return await next(method, params);
+                    } catch (error) {
+                        this.status = ResourceStatus.ERROR;
+                        if (error instanceof ResourceError) {
+                            this[SET_ERROR](error);
+                            throw error;
+                        } else {
+                            const resError = new ResourceError<B>(error);
+                            this[SET_ERROR](resError);
+                            throw resError;
+                        }
+                    }
                 }
             })
             .reduceRight(
@@ -102,94 +118,98 @@ export abstract class Resource<T, E = unknown> {
                     method: RequestMethod,
                     params: ExecuteRequestMethodParams
                 ): Promise<HttpResponse> => {
-                    try {
-                        const response = await method.invoke(instance, {
-                            ...params,
-                            signal
-                        });
-                        const httpStatus = await response.status();
-                        if (httpStatus < 200 || httpStatus >= 400) {
-                            await this.handleHttpErrorResponse(response);
-                        }
-                        this.status = ResourceStatus.SUCCESS;
-                        return response;
-                    } catch (error) {
-                        // Handle different error types
-                        if (
-                            error instanceof DOMException &&
-                            error.name === 'AbortError'
-                        ) {
-                            // Convert DOMException AbortError to our AbortError
-                            const abortError = new AbortError(
-                                'Request was aborted',
-                                error
-                            );
-                            this.status = ResourceStatus.ABORTED;
-                            this[SET_ERROR](
-                                new ResourceError(
-                                    abortError,
-                                    ResourceStatus.ABORTED
-                                )
-                            );
-                            throw abortError;
-                        } else if (
-                            error instanceof TypeError &&
-                            error.message.includes('NetworkError')
-                        ) {
-                            // Handle network errors
-                            const networkError = new NetworkError(
-                                'Network error occurred',
-                                error
-                            );
-                            this.status = ResourceStatus.ERROR;
-                            this[SET_ERROR](new ResourceError(networkError));
-                            throw networkError;
-                        } else if (
-                            error instanceof TypeError &&
-                            error.message.includes('timeout')
-                        ) {
-                            // Handle timeout errors
-                            const timeoutError = new TimeoutError(
-                                'Request timed out',
-                                {},
-                                error
-                            );
-                            this.status = ResourceStatus.ERROR;
-                            this[SET_ERROR](new ResourceError(timeoutError));
-                            throw timeoutError;
-                        } else if (
-                            error instanceof SyntaxError &&
-                            error.message.includes('JSON')
-                        ) {
-                            // Handle JSON parsing errors
-                            const parseError = new ParseError(
-                                'Failed to parse JSON response',
-                                error
-                            );
-                            this.status = ResourceStatus.ERROR;
-                            this[SET_ERROR](new ResourceError(parseError));
-                            throw parseError;
-                        } else if (error instanceof HttpError) {
-                            // Already a HttpError, just wrap it in ResourceError
-                            this.status = ResourceStatus.ERROR;
-                            this[SET_ERROR](new ResourceError(error));
-                            throw error;
-                        } else {
-                            // Unknown error type
-                            this.status = ResourceStatus.ERROR;
-                            this[SET_ERROR](new ResourceError(error));
-                            throw error;
-                        }
+                    const response = await method.invoke(instance, {
+                        ...params,
+                        signal
+                    });
+                    this.status = ResourceStatus.SUCCESS;
+                    const httpStatus = await response.status();
+                    if (httpStatus < 200 || httpStatus >= 400) {
+                        await this.handleHttpErrorResponse(response);
                     }
+                    return response;
                 }
             );
         const response = await sendRequest(method, params);
         await this.handleResponse(response);
     }
-    protected abstract handleResponse(response: HttpResponse): Promise<void>;
-    protected abstract handleHttpErrorResponse(
+    protected async *resolveResponseBody(response: HttpResponse) {
+        const headers = await response.headers();
+        const contentType = headers.get('content-type')?.join(', ');
+        if (isJSON(contentType)) {
+            try {
+                yield await response.json();
+            } catch (error) {
+                // Handle JSON parsing error
+                if (error instanceof SyntaxError) {
+                    const parseError = new ParseError(
+                        'Failed to parse JSON response',
+                        error
+                    );
+                    throw parseError;
+                }
+                throw error;
+            }
+        } else if (isText(contentType)) {
+            yield response.text();
+        } else if (isTextEventStream(contentType)) {
+            yield* response.textStream();
+        } else {
+            const byteStream = await response.body();
+            yield byteStream.readAsBlob();
+        }
+    }
+    protected async handleResponse(response: HttpResponse): Promise<void> {
+        try {
+            for await (const data of this.resolveResponseBody(response)) {
+                this[SET_DATA](data as T);
+            }
+        } catch (error) {
+            this.status = ResourceStatus.ERROR;
+            this[SET_ERROR](new ResourceError(error));
+            throw error;
+        }
+    }
+    protected async handleHttpErrorResponse(
         response: HttpResponse
-    ): Promise<void>;
+    ): Promise<void> {
+        const httpStatus = await response.status();
+        const headers = await response.headers();
+        const contentType = headers.get('content-type')?.join(', ');
+        const datas = [];
+        for await (const data of this.resolveResponseBody(response)) {
+            datas.push(data);
+        }
+        const responseBody = isTextEventStream(contentType) ? datas : datas[0];
+        // Create generic HTTP status error
+        let httpError: HttpStatusError;
+        if (httpStatus === 401) {
+            httpError = new UnauthorizedError(headers, responseBody);
+        } else if (httpStatus === 403) {
+            httpError = new ForbiddenError(headers, responseBody);
+        } else if (httpStatus === 404) {
+            httpError = new NotFoundError(headers, responseBody);
+        } else if (httpStatus >= 500) {
+            httpError = new ServerError(
+                httpStatus,
+                response.init.method.toString(),
+                headers,
+                responseBody
+            );
+        } else {
+            // Generic HTTP status error for other codes
+            httpError = new HttpStatusError(
+                httpStatus,
+                response.init.method.toString(),
+                headers,
+                responseBody
+            );
+        }
+
+        this.status = ResourceStatus.ERROR;
+        this[SET_ERROR](new ResourceError(httpError));
+        throw httpError;
+    }
 
     then(
         onFulfilled?: ((value: T) => T | PromiseLike<T>) | undefined,

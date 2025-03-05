@@ -23,6 +23,9 @@ export abstract class SolidDownloadResource<
     progress: Progress = new Progress(0, 0);
     @Signal()
     private [STATUS]: ResourceStatus = ResourceStatus.IDLE;
+    get messages(): T[] {
+        return [this.data];
+    }
     protected get status(): ResourceStatus {
         return this[STATUS];
     }
@@ -46,19 +49,21 @@ export abstract class SolidDownloadResource<
     }
 }
 export class SolidiumBlobResource extends SolidDownloadResource<Blob> {
-    protected async handleResponse(response: HttpResponse): Promise<void> {
-        await super.handleResponse(response);
+    protected async *resolveResponseBody(
+        response: HttpResponse
+    ): AsyncGenerator<unknown, void, unknown> {
         const body = await response.body();
         const blob = await body.readAsBlob();
-        this[SET_DATA](blob);
+        yield blob;
     }
 }
 
 export class SolidiumArrayBufferResource extends SolidDownloadResource<ArrayBuffer> {
-    protected async handleResponse(response: HttpResponse): Promise<void> {
-        await super.handleResponse(response);
+    protected async *resolveResponseBody(
+        response: HttpResponse
+    ): AsyncGenerator<unknown, void, unknown> {
         const body = await response.body();
         const buffer = await body.readAsBuffer();
-        this[SET_DATA](buffer);
+        yield buffer;
     }
 }

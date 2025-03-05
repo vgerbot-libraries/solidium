@@ -14,6 +14,9 @@ export class SolidRestfulResource<T, E = unknown> extends RestfulResource<
     T,
     E
 > {
+    get messages(): T[] {
+        throw new Error('Method not implemented.');
+    }
     @Signal()
     private [DATA]!: T;
     @Signal()
