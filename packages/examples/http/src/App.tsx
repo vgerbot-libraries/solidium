@@ -10,7 +10,8 @@ export function App() {
         <Solidium
             autoRegisterClasses={[
                 Persistence.default({
-                    driver: DefaultDrivers.LOCAL_STORAGE
+                    driver: DefaultDrivers.LOCAL_STORAGE,
+                    debug: true
                 })
             ]}
         >

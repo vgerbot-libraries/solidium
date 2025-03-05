@@ -9,6 +9,8 @@ import { Data } from '../types/Data';
 import { Bucket } from '../core/bucket/Bucket';
 import { DEFAULT_BUCKET } from '../core/constants';
 import { notifyStorageLoad } from './StorageLoadNotify';
+import { ActionType } from '../types/ActionType';
+import { ChangeBy } from '../types/ChangeBy';
 
 export interface StorageOptions {
     bucket?: string | symbol | Bucket;
@@ -33,11 +35,33 @@ export const Storage = (options: StorageOptions = {}) => {
                     : bucketOrName;
             const observe = () => {
                 return bucket.observe(key, event => {
+                    if (bucket.debug) {
+                        console.debug(
+                            `[Storage] ${ActionType[event.action]} ${JSON.stringify(
+                                {
+                                    action: ActionType[event.action],
+                                    changeBy: ChangeBy[event.changeBy],
+                                    key: event.key,
+                                    bucketName: event.target.name,
+                                    newValue: event.newValue,
+                                    originValue: event.originValue
+                                }
+                            )}`
+                        );
+                    }
                     set(event.newValue);
                 });
             };
+            if (bucket.debug) {
+                console.debug(`[Storage] ${key} is loaded from ${bucket.name}`);
+            }
             const owner = getOwner();
             bucket.getItem(key).then(value => {
+                if (bucket.debug) {
+                    console.debug(
+                        `[Storage] ${key} is loaded, value: ${value}`
+                    );
+                }
                 set(value);
                 notifyStorageLoad({
                     instance,
@@ -54,6 +78,15 @@ export const Storage = (options: StorageOptions = {}) => {
                             },
                             newValue => {
                                 unobserve();
+                                if (bucket.debug) {
+                                    console.debug(
+                                        `[Storage] ${instance.constructor.name}.${member.toString()} 
+                                        changed to ${newValue}`.replace(
+                                            /\s+/g,
+                                            ' '
+                                        )
+                                    );
+                                }
                                 bucket
                                     .setItem(key, newValue as Data)
                                     .finally(() => {

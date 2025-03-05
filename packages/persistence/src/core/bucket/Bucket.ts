@@ -47,12 +47,14 @@ interface PrivateBucketAPI {
     [PREPARE](): Promise<void>;
 }
 export class Bucket {
-    private readonly name: string;
+    readonly name: string;
     private readonly driver!: StorageDriver;
     private readonly serializer: DataSerializer;
+    readonly debug: boolean;
     constructor(config: BucketConfiguration) {
         this.name = config.name;
         this.serializer = config.serializer || new DefaultSerializer();
+        this.debug = config.debug ?? false;
         const driver = config.driver;
         if (driver === DefaultDrivers.LOCAL_STORAGE) {
             this.driver = LocalStorageDriver.createInstance(this.name);
