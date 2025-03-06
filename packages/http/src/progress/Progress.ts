@@ -5,8 +5,13 @@ export class Progress {
         public readonly chunk?: Uint8Array
     ) {}
 
-    public percent(fractionDigits: number = 2): number {
+    public percent(suffix = '%', fractionDigits: number = 2): string {
         const p = Math.pow(10, fractionDigits);
-        return this.total ? Math.round((this.loaded / this.total) * p) / p : 0;
+        return (
+            (this.total
+                ? Math.trunc((this.loaded / this.total) * 100 * p + 0.5) / p
+                : 0
+            ).toFixed(fractionDigits) + suffix
+        );
     }
 }

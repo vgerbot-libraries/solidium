@@ -31,8 +31,8 @@ export function UploadExample() {
             </Form.Group>
             <Show when={uploadResource.pending}>
                 <ProgressBar
-                    now={uploadResource.progress.percent()}
-                    label={`${uploadResource.progress.percent()}%`}
+                    now={parseFloat(uploadResource.progress.percent())}
+                    label={uploadResource.progress.percent('%')}
                 />
                 ;
             </Show>

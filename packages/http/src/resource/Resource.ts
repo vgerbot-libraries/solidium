@@ -122,16 +122,11 @@ export abstract class Resource<T, B = unknown> {
                         ...params,
                         signal
                     });
-                    this.status = ResourceStatus.SUCCESS;
-                    const httpStatus = await response.status();
-                    if (httpStatus < 200 || httpStatus >= 400) {
-                        await this.handleHttpErrorResponse(response);
-                    }
+                    await this.handleResponse(response);
                     return response;
                 }
             );
-        const response = await sendRequest(method, params);
-        await this.handleResponse(response);
+        await sendRequest(method, params);
     }
     protected async *resolveResponseBody(response: HttpResponse) {
         const headers = await response.headers();
@@ -161,8 +156,14 @@ export abstract class Resource<T, B = unknown> {
     }
     protected async handleResponse(response: HttpResponse): Promise<void> {
         try {
-            for await (const data of this.resolveResponseBody(response)) {
-                this[SET_DATA](data as T);
+            const httpStatus = await response.status();
+            if (httpStatus < 200 || httpStatus >= 400) {
+                await this.handleHttpErrorResponse(response);
+            } else {
+                for await (const data of this.resolveResponseBody(response)) {
+                    this[SET_DATA](data as T);
+                }
+                this.status = ResourceStatus.SUCCESS;
             }
         } catch (error) {
             this.status = ResourceStatus.ERROR;
