@@ -5,7 +5,7 @@ const SOLIDIUM_SOLID_OWNER_PROPERTY_KEY = Symbol(
 );
 export function runWithSolidiumOwner<T>(instance: object, callback: () => T) {
     const owner = Reflect.get(instance, SOLIDIUM_SOLID_OWNER_PROPERTY_KEY);
-    return runWithOwner(owner, callback);
+    return runWithOwner(owner, callback) as T;
 }
 export function setupOwner(instance: object, owner: Owner) {
     Reflect.set(instance, SOLIDIUM_SOLID_OWNER_PROPERTY_KEY, owner);

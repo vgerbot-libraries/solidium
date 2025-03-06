@@ -19,6 +19,7 @@ export interface RequestOptions {
     timeout?: number;
     retry?: RetryConfig;
     adapter?: RequestAdapterConstructor;
+    reactive?: boolean;
 }
 export function Request(options: RequestOptions) {
     return function decorateMethod<

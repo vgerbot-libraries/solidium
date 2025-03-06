@@ -26,7 +26,8 @@ export class AuthAPI {
     }
     @Post({
         path: 'token',
-        excludeInterceptors: [AuthInterceptor]
+        excludeInterceptors: [AuthInterceptor],
+        reactive: false
     })
     refreshToken(@Payload() data: { refreshToken: string }) {
         return restfull(data);

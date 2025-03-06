@@ -13,12 +13,22 @@ export function solidjsRequest<T, R extends Resource<T>>(
         throw new Error('Unknown error!');
     }
     const appCtx = context.instance[APPLICATION_CONTEXT];
-    const resource = appCtx.getInstance(ResourceType) as R;
-
+    const isReactive = context.method.isReactive();
     const tracker = appCtx.getInstance(ArgumentsTracker);
-    tracker.track(args, args => {
-        resource[EXECUTE](context, Array.from(args));
-    });
-
-    return resource;
+    if (isReactive) {
+        const resource = appCtx.getInstance(ResourceType) as R;
+        tracker.track(args, args => {
+            resource[EXECUTE](context, Array.from(args));
+        });
+        return resource;
+    } else {
+        const resource = new ResourceType();
+        const dispose = tracker.track(args, args => {
+            resource[EXECUTE](context, Array.from(args));
+            Promise.resolve().then(() => {
+                dispose();
+            });
+        });
+        return resource;
+    }
 }
