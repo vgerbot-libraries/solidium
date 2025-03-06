@@ -73,7 +73,9 @@ export class XMLHttpRequestAdapter implements RequestAdapter {
                 this.headersDefer.resolve(headers);
                 this.statusDefer.resolve(xhr.status);
             } else if (xhr.readyState === XMLHttpRequest.DONE) {
-                this.bodyDefer.resolve(new BlobByteStream(xhr.response));
+                this.bodyDefer.resolve(
+                    new BlobByteStream(xhr.response ?? new Blob([]))
+                );
             }
         });
         this.xhr = xhr;

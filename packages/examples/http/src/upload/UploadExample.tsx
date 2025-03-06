@@ -1,5 +1,5 @@
 import { useService } from '@vgerbot/solidium';
-import { Form, ProgressBar } from 'solid-bootstrap';
+import { Alert, Form, ProgressBar } from 'solid-bootstrap';
 import { UploadEndpoint } from './UploadEndpoint';
 import { createSignal, Show } from 'solid-js';
 export function UploadExample() {
@@ -34,7 +34,14 @@ export function UploadExample() {
                     now={parseFloat(uploadResource.progress.percent())}
                     label={uploadResource.progress.percent('%')}
                 />
-                ;
+            </Show>
+            <Show when={uploadResource.aborted}>
+                <Alert variant="warning">Aborted</Alert>
+            </Show>
+            <Show when={uploadResource.failure}>
+                <Alert variant="danger">
+                    {uploadResource.error?.toString()}
+                </Alert>
             </Show>
         </>
     );

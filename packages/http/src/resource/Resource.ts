@@ -37,6 +37,7 @@ export abstract class Resource<T, B = unknown> {
     protected abstract set status(status: ResourceStatus);
     protected readonly abortController = new AbortController();
     protected readonly defer = new Defer<T>();
+    protected lastExecutionAbortController = new AbortController();
     constructor() {
         this.abortController.signal.addEventListener('abort', () => {
             this.status = ResourceStatus.ABORTED;
@@ -65,6 +66,8 @@ export abstract class Resource<T, B = unknown> {
         this.abortController.abort();
     }
     protected async [EXECUTE](context: ExecutionContext, args: unknown[]) {
+        this.lastExecutionAbortController.abort();
+        this.lastExecutionAbortController = new AbortController();
         const { instance, method: methodMetadata, params } = context;
         const method = instance[METHODS].get(methodMetadata.name);
         if (!method) {
@@ -84,6 +87,11 @@ export abstract class Resource<T, B = unknown> {
         if (signal) {
             signal = mergeAbortSignal(
                 params.signal,
+                this.abortController.signal
+            );
+        } else {
+            signal = mergeAbortSignal(
+                this.lastExecutionAbortController.signal,
                 this.abortController.signal
             );
         }
