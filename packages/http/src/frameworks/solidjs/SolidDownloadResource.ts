@@ -1,51 +1,23 @@
+import { Inject, InstanceScope, Scope } from '@vgerbot/ioc';
 import { Signal } from '@vgerbot/solidium';
-import { Scope, InstanceScope } from '@vgerbot/ioc';
+import { HttpResponse } from '../../core/HttpResponse';
 import { Progress } from '../../progress/Progress';
 import { DownloadResource } from '../../resource/DownloadResource';
-import { ResourceStatus } from '../../resource/ResourceStatus';
-import { SET_DATA, SET_ERROR } from '../../resource/Resource';
-import { HttpResponse } from '../../core/HttpResponse';
-import { ResourceError } from '../../resource/ResourceError';
-
-const DATA = Symbol('data');
-const ERROR = Symbol('error');
-const STATUS = Symbol('status');
+import { SolidReactiveState } from './SolidReactiveState';
 
 @Scope(InstanceScope.TRANSIENT)
 export abstract class SolidDownloadResource<
     T extends Blob | ArrayBuffer
 > extends DownloadResource<T> {
-    @Signal()
-    private [DATA]!: T;
-    @Signal()
-    private [ERROR]!: ResourceError | null;
+    @Inject()
+    protected state!: SolidReactiveState<T>;
     @Signal()
     progress: Progress = new Progress(0, 0);
-    @Signal()
-    private [STATUS]: ResourceStatus = ResourceStatus.IDLE;
     get messages(): T[] {
         return [this.data];
     }
-    protected get status(): ResourceStatus {
-        return this[STATUS];
-    }
-    protected set status(status: ResourceStatus) {
-        this[STATUS] = status;
-    }
     protected updateProgress(progress: Progress): void {
         this.progress = progress;
-    }
-    protected [SET_DATA](data: T): void {
-        this[DATA] = data;
-    }
-    protected [SET_ERROR](error: ResourceError | null): void {
-        this[ERROR] = error;
-    }
-    get data(): T {
-        return this[DATA];
-    }
-    get error(): ResourceError | null {
-        return this[ERROR];
     }
 }
 export class SolidiumBlobResource extends SolidDownloadResource<Blob> {

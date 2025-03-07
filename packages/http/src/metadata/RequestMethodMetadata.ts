@@ -61,6 +61,6 @@ export class RequestMethodMetadata {
         return this.options.adapter;
     }
     isReactive() {
-        return this.options.reactive ?? false;
+        return this.options.reactive ?? true;
     }
 }

@@ -16,6 +16,7 @@ import {
     UnauthorizedError
 } from '../errors/HttpError';
 import { ResourceError } from './ResourceError';
+import { ResourceState } from './ResourceState';
 import { ResourceStatus } from './ResourceStatus';
 
 export const EXECUTE = Symbol('execute');
@@ -26,23 +27,32 @@ export const SET_ERROR = Symbol('setError');
 export type AnyResource = Resource<any, unknown>;
 
 export abstract class Resource<T, B = unknown> {
-    abstract get data(): T;
-    abstract get error(): ResourceError<B> | null;
-    abstract get messages(): T[];
+    protected abstract state: ResourceState<T, B>;
+    get data(): T {
+        return this.state.data;
+    }
+    get error(): ResourceError<B> | null {
+        return this.state.error;
+    }
+    get messages(): T[] {
+        return this.state.messages;
+    }
 
-    protected abstract [SET_DATA](data: T): void;
-    protected abstract [SET_ERROR](error: ResourceError<B>): void;
-
-    protected abstract get status(): ResourceStatus;
-    protected abstract set status(status: ResourceStatus);
+    protected get status(): ResourceStatus {
+        return this.state.status;
+    }
+    protected set status(status: ResourceStatus) {
+        this.state.status = status;
+    }
     protected readonly abortController = new AbortController();
     protected readonly defer = new Defer<T>();
     protected lastExecutionAbortController = new AbortController();
     constructor() {
         this.abortController.signal.addEventListener('abort', () => {
             this.status = ResourceStatus.ABORTED;
-            this[SET_ERROR](
-                new ResourceError(new AbortError(), ResourceStatus.ABORTED)
+            this.state.error = new ResourceError(
+                new AbortError(),
+                ResourceStatus.ABORTED
             );
         });
     }
@@ -75,7 +85,7 @@ export abstract class Resource<T, B = unknown> {
                 `Not found method ${methodMetadata.name.toString()}`
             );
             this.status = ResourceStatus.ERROR;
-            this[SET_ERROR](new ResourceError(error));
+            this.state.error = new ResourceError(error);
             throw error;
         }
         const executionHandlers = methodMetadata.getExecutionHandlers();
@@ -104,11 +114,11 @@ export abstract class Resource<T, B = unknown> {
                     } catch (error) {
                         this.status = ResourceStatus.ERROR;
                         if (error instanceof ResourceError) {
-                            this[SET_ERROR](error);
+                            this.state.error = error;
                             throw error;
                         } else {
                             const resError = new ResourceError<B>(error);
-                            this[SET_ERROR](resError);
+                            this.state.error = resError;
                             throw resError;
                         }
                     }
@@ -169,13 +179,13 @@ export abstract class Resource<T, B = unknown> {
                 await this.handleHttpErrorResponse(response);
             } else {
                 for await (const data of this.resolveResponseBody(response)) {
-                    this[SET_DATA](data as T);
+                    this.state.appendMessage(data as T);
                 }
                 this.status = ResourceStatus.SUCCESS;
             }
         } catch (error) {
             this.status = ResourceStatus.ERROR;
-            this[SET_ERROR](new ResourceError(error));
+            this.state.error = new ResourceError(error);
             throw error;
         }
     }
@@ -216,7 +226,7 @@ export abstract class Resource<T, B = unknown> {
         }
 
         this.status = ResourceStatus.ERROR;
-        this[SET_ERROR](new ResourceError(httpError));
+        this.state.error = new ResourceError(httpError);
         throw httpError;
     }
 

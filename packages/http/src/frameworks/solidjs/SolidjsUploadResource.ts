@@ -1,14 +1,8 @@
-import { InstanceScope, Scope } from '@vgerbot/ioc';
+import { Inject, InstanceScope, Scope } from '@vgerbot/ioc';
 import { Signal } from '@vgerbot/solidium';
 import { Progress } from '../../progress/Progress';
-import { SET_DATA, SET_ERROR } from '../../resource/Resource';
-import { ResourceError } from '../../resource/ResourceError';
-import { ResourceStatus } from '../../resource/ResourceStatus';
 import { UploadResource } from '../../resource/UploadResource';
-
-const DATA = Symbol('data');
-const ERROR = Symbol('error');
-const STATUS = Symbol('status');
+import { SolidReactiveState } from './SolidReactiveState';
 
 @Scope(InstanceScope.TRANSIENT)
 export class SolidjsUploadResource<
@@ -17,33 +11,12 @@ export class SolidjsUploadResource<
     get messages(): T[] {
         return [this.data];
     }
-    @Signal()
-    private [DATA]!: T;
-    @Signal()
-    private [ERROR]!: ResourceError | null;
+    @Inject()
+    protected state!: SolidReactiveState<T>;
     @Signal()
     progress: Progress = new Progress(0, 0);
-    @Signal()
-    private [STATUS]: ResourceStatus = ResourceStatus.IDLE;
-    protected get status(): ResourceStatus {
-        return this[STATUS];
-    }
-    protected set status(status: ResourceStatus) {
-        this[STATUS] = status;
-    }
+
     protected updateProgress(progress: Progress): void {
         this.progress = progress;
-    }
-    protected [SET_DATA](data: T): void {
-        this[DATA] = data;
-    }
-    protected [SET_ERROR](error: ResourceError | null): void {
-        this[ERROR] = error;
-    }
-    get data(): T {
-        return this[DATA];
-    }
-    get error(): ResourceError | null {
-        return this[ERROR];
     }
 }

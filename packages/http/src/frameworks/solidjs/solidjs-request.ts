@@ -3,6 +3,7 @@ import { APPLICATION_CONTEXT } from '../../core/EndpointMembers';
 import { getExecutionContext } from '../../core/execution-context';
 import { EXECUTE, Resource } from '../../resource/Resource';
 import { ArgumentsTracker } from './ArgumentsTracker';
+import { SolidReactiveState } from './SolidReactiveState';
 
 export function solidjsRequest<T, R extends Resource<T>>(
     args: unknown[],
@@ -23,6 +24,7 @@ export function solidjsRequest<T, R extends Resource<T>>(
         return resource;
     } else {
         const resource = new ResourceType();
+        Reflect.set(resource, 'state', new SolidReactiveState());
         const dispose = tracker.track(args, args => {
             resource[EXECUTE](context, Array.from(args));
             Promise.resolve().then(() => {
