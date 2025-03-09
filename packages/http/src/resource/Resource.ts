@@ -6,15 +6,8 @@ import { ExecuteRequestMethodParams } from '../core/ExecuteRequestParams';
 import { ExecutionContext } from '../core/execution-context';
 import { HttpResponse } from '../core/HttpResponse';
 import { RequestMethod } from '../core/RequestMethod';
-import {
-    AbortError,
-    ForbiddenError,
-    HttpStatusError,
-    NotFoundError,
-    ParseError,
-    ServerError,
-    UnauthorizedError
-} from '../errors/HttpError';
+import { AbortError, ParseError } from '../errors/HttpError';
+import { HttpStatusErrorFactory } from '../errors/HttpStatusErrorFactory';
 import { ResourceError } from './ResourceError';
 import { ResourceState } from './ResourceState';
 import { RequestStatus } from './RequestStatus';
@@ -205,30 +198,14 @@ export abstract class Resource<T, B = unknown> {
             datas.push(data);
         }
         const responseBody = isTextEventStream(contentType) ? datas : datas[0];
-        // Create generic HTTP status error
-        let httpError: HttpStatusError;
-        if (httpStatus === 401) {
-            httpError = new UnauthorizedError(headers, responseBody);
-        } else if (httpStatus === 403) {
-            httpError = new ForbiddenError(headers, responseBody);
-        } else if (httpStatus === 404) {
-            httpError = new NotFoundError(headers, responseBody);
-        } else if (httpStatus >= 500) {
-            httpError = new ServerError(
-                httpStatus,
-                response.init.method.toString(),
-                headers,
-                responseBody
-            );
-        } else {
-            // Generic HTTP status error for other codes
-            httpError = new HttpStatusError(
-                httpStatus,
-                response.init.method.toString(),
-                headers,
-                responseBody
-            );
-        }
+
+        // Use the factory to create the appropriate HTTP status error
+        const httpError = HttpStatusErrorFactory.createError(
+            httpStatus,
+            response.init.method.toString(),
+            headers,
+            responseBody
+        );
 
         this.status = RequestStatus.ERROR;
         this.state.error = new ResourceError(httpError);

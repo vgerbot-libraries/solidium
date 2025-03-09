@@ -1,9 +1,9 @@
 import { Inject, InstanceScope, Scope } from '@vgerbot/ioc';
 import { Resource } from '../../resource/Resource';
 
-import { SolidReactiveState } from './SolidReactiveState';
-import { HttpResponse } from '../../core/HttpResponse';
 import { isTextEventStream } from '../../common/mime-utils';
+import { HttpResponse } from '../../core/HttpResponse';
+import { SolidReactiveState } from './SolidReactiveState';
 
 @Scope(InstanceScope.TRANSIENT)
 export class SolidJSONSSEResource<T> extends Resource<T> {

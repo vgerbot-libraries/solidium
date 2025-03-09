@@ -4,7 +4,8 @@ import {
     HttpStatusError,
     Interceptor,
     InterceptorNextFunction,
-    RequestMethod
+    RequestMethod,
+    ResourceError
 } from '@vgerbot/http';
 import { Inject } from '@vgerbot/ioc';
 import { NotifyService } from './NotifyService';
@@ -20,9 +21,14 @@ export class HandleErrorInterceptor implements Interceptor {
         try {
             return await next(method, params);
         } catch (e) {
-            if (e instanceof HttpStatusError) {
-                if (e.responseBody && 'message' in e.responseBody) {
-                    const message = e.responseBody['message'];
+            const originError =
+                e instanceof ResourceError ? e.originalError : e;
+            if (originError instanceof HttpStatusError) {
+                if (
+                    originError.responseBody &&
+                    'message' in originError.responseBody
+                ) {
+                    const message = originError.responseBody['message'];
                     this.notifyService.alert({
                         title: 'Error',
                         message
