@@ -29,7 +29,10 @@ export function UploadExample() {
                     }}
                 />
             </Form.Group>
-            <Show when={uploadResource.pending}>
+            <Show when={uploadResource.opened}>
+                <Alert variant="info">Reqest is opened</Alert>
+            </Show>
+            <Show when={uploadResource.loading}>
                 <ProgressBar
                     now={parseFloat(uploadResource.progress.percent())}
                     label={uploadResource.progress.percent('%')}

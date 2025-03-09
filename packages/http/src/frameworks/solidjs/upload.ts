@@ -1,9 +1,9 @@
 import { solidjsRequest } from './solidjs-request';
-import { SolidjsUploadResource } from './SolidjsUploadResource';
+import { SolidUploadResource } from './SolidUploadResource';
 
 export function upload(...args: unknown[]) {
-    return solidjsRequest<BodyInit, SolidjsUploadResource<BodyInit>>(
+    return solidjsRequest<BodyInit, SolidUploadResource<BodyInit>>(
         args,
-        SolidjsUploadResource
+        SolidUploadResource
     );
 }

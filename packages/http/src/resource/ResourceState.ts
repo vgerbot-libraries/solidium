@@ -1,11 +1,11 @@
 import { ResourceError } from './ResourceError';
-import { ResourceStatus } from './ResourceStatus';
+import { RequestStatus } from './RequestStatus';
 
 export abstract class ResourceState<T, E> {
     public messages: T[] = [];
     public data!: T;
     public error!: ResourceError<E> | null;
-    public status: ResourceStatus = ResourceStatus.IDLE;
+    public status: RequestStatus = RequestStatus.IDLE;
 
     appendMessage(data: T) {
         this.data = data;

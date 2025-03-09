@@ -5,9 +5,7 @@ import { UploadResource } from '../../resource/UploadResource';
 import { SolidReactiveState } from './SolidReactiveState';
 
 @Scope(InstanceScope.TRANSIENT)
-export class SolidjsUploadResource<
-    T extends BodyInit
-> extends UploadResource<T> {
+export class SolidUploadResource<T extends BodyInit> extends UploadResource<T> {
     get messages(): T[] {
         return [this.data];
     }

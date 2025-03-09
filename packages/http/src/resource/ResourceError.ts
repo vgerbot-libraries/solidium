@@ -1,5 +1,5 @@
 import { HttpError, HttpStatusError } from '../errors/HttpError';
-import { ResourceStatus } from './ResourceStatus';
+import { RequestStatus } from './RequestStatus';
 
 /**
  * Represents an error that occurred during resource processing
@@ -13,7 +13,7 @@ export class ResourceError<B = unknown> {
     /**
      * The status of the resource when the error occurred
      */
-    readonly status: ResourceStatus;
+    readonly status: RequestStatus;
 
     /**
      * HTTP status code if available
@@ -43,7 +43,7 @@ export class ResourceError<B = unknown> {
     /**
      * Create a new ResourceError
      */
-    constructor(error: unknown, status: ResourceStatus = ResourceStatus.ERROR) {
+    constructor(error: unknown, status: RequestStatus = RequestStatus.ERROR) {
         this.originalError = error;
         this.status = status;
 
@@ -100,7 +100,7 @@ export class ResourceError<B = unknown> {
      */
     get isAbortError(): boolean {
         return (
-            this.name === 'AbortError' || this.status === ResourceStatus.ABORTED
+            this.name === 'AbortError' || this.status === RequestStatus.ABORTED
         );
     }
 

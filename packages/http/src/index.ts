@@ -60,7 +60,7 @@ export * from './frameworks/solidjs/arraybuffer';
 export * from './frameworks/solidjs/SolidRestfulResource';
 export * from './frameworks/solidjs/upload';
 export * from './resource/Resource';
-export * from './resource/ResourceStatus';
+export * from './resource/RequestStatus';
 export * from './resource/ResourceError';
 
 export * from './core/Acessor';

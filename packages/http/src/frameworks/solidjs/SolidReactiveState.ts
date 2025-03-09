@@ -1,5 +1,5 @@
 import { Signal } from '@vgerbot/solidium';
-import { ResourceStatus } from '../../resource/ResourceStatus';
+import { RequestStatus } from '../../resource/RequestStatus';
 import { ResourceError } from '../../resource/ResourceError';
 import { InstanceScope, Scope } from '@vgerbot/ioc';
 import { ResourceState } from '../../resource/ResourceState';
@@ -13,5 +13,5 @@ export class SolidReactiveState<T, E = unknown> extends ResourceState<T, E> {
     @Signal()
     public error!: ResourceError<E> | null;
     @Signal()
-    public status: ResourceStatus = ResourceStatus.IDLE;
+    public status: RequestStatus = RequestStatus.IDLE;
 }

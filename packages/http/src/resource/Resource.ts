@@ -17,7 +17,7 @@ import {
 } from '../errors/HttpError';
 import { ResourceError } from './ResourceError';
 import { ResourceState } from './ResourceState';
-import { ResourceStatus } from './ResourceStatus';
+import { RequestStatus } from './RequestStatus';
 
 export const EXECUTE = Symbol('execute');
 export const SET_DATA = Symbol('setData');
@@ -38,10 +38,10 @@ export abstract class Resource<T, B = unknown> {
         return this.state.messages;
     }
 
-    protected get status(): ResourceStatus {
+    protected get status(): RequestStatus {
         return this.state.status;
     }
-    protected set status(status: ResourceStatus) {
+    protected set status(status: RequestStatus) {
         this.state.status = status;
     }
     protected readonly abortController = new AbortController();
@@ -49,28 +49,31 @@ export abstract class Resource<T, B = unknown> {
     protected lastExecutionAbortController = new AbortController();
     constructor() {
         this.abortController.signal.addEventListener('abort', () => {
-            this.status = ResourceStatus.ABORTED;
+            this.status = RequestStatus.ABORTED;
             this.state.error = new ResourceError(
                 new AbortError(),
-                ResourceStatus.ABORTED
+                RequestStatus.ABORTED
             );
         });
     }
 
     get idle() {
-        return this.status === ResourceStatus.IDLE;
+        return this.status === RequestStatus.IDLE;
     }
-    get pending() {
-        return this.status === ResourceStatus.PENDING;
+    get opened() {
+        return this.status === RequestStatus.OPENED;
+    }
+    get loading() {
+        return this.status === RequestStatus.LOADING;
     }
     get success() {
-        return this.status === ResourceStatus.SUCCESS;
+        return this.status === RequestStatus.SUCCESS;
     }
     get aborted() {
-        return this.status === ResourceStatus.ABORTED;
+        return this.status === RequestStatus.ABORTED;
     }
     get failure() {
-        return this.status === ResourceStatus.ERROR;
+        return this.status === RequestStatus.ERROR;
     }
     abort() {
         this.abortController.abort();
@@ -84,7 +87,7 @@ export abstract class Resource<T, B = unknown> {
             const error = new Error(
                 `Not found method ${methodMetadata.name.toString()}`
             );
-            this.status = ResourceStatus.ERROR;
+            this.status = RequestStatus.ERROR;
             this.state.error = new ResourceError(error);
             throw error;
         }
@@ -92,7 +95,7 @@ export abstract class Resource<T, B = unknown> {
         executionHandlers.forEach(handler => {
             handler(instance, methodMetadata, params, args);
         });
-        this.status = ResourceStatus.PENDING;
+        this.status = RequestStatus.LOADING;
         let signal = params.signal;
         if (signal) {
             signal = mergeAbortSignal(
@@ -112,7 +115,7 @@ export abstract class Resource<T, B = unknown> {
                     try {
                         return await next(method, params);
                     } catch (error) {
-                        this.status = ResourceStatus.ERROR;
+                        this.status = RequestStatus.ERROR;
                         if (error instanceof ResourceError) {
                             this.state.error = error;
                             throw error;
@@ -136,10 +139,12 @@ export abstract class Resource<T, B = unknown> {
                     method: RequestMethod,
                     params: ExecuteRequestMethodParams
                 ): Promise<HttpResponse> => {
+                    this.status = RequestStatus.OPENED;
                     const response = await method.invoke(instance, {
                         ...params,
                         signal
                     });
+                    this.status = RequestStatus.LOADING;
                     await this.handleResponse(response);
                     return response;
                 }
@@ -181,10 +186,10 @@ export abstract class Resource<T, B = unknown> {
                 for await (const data of this.resolveResponseBody(response)) {
                     this.state.appendMessage(data as T);
                 }
-                this.status = ResourceStatus.SUCCESS;
+                this.status = RequestStatus.SUCCESS;
             }
         } catch (error) {
-            this.status = ResourceStatus.ERROR;
+            this.status = RequestStatus.ERROR;
             this.state.error = new ResourceError(error);
             throw error;
         }
@@ -225,7 +230,7 @@ export abstract class Resource<T, B = unknown> {
             );
         }
 
-        this.status = ResourceStatus.ERROR;
+        this.status = RequestStatus.ERROR;
         this.state.error = new ResourceError(httpError);
         throw httpError;
     }
