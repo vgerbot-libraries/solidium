@@ -19,14 +19,28 @@ export function solidjsRequest<T, R extends Resource<T>>(
     if (isReactive) {
         const resource = appCtx.getInstance(ResourceType) as R;
         tracker.track(args, args => {
-            resource[EXECUTE](context, Array.from(args));
+            resource[EXECUTE](
+                context,
+                Array.from(args),
+                () =>
+                    appCtx.getInstance(
+                        SolidReactiveState
+                    ) as SolidReactiveState<T>
+            );
         });
         return resource;
     } else {
         const resource = new ResourceType();
         Reflect.set(resource, 'state', new SolidReactiveState());
         const dispose = tracker.track(args, args => {
-            resource[EXECUTE](context, Array.from(args));
+            resource[EXECUTE](
+                context,
+                Array.from(args),
+                () =>
+                    appCtx.getInstance(
+                        SolidReactiveState
+                    ) as SolidReactiveState<T>
+            );
             Promise.resolve().then(() => {
                 dispose();
             });

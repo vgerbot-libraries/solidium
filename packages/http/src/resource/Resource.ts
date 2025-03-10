@@ -1,4 +1,4 @@
-import { Defer } from '../common/Defer';
+import { first, firstValueFrom, Observer, Subject, take } from 'rxjs';
 import { mergeAbortSignal } from '../common/mergeAbortSignal';
 import { isJSON, isText, isTextEventStream } from '../common/mime-utils';
 import { METHODS } from '../core/EndpointMembers';
@@ -6,11 +6,11 @@ import { ExecuteRequestMethodParams } from '../core/ExecuteRequestParams';
 import { ExecutionContext } from '../core/execution-context';
 import { HttpResponse } from '../core/HttpResponse';
 import { RequestMethod } from '../core/RequestMethod';
-import { AbortError, ParseError } from '../errors/HttpError';
+import { ParseError } from '../errors/HttpError';
 import { HttpStatusErrorFactory } from '../errors/HttpStatusErrorFactory';
-import { ResourceError } from './ResourceError';
-import { ResourceState } from './ResourceState';
 import { RequestStatus } from './RequestStatus';
+import { ResourceError } from './ResourceError';
+import { ResourceExecutionState } from './ResourceExecutionState';
 
 export const EXECUTE = Symbol('execute');
 export const SET_DATA = Symbol('setData');
@@ -20,75 +20,81 @@ export const SET_ERROR = Symbol('setError');
 export type AnyResource = Resource<any, unknown>;
 
 export abstract class Resource<T, B = unknown> {
-    protected abstract state: ResourceState<T, B>;
-    get data(): T {
-        return this.state.data;
+    private readonly $state = new Subject<ResourceExecutionState<T, B>>();
+    protected state?: ResourceExecutionState<T, B>;
+
+    get data(): T | undefined {
+        return this.state?.data;
     }
-    get error(): ResourceError<B> | null {
-        return this.state.error;
+    get error(): ResourceError<B> | undefined | null {
+        return this.state?.reason;
     }
     get messages(): T[] {
-        return this.state.messages;
-    }
-
-    protected get status(): RequestStatus {
-        return this.state.status;
-    }
-    protected set status(status: RequestStatus) {
-        this.state.status = status;
-    }
-    protected readonly abortController = new AbortController();
-    protected readonly defer = new Defer<T>();
-    protected lastExecutionAbortController = new AbortController();
-    constructor() {
-        this.abortController.signal.addEventListener('abort', () => {
-            this.status = RequestStatus.ABORTED;
-            this.state.error = new ResourceError(
-                new AbortError(),
-                RequestStatus.ABORTED
-            );
-        });
+        return this.state?.messages ?? [];
     }
 
     get idle() {
-        return this.status === RequestStatus.IDLE;
+        return this.state ? this.state.idle : true;
     }
     get opened() {
-        return this.status === RequestStatus.OPENED;
+        return this.state ? this.state.opened : false;
     }
     get loading() {
-        return this.status === RequestStatus.LOADING;
+        return this.state ? this.state.loading : false;
     }
     get success() {
-        return this.status === RequestStatus.SUCCESS;
+        return this.state ? this.state.success : false;
     }
     get aborted() {
-        return this.status === RequestStatus.ABORTED;
+        return this.state ? this.state.aborted : false;
     }
     get failure() {
-        return this.status === RequestStatus.ERROR;
+        return this.state ? this.state.failure : false;
     }
+
+    protected readonly abortController = new AbortController();
+
     abort() {
         this.abortController.abort();
     }
-    protected async [EXECUTE](context: ExecutionContext, args: unknown[]) {
-        this.lastExecutionAbortController.abort();
-        this.lastExecutionAbortController = new AbortController();
+    wait() {
+        return firstValueFrom(this.$state);
+    }
+    subscribe(
+        observerOrNext?:
+            | Partial<Observer<ResourceExecutionState<T, B>>>
+            | ((value: ResourceExecutionState<T, B>) => void)
+    ) {
+        return this.$state.subscribe(observerOrNext);
+    }
+
+    protected [EXECUTE](
+        context: ExecutionContext,
+        args: unknown[],
+        factory: () => ResourceExecutionState<T, B>
+    ): ResourceExecutionState<T, B> {
+        const state = factory();
+        state.init();
+        this.$state.next(state);
+        firstValueFrom(this.$state).then(console.warn);
+
+        const lastExecutionAbortController = this.state?.abortController;
+        lastExecutionAbortController?.abort();
+        this.state = state;
         const { instance, method: methodMetadata, params } = context;
         const method = instance[METHODS].get(methodMetadata.name);
         if (!method) {
             const error = new Error(
                 `Not found method ${methodMetadata.name.toString()}`
             );
-            this.status = RequestStatus.ERROR;
-            this.state.error = new ResourceError(error);
+            state.error(new ResourceError(error));
             throw error;
         }
         const executionHandlers = methodMetadata.getExecutionHandlers();
         executionHandlers.forEach(handler => {
             handler(instance, methodMetadata, params, args);
         });
-        this.status = RequestStatus.LOADING;
+        state.status = RequestStatus.LOADING;
         let signal = params.signal;
         if (signal) {
             signal = mergeAbortSignal(
@@ -96,53 +102,37 @@ export abstract class Resource<T, B = unknown> {
                 this.abortController.signal
             );
         } else {
-            signal = mergeAbortSignal(
-                this.lastExecutionAbortController.signal,
-                this.abortController.signal
-            );
+            signal = lastExecutionAbortController
+                ? mergeAbortSignal(
+                      lastExecutionAbortController.signal,
+                      this.abortController.signal
+                  )
+                : this.abortController.signal;
         }
         const allInterceptors = method.getAlInterceptors(instance);
-        const sendRequest = allInterceptors
-            .concat({
-                invoke: async (method, params, next) => {
-                    try {
-                        return await next(method, params);
-                    } catch (error) {
-                        this.status = RequestStatus.ERROR;
-                        if (error instanceof ResourceError) {
-                            this.state.error = error;
-                            throw error;
-                        } else {
-                            const resError = new ResourceError<B>(error);
-                            this.state.error = resError;
-                            throw resError;
-                        }
-                    }
-                }
-            })
-            .reduceRight(
-                (next, interceptor) =>
-                    (
-                        method: RequestMethod,
-                        params: ExecuteRequestMethodParams
-                    ) => {
-                        return interceptor.invoke(method, params, next);
-                    },
-                async (
-                    method: RequestMethod,
-                    params: ExecuteRequestMethodParams
-                ): Promise<HttpResponse> => {
-                    this.status = RequestStatus.OPENED;
-                    const response = await method.invoke(instance, {
-                        ...params,
-                        signal
-                    });
-                    this.status = RequestStatus.LOADING;
-                    await this.handleResponse(response);
-                    return response;
-                }
-            );
-        await sendRequest(method, params);
+        const sendRequest = allInterceptors.reduceRight(
+            (next, interceptor) =>
+                (method: RequestMethod, params: ExecuteRequestMethodParams) => {
+                    return interceptor.invoke(method, params, next);
+                },
+            async (
+                method: RequestMethod,
+                params: ExecuteRequestMethodParams
+            ): Promise<HttpResponse> => {
+                state.status = RequestStatus.OPENED;
+                const response = await method.invoke(instance, {
+                    ...params,
+                    signal
+                });
+                state.status = RequestStatus.LOADING;
+                await this.handleResponse(response, state);
+                return response;
+            }
+        );
+        sendRequest(method, params).catch(error => {
+            state.error(ResourceError.wrap(error));
+        });
+        return state;
     }
     protected async *resolveResponseBody(response: HttpResponse) {
         const headers = await response.headers();
@@ -170,21 +160,20 @@ export abstract class Resource<T, B = unknown> {
             yield byteStream.readAsBlob();
         }
     }
-    protected async handleResponse(response: HttpResponse): Promise<void> {
-        try {
-            const httpStatus = await response.status();
-            if (httpStatus < 200 || httpStatus >= 400) {
-                await this.handleHttpErrorResponse(response);
-            } else {
-                for await (const data of this.resolveResponseBody(response)) {
-                    this.state.appendMessage(data as T);
-                }
-                this.status = RequestStatus.SUCCESS;
+    protected async handleResponse(
+        response: HttpResponse,
+        state: ResourceExecutionState<T, B>
+    ): Promise<void> {
+        const httpStatus = await response.status();
+        state.headerReceived(await response.headers(), httpStatus);
+        if (httpStatus < 200 || httpStatus >= 400) {
+            await this.handleHttpErrorResponse(response);
+        } else {
+            for await (const data of this.resolveResponseBody(response)) {
+                state.next(data as T);
             }
-        } catch (error) {
-            this.status = RequestStatus.ERROR;
-            this.state.error = new ResourceError(error);
-            throw error;
+            state.status = RequestStatus.SUCCESS;
+            state.complete();
         }
     }
     protected async handleHttpErrorResponse(
@@ -207,23 +196,6 @@ export abstract class Resource<T, B = unknown> {
             responseBody
         );
 
-        this.status = RequestStatus.ERROR;
-        this.state.error = new ResourceError(httpError);
         throw httpError;
-    }
-
-    then(
-        onFulfilled?: ((value: T) => T | PromiseLike<T>) | undefined,
-        onRejected?: ((reason: unknown) => T | PromiseLike<T>) | undefined
-    ): Promise<T> {
-        return this.defer.promise.then(onFulfilled, onRejected);
-    }
-    catch(
-        onRejected?: ((reason: unknown) => T | PromiseLike<T>) | undefined
-    ): Promise<T> {
-        return this.defer.promise.catch(onRejected);
-    }
-    finally(onFinally?: (() => void) | undefined): Promise<T> {
-        return this.defer.promise.finally(onFinally);
     }
 }

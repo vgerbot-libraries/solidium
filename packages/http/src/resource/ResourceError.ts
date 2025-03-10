@@ -1,19 +1,19 @@
 import { HttpError, HttpStatusError } from '../errors/HttpError';
-import { RequestStatus } from './RequestStatus';
 
 /**
  * Represents an error that occurred during resource processing
  */
 export class ResourceError<B = unknown> {
+    public static wrap(error: unknown) {
+        if (error instanceof ResourceError) {
+            return error;
+        }
+        return new ResourceError(error);
+    }
     /**
      * The original error that caused this resource error
      */
     readonly originalError: unknown;
-
-    /**
-     * The status of the resource when the error occurred
-     */
-    readonly status: RequestStatus;
 
     /**
      * HTTP status code if available
@@ -43,9 +43,8 @@ export class ResourceError<B = unknown> {
     /**
      * Create a new ResourceError
      */
-    constructor(error: unknown, status: RequestStatus = RequestStatus.ERROR) {
+    constructor(error: unknown) {
         this.originalError = error;
-        this.status = status;
 
         if (error instanceof HttpStatusError) {
             this.httpStatus = error.status;
@@ -99,9 +98,7 @@ export class ResourceError<B = unknown> {
      * Check if this is an abort error
      */
     get isAbortError(): boolean {
-        return (
-            this.name === 'AbortError' || this.status === RequestStatus.ABORTED
-        );
+        return this.name === 'AbortError';
     }
 
     /**

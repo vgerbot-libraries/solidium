@@ -2,19 +2,25 @@ import { HttpResponse } from '../core/HttpResponse';
 import { Progress } from '../progress/Progress';
 import { ProgressiveResource } from './ProgressiveResource';
 import { Resource } from './Resource';
+import { ResourceExecutionState } from './ResourceExecutionState';
 
-export abstract class UploadResource<T extends BodyInit, E = unknown>
-    extends Resource<T, E>
-    implements ProgressiveResource<T>
+export abstract class UploadResource<T extends BodyInit, B = unknown>
+    extends Resource<T, B>
+    implements ProgressiveResource<T, B>
 {
     abstract progress: Progress;
 
-    protected async handleResponse(response: HttpResponse): Promise<void> {
+    protected async handleResponse(
+        response: HttpResponse,
+        state: ResourceExecutionState<T, B>
+    ): Promise<void> {
         response.onUpload(progress => {
             this.updateProgress(progress);
         });
-        return super.handleResponse(response);
+        return super.handleResponse(response, state);
     }
 
-    protected abstract updateProgress(progress: Progress): void;
+    protected updateProgress(progress: Progress): void {
+        this.progress = progress;
+    }
 }

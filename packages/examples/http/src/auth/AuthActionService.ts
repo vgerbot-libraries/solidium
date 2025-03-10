@@ -11,8 +11,7 @@ export class AuthActionService {
         const startTime = Date.now();
         const resource = this.authAPI.login(data);
         try {
-            console.log(await resource);
-            const { data } = await resource;
+            const { data } = await resource.wait();
             this.authService.token = data.accessToken;
             this.authService.refreshToken = data.refreshToken;
             this.authService.expiresAt = data.expiresIn * 1000 + startTime;

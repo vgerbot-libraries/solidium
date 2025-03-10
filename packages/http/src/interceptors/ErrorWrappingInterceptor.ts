@@ -9,7 +9,6 @@ import {
     TimeoutError
 } from '../errors/HttpError';
 import { ResourceError } from '../resource/ResourceError';
-import { RequestStatus } from '../resource/RequestStatus';
 
 export class ErrorWrappingInterceptor implements Interceptor {
     async invoke(
@@ -25,7 +24,7 @@ export class ErrorWrappingInterceptor implements Interceptor {
             if (error instanceof DOMException && error.name === 'AbortError') {
                 // Convert DOMException AbortError to our AbortError
                 const abortError = new AbortError('Request was aborted', error);
-                throw new ResourceError(abortError, RequestStatus.ABORTED);
+                throw new ResourceError(abortError);
             } else if (
                 error instanceof TypeError &&
                 error.message.includes('NetworkError')

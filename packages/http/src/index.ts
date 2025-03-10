@@ -55,8 +55,7 @@ export * from './swr/SWRConfig';
 
 export * from './frameworks/solidjs/restful';
 export * from './frameworks/solidjs/jsonsse';
-export * from './frameworks/solidjs/blob';
-export * from './frameworks/solidjs/arraybuffer';
+export * from './frameworks/solidjs/download';
 export * from './frameworks/solidjs/SolidRestfulResource';
 export * from './frameworks/solidjs/upload';
 export * from './resource/Resource';
