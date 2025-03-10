@@ -29,7 +29,7 @@ export interface StorageLoadNotifyOptions {
     members: PropertyKey[];
 }
 
-export function StorageLoadNotify(options?: StorageLoadNotifyOptions) {
+export function OnStorageLoad(options?: StorageLoadNotifyOptions) {
     return <T extends object>(target: T, propertyKey: PropertyKey) => {
         const events: InternalStorageLoadEventListener[] =
             Reflect.getMetadata(STORAGE_LOAD_EVENTS, target) ?? [];

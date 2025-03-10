@@ -8,7 +8,7 @@ import {
 import { Data } from '../types/Data';
 import { Bucket } from '../core/bucket/Bucket';
 import { DEFAULT_BUCKET } from '../core/constants';
-import { notifyStorageLoad } from './StorageLoadNotify';
+import { notifyStorageLoad } from './OnStorageLoad';
 import { ActionType } from '../types/ActionType';
 import { ChangeBy } from '../types/ChangeBy';
 
