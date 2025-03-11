@@ -62,4 +62,4 @@ export * from './resource/Resource';
 export * from './resource/RequestStatus';
 export * from './resource/ResourceError';
 
-export * from './core/Acessor';
+export * from './core/Reactive';

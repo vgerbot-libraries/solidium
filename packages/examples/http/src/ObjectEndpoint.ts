@@ -1,11 +1,11 @@
 import {
-    Accessor,
     Endpoint,
     Get,
     PathVariable,
     Payload,
     Post,
     Query,
+    R,
     restfull
 } from '@vgerbot/http';
 
@@ -24,7 +24,7 @@ export class ObjectsEndpoint {
         return restfull<ObjectDef[]>();
     }
     @Get('objects/:id')
-    getItem(@PathVariable('id') id: Accessor<string | undefined>) {
+    getItem(@PathVariable('id') id: R<string>) {
         return restfull<ObjectDef>(id);
     }
     @Get('objects')
