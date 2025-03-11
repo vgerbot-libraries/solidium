@@ -1,14 +1,18 @@
 import { useService } from '@vgerbot/solidium';
 import { AuthActionService } from '../auth/AuthActionService';
+import { UserAPI } from '../apis/UserAPI';
 
 export function Profile() {
     const service = useService(AuthActionService);
     const profile = service.profile();
+    const userAPI = useService(UserAPI);
+    const info = userAPI.userInfo(() => profile.data?.data?.id);
     return (
         <div>
             <div>ID: {profile.data?.data?.id}</div>
             <div>Name: {profile.data?.data?.username}</div>
             <div>Role: {profile.data?.data?.role}</div>
+            <div>Email: {info.data?.data?.email}</div>
         </div>
     );
 }

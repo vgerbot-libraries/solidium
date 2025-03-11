@@ -1,4 +1,4 @@
-import { first, firstValueFrom, Observer, Subject, take } from 'rxjs';
+import { firstValueFrom, Observer, Subject } from 'rxjs';
 import { mergeAbortSignal } from '../common/mergeAbortSignal';
 import { isJSON, isText, isTextEventStream } from '../common/mime-utils';
 import { METHODS } from '../core/EndpointMembers';
@@ -58,6 +58,9 @@ export abstract class Resource<T, B = unknown> {
         this.abortController.abort();
     }
     wait() {
+        if (this.state) {
+            return Promise.resolve(this.state);
+        }
         return firstValueFrom(this.$state);
     }
     subscribe(
@@ -76,7 +79,6 @@ export abstract class Resource<T, B = unknown> {
         const state = factory();
         state.init();
         this.$state.next(state);
-        firstValueFrom(this.$state).then(console.warn);
 
         const lastExecutionAbortController = this.state?.abortController;
         lastExecutionAbortController?.abort();
