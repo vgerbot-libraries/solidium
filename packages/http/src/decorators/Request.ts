@@ -1,5 +1,5 @@
 import { RequestAdapterConstructor } from '../adapter/RequestAdapter';
-import { R } from '../core/Reactive';
+import { Reactive } from '../core/Reactive';
 import { EndpointInstance } from '../core/EndpointInstance';
 import { ExecuteRequestMethodParams } from '../core/ExecuteRequestParams';
 import { setExecutionContext } from '../core/execution-context';
@@ -22,7 +22,7 @@ export interface RequestOptions {
     reactive?: boolean;
 }
 export function Request(options: RequestOptions) {
-    return function decorateMethod<R, Args extends Array<R<unknown>>>(
+    return function decorateMethod<R, Args extends Array<Reactive<unknown>>>(
         target: object | ((...args: Args) => R),
         context:
             | ClassMethodDecoratorContext<object, (...args: Args) => R>

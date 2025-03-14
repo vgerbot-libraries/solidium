@@ -1,9 +1,4 @@
-import {
-    SWRConfig,
-    RevalidateStrategy,
-    SWRRetryContext,
-    isRevalidateStrategyFunction
-} from './SWRConfig';
+import { SWRConfig, SWRRetryContext } from './SWRConfig';
 
 export interface SWRState<T> {
     data?: T;
@@ -25,37 +20,12 @@ export interface SWROptions extends Partial<SWRConfig> {
     onStateChange?: (state: SWRState<unknown>) => void;
 }
 
-export class DefaultRevalidateStrategy implements RevalidateStrategy {
-    constructor(private readonly options: SWRConfig['revalidate']['on']) {}
-    execute(signal: AbortSignal, revalidate: (reason?: string) => void): void {
-        if (typeof window !== 'undefined') {
-            if (this.options.focus !== false) {
-                window.addEventListener('focus', () => revalidate('focus'));
-            }
-            if (this.options.reconnect) {
-                window.addEventListener('online', () =>
-                    revalidate('reconnect')
-                );
-            }
-            if (this.options.events) {
-                this.options.events.forEach(event => {
-                    window.addEventListener(event, () => {
-                        revalidate(event);
-                    });
-                });
-            }
-        }
-    }
-}
-
 const defaultConfig: SWRConfig = {
     revalidate: {
-        on: {
-            focus: true,
-            reconnect: true,
-            ifStale: true,
-            events: []
-        }
+        focus: true,
+        reconnect: true,
+        ifStale: true,
+        events: []
     },
     dedupingInterval: 2000,
     staleTime: 0,
@@ -103,11 +73,8 @@ export class SWRInstance<T> {
             isValidating: false
         } as SWRState<T>;
 
-        this.executeRevalidationStrategy();
+        this.initRevalidationStrategy();
         this.setupRefreshInterval();
-        (() => {
-            this.revalidate(); // Initial fetch
-        })();
     }
 
     private setState(newState: Partial<SWRState<T>>) {
@@ -176,26 +143,42 @@ export class SWRInstance<T> {
         }
     }
 
-    private executeRevalidationStrategy() {
-        const revalidateOn = this.config.revalidate?.on;
-        const customStrategy = this.config.revalidate?.strategy;
-        let strategy: RevalidateStrategy | undefined;
-        if (customStrategy) {
-            strategy = isRevalidateStrategyFunction(customStrategy)
-                ? { execute: customStrategy }
-                : undefined;
+    private initRevalidationStrategy() {
+        const { focus, reconnect, events } = this.config.revalidate ?? {};
+        if (typeof window === 'undefined') {
+            return;
         }
-        strategy =
-            strategy ??
-            new DefaultRevalidateStrategy({
-                focus: true,
-                reconnect: true,
-                ifStale: true,
-                ...revalidateOn
+        if (focus !== false) {
+            window.addEventListener(
+                'focus',
+                () => {
+                    this.revalidate('focus');
+                },
+                {
+                    signal: this.signal
+                }
+            );
+        }
+        if (reconnect) {
+            window.addEventListener(
+                'online',
+                () => {
+                    this.revalidate('reconnect');
+                },
+                { signal: this.signal }
+            );
+        }
+        if (events) {
+            events.forEach(event => {
+                window.addEventListener(
+                    event,
+                    () => {
+                        this.revalidate(event);
+                    },
+                    { signal: this.signal }
+                );
             });
-        strategy.execute(this.signal, (reason?: string) => {
-            this.revalidate(reason);
-        });
+        }
     }
 
     private setupRefreshInterval() {
@@ -237,3 +220,4 @@ export class SWRInstance<T> {
         this.cleanupFns.forEach(cleanup => cleanup());
     }
 }
+Object.assign(window, { SWRInstance });

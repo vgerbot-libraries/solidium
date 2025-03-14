@@ -1,5 +1,3 @@
-import { Newable } from '@vgerbot/ioc';
-
 export interface RevalidateOptions {
     /**
      * Auto revalidate on window focus
@@ -84,30 +82,6 @@ export interface SWRRetryConfig {
     shouldRetryOnError?: (ctx: SWRRetryContext) => boolean;
 }
 
-export type RevalidateStrategyFunction = (
-    signal: AbortSignal,
-    revalidate: (reason?: string) => void
-) => void;
-
-export interface RevalidateStrategy {
-    execute(signal: AbortSignal, revalidate: (reason?: string) => void): void;
-}
-
-export function isRevalidateStrategyClass(
-    value: unknown
-): value is RevalidateStrategy {
-    return (
-        typeof value === 'function' &&
-        'invoke' in value.prototype &&
-        typeof value.prototype['invoke'] === 'function'
-    );
-}
-export function isRevalidateStrategyFunction(
-    value: unknown
-): value is RevalidateStrategyFunction {
-    return typeof value === 'function' && !isRevalidateStrategyClass(value);
-}
-
 export interface SWRThrottleConfig {
     /**
      * Throttle interval in milliseconds
@@ -147,10 +121,7 @@ export interface SWRConfig {
     /**
      * Revalidation configuration
      */
-    revalidate: {
-        on: Partial<RevalidateOptions>;
-        strategy?: Newable<RevalidateStrategy> | RevalidateStrategyFunction;
-    };
+    revalidate: RevalidateOptions;
     /**
      * Event throttling configuration
      */
