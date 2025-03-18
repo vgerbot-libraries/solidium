@@ -1,13 +1,20 @@
 import { Subject } from 'rxjs';
+import { InstanceScope, Scope } from '@vgerbot/ioc';
 import { RequestStatus } from './RequestStatus';
 import { ResourceError } from './ResourceError';
 import { Defer } from '../common/Defer';
 import { HttpHeaders } from '../http/HttpHeaders';
+import { Signal } from '@vgerbot/solidium';
 
-export abstract class ResourceExecutionState<T, E> extends Subject<T> {
+@Scope(InstanceScope.TRANSIENT)
+export class ResourceExecutionState<T, E = unknown> extends Subject<T> {
+    @Signal()
     public messages: T[] = [];
+    @Signal()
     public data!: T;
+    @Signal()
     public reason!: ResourceError<E> | null;
+    @Signal()
     public status: RequestStatus = RequestStatus.IDLE;
     public headers: HttpHeaders = new HttpHeaders();
     public httpStatus = 0;

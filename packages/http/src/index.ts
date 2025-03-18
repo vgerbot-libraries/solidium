@@ -53,11 +53,11 @@ export * from './progress/ProgressHandler';
 export * from './swr/SWRInstance';
 export * from './swr/SWRConfig';
 
-export * from './frameworks/solidjs/restful';
-export * from './frameworks/solidjs/jsonsse';
-export * from './frameworks/solidjs/download';
-export * from './frameworks/solidjs/SolidRestfulResource';
-export * from './frameworks/solidjs/upload';
+export * from './executions/restful';
+export * from './executions/jsonsse';
+export * from './executions/download';
+export * from './resource/RestfulResource';
+export * from './executions/upload';
 export * from './resource/Resource';
 export * from './resource/RequestStatus';
 export * from './resource/ResourceError';

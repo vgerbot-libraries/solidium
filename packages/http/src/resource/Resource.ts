@@ -11,6 +11,7 @@ import { HttpStatusErrorFactory } from '../errors/HttpStatusErrorFactory';
 import { RequestStatus } from './RequestStatus';
 import { ResourceError } from './ResourceError';
 import { ResourceExecutionState } from './ResourceExecutionState';
+import { Signal } from '@vgerbot/solidium';
 
 export const EXECUTE = Symbol('execute');
 export const SET_DATA = Symbol('setData');
@@ -21,6 +22,7 @@ export type AnyResource = Resource<any, unknown>;
 
 export abstract class Resource<T, B = unknown> {
     private readonly $state = new Subject<ResourceExecutionState<T, B>>();
+    @Signal()
     protected state?: ResourceExecutionState<T, B>;
 
     get data(): T | undefined {

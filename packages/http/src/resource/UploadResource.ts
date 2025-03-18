@@ -1,14 +1,19 @@
+import { Signal } from '@vgerbot/solidium';
 import { HttpResponse } from '../core/HttpResponse';
 import { Progress } from '../progress/Progress';
 import { ProgressiveResource } from './ProgressiveResource';
-import { Resource } from './Resource';
 import { ResourceExecutionState } from './ResourceExecutionState';
 
-export abstract class UploadResource<T extends BodyInit, B = unknown>
-    extends Resource<T, B>
-    implements ProgressiveResource<T, B>
-{
-    abstract progress: Progress;
+export class UploadResource<
+    T extends BodyInit,
+    B = unknown
+> extends ProgressiveResource<T, B> {
+    @Signal()
+    progress: Progress = new Progress(0, 0);
+
+    protected updateProgress(progress: Progress): void {
+        this.progress = progress;
+    }
 
     protected async handleResponse(
         response: HttpResponse,
@@ -18,9 +23,5 @@ export abstract class UploadResource<T extends BodyInit, B = unknown>
             this.updateProgress(progress);
         });
         return super.handleResponse(response, state);
-    }
-
-    protected updateProgress(progress: Progress): void {
-        this.progress = progress;
     }
 }

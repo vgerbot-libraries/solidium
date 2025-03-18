@@ -1,15 +1,15 @@
+import { InstanceScope, Scope } from '@vgerbot/ioc';
+import { Signal } from '@vgerbot/solidium';
 import { HttpResponse } from '../core/HttpResponse';
 import { ByteStream } from '../http/ByteStream';
 import { Progress } from '../progress/Progress';
 import { ProgressiveResource } from './ProgressiveResource';
-import { Resource } from './Resource';
 import { ResourceExecutionState } from './ResourceExecutionState';
 
-export abstract class DownloadResource
-    extends Resource<ByteStream>
-    implements ProgressiveResource<ByteStream>
-{
-    abstract progress: Progress;
+@Scope(InstanceScope.TRANSIENT)
+export class DownloadResource extends ProgressiveResource<ByteStream> {
+    @Signal()
+    public progress!: Progress;
 
     protected async handleResponse(
         response: HttpResponse,
@@ -23,5 +23,12 @@ export abstract class DownloadResource
         return super.handleResponse(response, state);
     }
 
-    protected abstract updateProgress(progress: Progress): void;
+    protected updateProgress(progress: Progress): void {
+        this.progress = progress;
+    }
+    protected async *resolveResponseBody(
+        response: HttpResponse
+    ): AsyncGenerator<ByteStream, void, unknown> {
+        yield response.body();
+    }
 }
