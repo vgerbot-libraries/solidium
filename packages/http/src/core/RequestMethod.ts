@@ -27,7 +27,7 @@ export class RequestMethod {
     constructor(
         public readonly name: string | symbol,
         public readonly endpointMetadata: EndpointMetadata,
-        private readonly metadata: RequestMethodMetadata
+        public readonly metadata: RequestMethodMetadata
     ) {
         const pathOrURL = metadata.getPath();
         if (isURL(pathOrURL)) {
@@ -78,15 +78,18 @@ export class RequestMethod {
             method: this
         });
     }
-    private createAdapter(
-        instance: EndpointInstance,
-        params: ExecuteRequestMethodParams
-    ) {
-        const url = resolveURL(
+    resolveURL(params: ExecuteRequestMethodParams) {
+        return resolveURL(
             this.url,
             params.pathVariables ?? {},
             params.queryParams
         );
+    }
+    private createAdapter(
+        instance: EndpointInstance,
+        params: ExecuteRequestMethodParams
+    ) {
+        const url = this.resolveURL(params);
         const method = this.metadata.getHttpMethod();
         const headers = this.metadata.getHeaders();
         const signal = mergeAbortSignal(

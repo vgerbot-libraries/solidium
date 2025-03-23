@@ -3,7 +3,6 @@ import { APPLICATION_CONTEXT } from '../core/EndpointMembers';
 import { getExecutionContext } from '../core/execution-context';
 import { EXECUTE, Resource } from '../resource/Resource';
 import { ArgumentsTracker } from './ArgumentsTracker';
-import { ResourceExecutionState } from '../resource/ResourceExecutionState';
 
 export function execute<T, R extends Resource<T>>(
     args: unknown[],
@@ -14,33 +13,18 @@ export function execute<T, R extends Resource<T>>(
         throw new Error('Unknown error!');
     }
     const appCtx = context.instance[APPLICATION_CONTEXT];
-    const isReactive = context.method.isReactive();
+    const methodMetadata = context.method.metadata;
+    const isReactive = methodMetadata.isReactive();
     const tracker = appCtx.getInstance(ArgumentsTracker);
+    const resource = appCtx.getInstance(ResourceType) as R;
     if (isReactive) {
-        const resource = appCtx.getInstance(ResourceType) as R;
         tracker.track(args, args => {
-            resource[EXECUTE](
-                context,
-                Array.from(args),
-                () =>
-                    appCtx.getInstance(
-                        ResourceExecutionState
-                    ) as ResourceExecutionState<T>
-            );
+            resource[EXECUTE](context, Array.from(args));
         });
         return resource;
     } else {
-        const resource = new ResourceType();
-        Reflect.set(resource, 'state', new ResourceExecutionState());
         const dispose = tracker.track(args, args => {
-            resource[EXECUTE](
-                context,
-                Array.from(args),
-                () =>
-                    appCtx.getInstance(
-                        ResourceExecutionState
-                    ) as ResourceExecutionState<T>
-            );
+            resource[EXECUTE](context, Array.from(args));
             Promise.resolve().then(() => {
                 dispose();
             });

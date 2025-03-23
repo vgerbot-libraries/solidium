@@ -94,4 +94,7 @@ export class HttpHeaders {
         });
         return result;
     }
+    clear() {
+        this.headers.clear();
+    }
 }

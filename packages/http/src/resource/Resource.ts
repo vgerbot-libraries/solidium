@@ -1,7 +1,8 @@
-import { firstValueFrom, Observer, Subject } from 'rxjs';
+import { ApplicationContext, Inject, PostInject } from '@vgerbot/ioc';
+import { Signal } from '@vgerbot/solidium';
+import { last, lastValueFrom, mergeMap, Observer, Subject } from 'rxjs';
 import { mergeAbortSignal } from '../common/mergeAbortSignal';
 import { isJSON, isText, isTextEventStream } from '../common/mime-utils';
-import { METHODS } from '../core/EndpointMembers';
 import { ExecuteRequestMethodParams } from '../core/ExecuteRequestParams';
 import { ExecutionContext } from '../core/execution-context';
 import { HttpResponse } from '../core/HttpResponse';
@@ -11,7 +12,6 @@ import { HttpStatusErrorFactory } from '../errors/HttpStatusErrorFactory';
 import { RequestStatus } from './RequestStatus';
 import { ResourceError } from './ResourceError';
 import { ResourceExecutionState } from './ResourceExecutionState';
-import { Signal } from '@vgerbot/solidium';
 
 export const EXECUTE = Symbol('execute');
 export const SET_DATA = Symbol('setData');
@@ -24,6 +24,8 @@ export abstract class Resource<T, B = unknown> {
     private readonly $state = new Subject<ResourceExecutionState<T, B>>();
     @Signal()
     protected state?: ResourceExecutionState<T, B>;
+    @Inject()
+    protected ioc!: ApplicationContext;
 
     get data(): T | undefined {
         return this.state?.data;
@@ -56,14 +58,22 @@ export abstract class Resource<T, B = unknown> {
 
     protected readonly abortController = new AbortController();
 
+    @PostInject()
+    protected init() {
+        this.$state.subscribe({
+            next: value => {
+                this.state = value;
+            }
+        });
+    }
+
     abort() {
         this.abortController.abort();
     }
     wait() {
-        if (this.state) {
-            return Promise.resolve(this.state);
-        }
-        return firstValueFrom(this.$state);
+        return lastValueFrom(
+            this.$state.pipe(mergeMap(state => state)).pipe(last())
+        );
     }
     subscribe(
         observerOrNext?:
@@ -76,28 +86,16 @@ export abstract class Resource<T, B = unknown> {
     protected [EXECUTE](
         context: ExecutionContext,
         args: unknown[],
-        factory: () => ResourceExecutionState<T, B>
-    ): ResourceExecutionState<T, B> {
-        const state = factory();
-        state.init();
-        this.$state.next(state);
-
+        state = this.ioc.getInstance(
+            ResourceExecutionState
+        ) as ResourceExecutionState<T, B>
+    ) {
         const lastExecutionAbortController = this.state?.abortController;
         lastExecutionAbortController?.abort();
-        this.state = state;
-        const { instance, method: methodMetadata, params } = context;
-        const method = instance[METHODS].get(methodMetadata.name);
-        if (!method) {
-            const error = new Error(
-                `Not found method ${methodMetadata.name.toString()}`
-            );
-            state.error(new ResourceError(error));
-            throw error;
-        }
-        const executionHandlers = methodMetadata.getExecutionHandlers();
-        executionHandlers.forEach(handler => {
-            handler(instance, methodMetadata, params, args);
-        });
+
+        this.$state.next(state);
+
+        const { instance, method, params } = context;
         state.status = RequestStatus.LOADING;
         let signal = params.signal;
         if (signal) {
@@ -136,7 +134,6 @@ export abstract class Resource<T, B = unknown> {
         sendRequest(method, params).catch(error => {
             state.error(ResourceError.wrap(error));
         });
-        return state;
     }
     protected async *resolveResponseBody(response: HttpResponse) {
         const headers = await response.headers();

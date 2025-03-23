@@ -1,32 +1,29 @@
 import { EndpointInstance } from '../core/EndpointInstance';
 import { ExecuteRequestMethodParams } from '../core/ExecuteRequestParams';
+import { RequestMethod } from '../core/RequestMethod';
 import { RequestOptions } from '../decorators/Request';
 import { HttpHeaders } from '../http/HttpHeaders';
-import { SWRConfig } from '../swr/SWRConfig';
 
 export type ExecutionHandler = (
     instance: EndpointInstance,
-    metadata: RequestMethodMetadata,
+    method: RequestMethod,
     params: ExecuteRequestMethodParams,
     args: unknown[]
 ) => void;
 
 export class RequestMethodMetadata {
     private readonly executionHandlers: ExecutionHandler[] = [];
-    private swrConfig?: SWRConfig;
+    private readonly extra = new Map<string | symbol, unknown>();
     private readonly options: RequestOptions = { path: '/', method: 'GET' };
     constructor(public readonly name: string | symbol) {}
     setOptions(options: RequestOptions) {
         Object.assign(this.options, options);
     }
-    appendSWRConfig(config: SWRConfig) {
-        this.swrConfig = {
-            ...this.swrConfig,
-            ...config
-        };
+    getExtra<T>(key: string | symbol) {
+        return this.extra.get(key) as T;
     }
-    getSWRConfig() {
-        return this.swrConfig;
+    setExtra<T>(key: string | symbol, value: T) {
+        this.extra.set(key, value);
     }
     getRetryConfig() {
         return this.options.retry;

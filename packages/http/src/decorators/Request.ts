@@ -1,9 +1,10 @@
 import { RequestAdapterConstructor } from '../adapter/RequestAdapter';
-import { Reactive } from '../core/Reactive';
 import { EndpointInstance } from '../core/EndpointInstance';
+import { METHODS } from '../core/EndpointMembers';
 import { ExecuteRequestMethodParams } from '../core/ExecuteRequestParams';
 import { setExecutionContext } from '../core/execution-context';
 import { Interceptor, InterceptorTypeIdentifier } from '../core/Interceptor';
+import { Reactive } from '../core/Reactive';
 import { HttpMethod } from '../http/HttpMethod';
 import { RetryConfig } from '../interceptors/RetryInterceptor';
 import { EndpointMetadata } from '../metadata/EndpointMetadata';
@@ -64,19 +65,31 @@ export function Request(options: RequestOptions) {
 
         function delegator(
             originFunction: (...args: unknown[]) => AnyResource,
-            method: RequestMethodMetadata
+            methodMetadata: RequestMethodMetadata
         ) {
             return function (this: unknown, ...args: unknown[]) {
                 const params: ExecuteRequestMethodParams = {
-                    headers: method.getHeaders().clone(),
+                    headers: methodMetadata.getHeaders().clone(),
                     pathVariables: {},
                     queryParams: new URLSearchParams(),
-                    adapter: method.getAdapter()
+                    adapter: methodMetadata.getAdapter()
                 };
+                const instance = this as EndpointInstance;
+                const method = instance[METHODS].get(methodMetadata.name);
+                if (!method) {
+                    const error = new Error(
+                        `Not found method ${methodMetadata.name.toString()}`
+                    );
+                    throw error;
+                }
                 setExecutionContext({
-                    instance: this as EndpointInstance,
+                    instance,
                     method,
                     params
+                });
+                const executionHandlers = methodMetadata.getExecutionHandlers();
+                executionHandlers.forEach(handler => {
+                    handler(instance, method, params, args);
                 });
                 return originFunction.apply(this, args) as R;
             };

@@ -1,3 +1,4 @@
+import { Events } from '../common/Events';
 import { SWRConfig, SWRRetryContext } from './SWRConfig';
 
 export interface SWRState<T> {
@@ -15,9 +16,6 @@ export interface SWRResponse<T> extends SWRState<T> {
 
 export interface SWROptions extends Partial<SWRConfig> {
     initialData?: unknown;
-    onSuccess?: (data: unknown) => void;
-    onError?: (error: Error) => void;
-    onStateChange?: (state: SWRState<unknown>) => void;
 }
 
 const defaultConfig: SWRConfig = {
@@ -51,6 +49,9 @@ const defaultConfig: SWRConfig = {
         whenOffline: false
     }
 };
+const STATE_CHANGE_EVENT = 'stateChange';
+const ERROR_EVENT = 'error';
+const SUCCESS_EVENT = 'success';
 
 export class SWRInstance<T> {
     private readonly config: SWROptions;
@@ -59,12 +60,15 @@ export class SWRInstance<T> {
     private currentRetryAttempt: number = 0;
     private refreshInterval?: number;
     private readonly cleanupFns: Array<() => void> = [];
-
+    private readonly abortController = new AbortController();
+    private get signal() {
+        return this.abortController.signal;
+    }
+    private events = new Events();
     constructor(
         public readonly key: string,
-        private readonly signal: AbortSignal,
-        private readonly fetcher: () => Promise<T>,
-        private readonly options: SWROptions = {}
+        private readonly fetcher: (key: string) => Promise<T>,
+        readonly options: SWROptions = {}
     ) {
         this.config = { ...defaultConfig, ...options };
         this.state = {
@@ -76,10 +80,12 @@ export class SWRInstance<T> {
         this.initRevalidationStrategy();
         this.setupRefreshInterval();
     }
-
+    onStateChange(listener: (state: SWRState<T>) => void) {
+        return this.events.on(STATE_CHANGE_EVENT, listener);
+    }
     private setState(newState: Partial<SWRState<T>>) {
         this.state = { ...this.state, ...newState };
-        this.options.onStateChange?.(this.state);
+        this.events.emit(STATE_CHANGE_EVENT, this.state);
     }
 
     private async revalidate(reason?: string) {
@@ -95,7 +101,7 @@ export class SWRInstance<T> {
         this.lastFetchTime = now;
 
         try {
-            const newData = await this.fetcher();
+            const newData = await this.fetcher(this.key);
             this.setState({
                 data: newData,
                 error: undefined,
@@ -103,7 +109,7 @@ export class SWRInstance<T> {
                 isValidating: false
             });
             this.currentRetryAttempt = 0;
-            this.options.onSuccess?.(newData);
+            this.events.emit(SUCCESS_EVENT, newData);
         } catch (err) {
             const error = err as Error;
             this.setState({
@@ -111,7 +117,7 @@ export class SWRInstance<T> {
                 isLoading: false,
                 isValidating: false
             });
-            this.options.onError?.(error);
+            this.events.emit(ERROR_EVENT, error);
 
             // Retry logic
             if (

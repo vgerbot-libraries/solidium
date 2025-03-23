@@ -1,17 +1,16 @@
+import { InstanceScope, PostInject, Scope } from '@vgerbot/ioc';
+import { Signal } from '@vgerbot/solidium';
 import { Subject } from 'rxjs';
-import { InstanceScope, Scope } from '@vgerbot/ioc';
+import { HttpHeaders } from '../http/HttpHeaders';
 import { RequestStatus } from './RequestStatus';
 import { ResourceError } from './ResourceError';
-import { Defer } from '../common/Defer';
-import { HttpHeaders } from '../http/HttpHeaders';
-import { Signal } from '@vgerbot/solidium';
 
 @Scope(InstanceScope.TRANSIENT)
 export class ResourceExecutionState<T, E = unknown> extends Subject<T> {
     @Signal()
     public messages: T[] = [];
     @Signal()
-    public data!: T;
+    public data?: T;
     @Signal()
     public reason!: ResourceError<E> | null;
     @Signal()
@@ -19,8 +18,9 @@ export class ResourceExecutionState<T, E = unknown> extends Subject<T> {
     public headers: HttpHeaders = new HttpHeaders();
     public httpStatus = 0;
     public abortController = new AbortController();
-    private readonly defer = new Defer<T>();
-    init() {
+
+    @PostInject()
+    protected init() {
         this.subscribe({
             next: value => {
                 this.data = value;
@@ -32,13 +32,6 @@ export class ResourceExecutionState<T, E = unknown> extends Subject<T> {
                     err instanceof ResourceError && err.isAbortError
                         ? RequestStatus.ABORTED
                         : RequestStatus.ERROR;
-            },
-            complete: () => {
-                if (this.success) {
-                    this.defer.resolve(this.data);
-                } else {
-                    this.defer.reject(this.reason);
-                }
             }
         });
     }
@@ -65,18 +58,12 @@ export class ResourceExecutionState<T, E = unknown> extends Subject<T> {
     get failure() {
         return this.status === RequestStatus.ERROR;
     }
-    then(
-        onFulfilled?: ((value: T) => T | PromiseLike<T>) | undefined,
-        onRejected?: ((reason: unknown) => T | PromiseLike<T>) | undefined
-    ): Promise<T> {
-        return this.defer.promise.then(onFulfilled, onRejected);
-    }
-    catch(
-        onRejected?: ((reason: unknown) => T | PromiseLike<T>) | undefined
-    ): Promise<T> {
-        return this.defer.promise.catch(onRejected);
-    }
-    finally(onFinally?: (() => void) | undefined): Promise<T> {
-        return this.defer.promise.finally(onFinally);
+    reset() {
+        this.status = RequestStatus.IDLE;
+        this.headers.clear();
+        this.httpStatus = 0;
+        this.data = undefined;
+        this.reason = null;
+        this.messages = [];
     }
 }
