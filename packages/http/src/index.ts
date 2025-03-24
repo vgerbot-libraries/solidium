@@ -52,6 +52,7 @@ export * from './progress/ProgressHandler';
 
 export * from './swr/SWRInstance';
 export * from './swr/SWRConfig';
+export * from './swr/SWR';
 
 export * from './executions/restful';
 export * from './executions/jsonsse';

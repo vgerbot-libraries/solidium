@@ -18,7 +18,12 @@ export function execute<T, R extends Resource<T>>(
     const tracker = appCtx.getInstance(ArgumentsTracker);
     const resource = appCtx.getInstance(ResourceType) as R;
     const dispose = tracker.track(args, args => {
-        resource[EXECUTE](context, Array.from(args));
+        const executionHandlers = methodMetadata.getExecutionHandlers();
+        const { instance, method, params } = context;
+        executionHandlers.forEach(handler => {
+            handler(instance, method, params, args);
+        });
+        resource[EXECUTE](context, args);
         if (!isReactive) {
             Promise.resolve().then(() => {
                 dispose();

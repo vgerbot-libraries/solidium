@@ -29,8 +29,8 @@ export class SWRService {
                 >
             );
         } else {
-            const instance = this.instances.get(key);
-            instance?.mutate();
+            // const instance = this.instances.get(key);
+            // instance?.mutate();
         }
     }
 }

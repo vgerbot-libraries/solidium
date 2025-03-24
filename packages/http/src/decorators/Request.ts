@@ -87,10 +87,6 @@ export function Request(options: RequestOptions) {
                     method,
                     params
                 });
-                const executionHandlers = methodMetadata.getExecutionHandlers();
-                executionHandlers.forEach(handler => {
-                    handler(instance, method, params, args);
-                });
                 return originFunction.apply(this, args) as R;
             };
         }

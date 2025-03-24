@@ -1,6 +1,6 @@
 import { Endpoint, Get, Payload, Post, restfull } from '@vgerbot/http';
-import { BaseAPIEndpoint } from './BaseAPIEndpoint';
 import { AuthInterceptor } from '../auth/AuthInterceptor';
+import { BaseAPIEndpoint } from './BaseAPIEndpoint';
 
 @Endpoint({
     extends: BaseAPIEndpoint,
