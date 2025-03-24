@@ -1,6 +1,6 @@
 import { ApplicationContext, Inject, PostInject } from '@vgerbot/ioc';
 import { Signal } from '@vgerbot/solidium';
-import { last, lastValueFrom, mergeMap, Observer, Subject } from 'rxjs';
+import { lastValueFrom, Observer, ReplaySubject, switchMap, take } from 'rxjs';
 import { mergeAbortSignal } from '../common/mergeAbortSignal';
 import { isJSON, isText, isTextEventStream } from '../common/mime-utils';
 import { ExecuteRequestMethodParams } from '../core/ExecuteRequestParams';
@@ -21,7 +21,9 @@ export const SET_ERROR = Symbol('setError');
 export type AnyResource = Resource<any, unknown>;
 
 export abstract class Resource<T, B = unknown> {
-    private readonly $state = new Subject<ResourceExecutionState<T, B>>();
+    private readonly $state = new ReplaySubject<ResourceExecutionState<T, B>>(
+        1
+    );
     @Signal()
     protected state?: ResourceExecutionState<T, B>;
     @Inject()
@@ -72,7 +74,10 @@ export abstract class Resource<T, B = unknown> {
     }
     wait() {
         return lastValueFrom(
-            this.$state.pipe(mergeMap(state => state)).pipe(last())
+            this.$state.pipe(
+                switchMap(state => state),
+                take(1)
+            )
         );
     }
     subscribe(

@@ -4,6 +4,106 @@
     (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.Solidium = {}, global.IOC, global.solidJs, global.web));
 })(this, (function (exports, ioc, solidJs, web) { 'use strict';
 
+    var COMPONENT_TREE_SCOPE = 'solidium-component-tree-scope';
+    /**
+     * 标记为 ComponentTreeScoped 的类，其不再是全局共享单实例，而是子组件共享单实例
+     */
+    ioc.Scope(COMPONENT_TREE_SCOPE);
+
+    var instanceSerialNo = -1;
+    var InstanceWrapper = /** @class */function () {
+      function InstanceWrapper(instance) {
+        this.instance = instance;
+        this.serialNo = ++instanceSerialNo;
+      }
+      InstanceWrapper.prototype.compareTo = function (other) {
+        return this.serialNo > other.serialNo ? -1 : this.serialNo < other.serialNo ? 1 : 0;
+      };
+      return InstanceWrapper;
+    }();
+
+    var ComponentTreeScopeInstanceResolution = /** @class */function () {
+      function ComponentTreeScopeInstanceResolution() {
+        this.allInstances = [];
+      }
+      ComponentTreeScopeInstanceResolution.prototype.shouldGenerate = function (options) {
+        var solidOwner = this.getParentSolidOwner(options.identifier);
+        return !solidOwner;
+      };
+      ComponentTreeScopeInstanceResolution.prototype.saveInstance = function (options) {
+        var _this = this;
+        var owner = solidJs.getOwner();
+        if (!owner) {
+          return;
+        }
+        if (!owner.instances) {
+          owner.instances = new Map();
+        }
+        var wrapper = new InstanceWrapper(options.instance);
+        this.allInstances.push(wrapper);
+        owner.instances.set(options.identifier, wrapper);
+        solidJs.runWithOwner(owner, function () {
+          solidJs.onCleanup(function () {
+            _this.invokeInstancePreDestroy(wrapper.instance);
+            var index = _this.allInstances.indexOf(wrapper);
+            if (index > -1) {
+              _this.allInstances.splice(index, 1);
+            }
+          });
+        });
+      };
+      ComponentTreeScopeInstanceResolution.prototype.getInstance = function (options) {
+        var _a, _b;
+        var solidOwner = this.getParentSolidOwner(options.identifier);
+        if (!solidOwner) {
+          return;
+        }
+        return (_b = (_a = solidOwner.instances) === null || _a === undefined ? undefined : _a.get(options.identifier)) === null || _b === undefined ? undefined : _b.instance;
+      };
+      ComponentTreeScopeInstanceResolution.prototype.destroy = function () {
+        var _this = this;
+        this.allInstances.sort(function (a, b) {
+          return a.compareTo(b);
+        });
+        this.allInstances.forEach(function (wrapper) {
+          _this.invokeInstancePreDestroy(wrapper.instance);
+        });
+        this.allInstances.length = 0;
+      };
+      ComponentTreeScopeInstanceResolution.prototype.invokeInstancePreDestroy = function (instance) {
+        var classMetadata = ioc.ClassMetadata.getInstance(instance.constructor);
+        var preDestroyMethods = classMetadata.getMethods(ioc.Lifecycle.PRE_DESTROY);
+        preDestroyMethods.forEach(function (methodName) {
+          var method = instance[methodName];
+          if (typeof method === 'function') {
+            method.call(instance);
+          }
+        });
+      };
+      ComponentTreeScopeInstanceResolution.prototype.getParentSolidOwner = function (identifier) {
+        var _a;
+        var owner = solidJs.getOwner();
+        while (!!owner && !!owner.instances) {
+          var hasInstance = owner.instances.has(identifier);
+          if (hasInstance) {
+            return owner;
+          }
+          owner = (_a = owner.owner) === null || _a === undefined ? undefined : _a.owner;
+        }
+        return owner;
+      };
+      return ComponentTreeScopeInstanceResolution;
+    }();
+
+    var SOLIDIUM_SOLID_OWNER_PROPERTY_KEY = Symbol('solidium-solid-owner-property');
+    function runWithSolidiumOwner(instance, callback) {
+      var owner = Reflect.get(instance, SOLIDIUM_SOLID_OWNER_PROPERTY_KEY);
+      return solidJs.runWithOwner(owner, callback);
+    }
+    function setupOwner(instance, owner) {
+      Reflect.set(instance, SOLIDIUM_SOLID_OWNER_PROPERTY_KEY, owner);
+    }
+
     /******************************************************************************
     Copyright (c) Microsoft Corporation.
 
@@ -170,149 +270,39 @@
       return instance;
     }
 
-    var COMPONENT_TREE_SCOPE = 'solidium-component-tree-scope';
-    /**
-     * 标记为 ComponentTreeScoped 的类，其不再是全局共享单实例，而是子组件共享单实例
-     */
-    ioc.Scope(COMPONENT_TREE_SCOPE);
-
-    var instanceSerialNo = -1;
-    var InstanceWrapper = /** @class */function () {
-      function InstanceWrapper(instance) {
-        this.instance = instance;
-        this.serialNo = ++instanceSerialNo;
-      }
-      InstanceWrapper.prototype.compareTo = function (other) {
-        return this.serialNo > other.serialNo ? -1 : this.serialNo < other.serialNo ? 1 : 0;
-      };
-      return InstanceWrapper;
-    }();
-
-    var ComponentTreeScopeInstanceResolution = /** @class */function () {
-      function ComponentTreeScopeInstanceResolution() {
-        this.allInstances = [];
-      }
-      ComponentTreeScopeInstanceResolution.prototype.shouldGenerate = function (options) {
-        var solidOwner = this.getParentSolidOwner(options.identifier);
-        return !solidOwner;
-      };
-      ComponentTreeScopeInstanceResolution.prototype.saveInstance = function (options) {
-        var _this = this;
-        var owner = solidJs.getOwner();
-        if (!owner) {
-          return;
-        }
-        if (!owner.instances) {
-          owner.instances = new Map();
-        }
-        var wrapper = new InstanceWrapper(options.instance);
-        this.allInstances.push(wrapper);
-        owner.instances.set(options.identifier, wrapper);
-        solidJs.runWithOwner(owner, function () {
-          solidJs.onCleanup(function () {
-            _this.invokeInstancePreDestroy(wrapper.instance);
-            var index = _this.allInstances.indexOf(wrapper);
-            if (index > -1) {
-              _this.allInstances.splice(index, 1);
-            }
-          });
-        });
-      };
-      ComponentTreeScopeInstanceResolution.prototype.getInstance = function (options) {
-        var _a, _b;
-        var solidOwner = this.getParentSolidOwner(options.identifier);
-        if (!solidOwner) {
-          return;
-        }
-        return (_b = (_a = solidOwner.instances) === null || _a === undefined ? undefined : _a.get(options.identifier)) === null || _b === undefined ? undefined : _b.instance;
-      };
-      ComponentTreeScopeInstanceResolution.prototype.destroy = function () {
-        var _this = this;
-        this.allInstances.sort(function (a, b) {
-          return a.compareTo(b);
-        });
-        this.allInstances.forEach(function (wrapper) {
-          _this.invokeInstancePreDestroy(wrapper.instance);
-        });
-        this.allInstances.length = 0;
-      };
-      ComponentTreeScopeInstanceResolution.prototype.invokeInstancePreDestroy = function (instance) {
-        var classMetadata = ioc.ClassMetadata.getInstance(instance.constructor);
-        var preDestroyMethods = classMetadata.getMethods(ioc.Lifecycle.PRE_DESTROY);
-        preDestroyMethods.forEach(function (methodName) {
-          var method = instance[methodName];
-          if (typeof method === 'function') {
-            method.call(instance);
-          }
-        });
-      };
-      ComponentTreeScopeInstanceResolution.prototype.getParentSolidOwner = function (identifier) {
-        var _a;
-        var owner = solidJs.getOwner();
-        while (!!owner && !!owner.instances) {
-          var hasInstance = owner.instances.has(identifier);
-          if (hasInstance) {
-            return owner;
-          }
-          owner = (_a = owner.owner) === null || _a === undefined ? undefined : _a.owner;
-        }
-        return owner;
-      };
-      return ComponentTreeScopeInstanceResolution;
-    }();
-
-    var SOLIDIUM_SOLID_OWNER_PROPERTY_KEY = Symbol('solidium-solid-owner-property');
-    function runWithSolidiumOwner(instance, callback) {
-      var owner = Reflect.get(instance, SOLIDIUM_SOLID_OWNER_PROPERTY_KEY);
-      return solidJs.runWithOwner(owner, callback);
-    }
-    function setupOwner(instance, owner) {
-      Reflect.set(instance, SOLIDIUM_SOLID_OWNER_PROPERTY_KEY, owner);
-    }
-
     var IoCContext = solidJs.createContext();
-    var ServiceInstanceStatusManager = /** @class */function () {
-      function ServiceInstanceStatusManager() {
-        this.store = new WeakMap();
-      }
-      ServiceInstanceStatusManager.prototype.record = function (cls) {
-        this.store.set(cls, true);
-      };
-      ServiceInstanceStatusManager.prototype.isInstantiated = function (cls) {
-        return this.store.has(cls);
-      };
-      return ServiceInstanceStatusManager;
-    }();
     function Solidium(props) {
       var _a;
+      var owner = solidJs.getOwner();
       var appCtx = new ioc.ApplicationContext();
-      var manager = appCtx.getInstance(ServiceInstanceStatusManager);
+      var IS_MANAGED = Symbol('IS_MANAGED');
       var originGetInstance = appCtx.getInstance;
-      appCtx.getInstance = function (id, owner) {
+      appCtx.getInstance = function (id, instanceOwner) {
         var _this = this;
-        if (typeof id === 'function') {
-          var metadata = ioc.ClassMetadata.getInstance(id).reader();
-          if (metadata.getScope() === ioc.InstanceScope.TRANSIENT) {
-            return originGetInstance.call(this, id, owner);
-          }
-          if (manager.isInstantiated(id)) {
-            return originGetInstance.call(this, id, owner);
-          }
-        }
         var _a = solidJs.createRoot(function (dispose) {
-            return [dispose, originGetInstance.call(_this, id, owner)];
-          }),
+            return [dispose, originGetInstance.call(_this, id, instanceOwner)];
+          }, owner),
           dispose = _a[0],
           instance = _a[1];
-        this.onPreDestroy(function () {
-          queueMicrotask(dispose);
-        });
+        if (instance !== null && typeof instance === 'object') {
+          var isManaged = Reflect.getMetadata(IS_MANAGED, instance);
+          if (isManaged) {
+            dispose();
+          } else {
+            Reflect.defineMetadata(IS_MANAGED, true, instance);
+          }
+          var removeListener_1 = this.onPreDestroyThat(function (it) {
+            if (it === instance) {
+              dispose();
+              removeListener_1();
+            }
+          });
+        }
         return instance;
       };
       appCtx.registerBeforeInstantiationProcessor(function (constructor) {
         return beforeInstantiation(constructor, appCtx);
       });
-      var owner = solidJs.getOwner();
       appCtx.registerAfterInstantiationProcessor(function (instance) {
         setupOwner(instance, owner);
         return instance;
@@ -596,9 +586,9 @@
     });
 
     var TRACK_METHOD_MARK_KEY = Symbol('solidium_track_method');
-    var Track = function (fn) {
+    function Track(fn) {
       return ioc.Mark(TRACK_METHOD_MARK_KEY, fn);
-    };
+    }
 
     function defineClassDecoratorProcessor(key, processor) {
       var _a;
@@ -665,6 +655,34 @@
       return instance;
     }
 
+    var Tracker = /** @class */function () {
+      function Tracker() {}
+      Tracker.prototype.track = function (callback) {
+        return runWithSolidiumOwner(this, function () {
+          var dispose;
+          solidJs.createRoot(function (_dispose) {
+            dispose = _dispose;
+            solidJs.createEffect(function () {
+              callback(_dispose);
+            });
+          }, solidJs.getOwner());
+          return dispose;
+        });
+      };
+      Tracker.prototype.until = function (contition) {
+        var _this = this;
+        return new Promise(function (resolve) {
+          _this.track(function (dispose) {
+            if (contition()) {
+              resolve();
+              dispose();
+            }
+          });
+        });
+      };
+      return Tracker;
+    }();
+
     exports.Auto = Auto;
     exports.Batch = Batch;
     exports.Computed = Computed;
@@ -675,6 +693,7 @@
     exports.Signal = Signal;
     exports.Solidium = Solidium;
     exports.Track = Track;
+    exports.Tracker = Tracker;
     exports.appendSetterInterceptor = appendSetterInterceptor;
     exports.defineClassDecoratorProcessor = defineClassDecoratorProcessor;
     exports.defineMemberDecoratorProcessor = defineMemberDecoratorProcessor;
@@ -682,6 +701,7 @@
     exports.getSignal = getSignal;
     exports.isSignalMember = isSignalMember;
     exports.resultOf = resultOf;
+    exports.runWithSolidiumOwner = runWithSolidiumOwner;
     exports.useApplicationContext = useApplicationContext;
     exports.useComputed = useComputed;
     exports.useService = useService;

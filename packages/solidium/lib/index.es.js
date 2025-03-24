@@ -1,6 +1,100 @@
-import { ClassMetadata, Scope, Lifecycle, ApplicationContext, InstanceScope, Mark } from '@vgerbot/ioc';
+import { Scope, ClassMetadata, Lifecycle, ApplicationContext, Mark, InstanceScope } from '@vgerbot/ioc';
 import { getOwner, runWithOwner, onCleanup, createContext, createRoot, createSignal, createEffect, on, createMemo, untrack, batch, useContext } from 'solid-js';
 import { createComponent } from 'solid-js/web';
+
+const COMPONENT_TREE_SCOPE = 'solidium-component-tree-scope';
+/**
+ * 标记为 ComponentTreeScoped 的类，其不再是全局共享单实例，而是子组件共享单实例
+ */
+Scope(COMPONENT_TREE_SCOPE);
+
+let instanceSerialNo = -1;
+class InstanceWrapper {
+  constructor(instance) {
+    this.instance = instance;
+    this.serialNo = ++instanceSerialNo;
+  }
+  compareTo(other) {
+    return this.serialNo > other.serialNo ? -1 : this.serialNo < other.serialNo ? 1 : 0;
+  }
+}
+
+class ComponentTreeScopeInstanceResolution {
+  constructor() {
+    this.allInstances = [];
+  }
+  shouldGenerate(options) {
+    const solidOwner = this.getParentSolidOwner(options.identifier);
+    return !solidOwner;
+  }
+  saveInstance(options) {
+    const owner = getOwner();
+    if (!owner) {
+      return;
+    }
+    if (!owner.instances) {
+      owner.instances = new Map();
+    }
+    const wrapper = new InstanceWrapper(options.instance);
+    this.allInstances.push(wrapper);
+    owner.instances.set(options.identifier, wrapper);
+    runWithOwner(owner, () => {
+      onCleanup(() => {
+        this.invokeInstancePreDestroy(wrapper.instance);
+        const index = this.allInstances.indexOf(wrapper);
+        if (index > -1) {
+          this.allInstances.splice(index, 1);
+        }
+      });
+    });
+  }
+  getInstance(options) {
+    var _a, _b;
+    const solidOwner = this.getParentSolidOwner(options.identifier);
+    if (!solidOwner) {
+      return;
+    }
+    return (_b = (_a = solidOwner.instances) === null || _a === undefined ? undefined : _a.get(options.identifier)) === null || _b === undefined ? undefined : _b.instance;
+  }
+  destroy() {
+    this.allInstances.sort((a, b) => a.compareTo(b));
+    this.allInstances.forEach(wrapper => {
+      this.invokeInstancePreDestroy(wrapper.instance);
+    });
+    this.allInstances.length = 0;
+  }
+  invokeInstancePreDestroy(instance) {
+    const classMetadata = ClassMetadata.getInstance(instance.constructor);
+    const preDestroyMethods = classMetadata.getMethods(Lifecycle.PRE_DESTROY);
+    preDestroyMethods.forEach(methodName => {
+      const method = instance[methodName];
+      if (typeof method === 'function') {
+        method.call(instance);
+      }
+    });
+  }
+  getParentSolidOwner(identifier) {
+    var _a;
+    let owner = getOwner();
+    while (!!owner && !!owner.instances) {
+      const hasInstance = owner.instances.has(identifier);
+      if (hasInstance) {
+        return owner;
+      }
+      owner = (_a = owner.owner) === null || _a === undefined ? undefined : _a.owner;
+    }
+    return owner;
+  }
+}
+
+const SOLIDIUM_SOLID_OWNER_PROPERTY_KEY = Symbol('solidium-solid-owner-property');
+function runWithSolidiumOwner(instance, callback) {
+  const owner = Reflect.get(instance, SOLIDIUM_SOLID_OWNER_PROPERTY_KEY);
+  return runWithOwner(owner, callback);
+}
+function setupOwner(instance, owner) {
+  Reflect.set(instance, SOLIDIUM_SOLID_OWNER_PROPERTY_KEY, owner);
+}
 
 const IS_MEMBER_DECORATOR_PROCESSOR = Symbol('solidium-is-member-decorator-processor');
 const IS_CLASS_DECORATOR_PROCESSOR = Symbol('solidium-is-class-decorator-processor');
@@ -111,139 +205,36 @@ function afterInstantiation(instance, container) {
   return instance;
 }
 
-const COMPONENT_TREE_SCOPE = 'solidium-component-tree-scope';
-/**
- * 标记为 ComponentTreeScoped 的类，其不再是全局共享单实例，而是子组件共享单实例
- */
-Scope(COMPONENT_TREE_SCOPE);
-
-let instanceSerialNo = -1;
-class InstanceWrapper {
-  constructor(instance) {
-    this.instance = instance;
-    this.serialNo = ++instanceSerialNo;
-  }
-  compareTo(other) {
-    return this.serialNo > other.serialNo ? -1 : this.serialNo < other.serialNo ? 1 : 0;
-  }
-}
-
-class ComponentTreeScopeInstanceResolution {
-  constructor() {
-    this.allInstances = [];
-  }
-  shouldGenerate(options) {
-    const solidOwner = this.getParentSolidOwner(options.identifier);
-    return !solidOwner;
-  }
-  saveInstance(options) {
-    const owner = getOwner();
-    if (!owner) {
-      return;
-    }
-    if (!owner.instances) {
-      owner.instances = new Map();
-    }
-    const wrapper = new InstanceWrapper(options.instance);
-    this.allInstances.push(wrapper);
-    owner.instances.set(options.identifier, wrapper);
-    runWithOwner(owner, () => {
-      onCleanup(() => {
-        this.invokeInstancePreDestroy(wrapper.instance);
-        const index = this.allInstances.indexOf(wrapper);
-        if (index > -1) {
-          this.allInstances.splice(index, 1);
-        }
-      });
-    });
-  }
-  getInstance(options) {
-    var _a, _b;
-    const solidOwner = this.getParentSolidOwner(options.identifier);
-    if (!solidOwner) {
-      return;
-    }
-    return (_b = (_a = solidOwner.instances) === null || _a === undefined ? undefined : _a.get(options.identifier)) === null || _b === undefined ? undefined : _b.instance;
-  }
-  destroy() {
-    this.allInstances.sort((a, b) => a.compareTo(b));
-    this.allInstances.forEach(wrapper => {
-      this.invokeInstancePreDestroy(wrapper.instance);
-    });
-    this.allInstances.length = 0;
-  }
-  invokeInstancePreDestroy(instance) {
-    const classMetadata = ClassMetadata.getInstance(instance.constructor);
-    const preDestroyMethods = classMetadata.getMethods(Lifecycle.PRE_DESTROY);
-    preDestroyMethods.forEach(methodName => {
-      const method = instance[methodName];
-      if (typeof method === 'function') {
-        method.call(instance);
-      }
-    });
-  }
-  getParentSolidOwner(identifier) {
-    var _a;
-    let owner = getOwner();
-    while (!!owner && !!owner.instances) {
-      const hasInstance = owner.instances.has(identifier);
-      if (hasInstance) {
-        return owner;
-      }
-      owner = (_a = owner.owner) === null || _a === undefined ? undefined : _a.owner;
-    }
-    return owner;
-  }
-}
-
-const SOLIDIUM_SOLID_OWNER_PROPERTY_KEY = Symbol('solidium-solid-owner-property');
-function runWithSolidiumOwner(instance, callback) {
-  const owner = Reflect.get(instance, SOLIDIUM_SOLID_OWNER_PROPERTY_KEY);
-  return runWithOwner(owner, callback);
-}
-function setupOwner(instance, owner) {
-  Reflect.set(instance, SOLIDIUM_SOLID_OWNER_PROPERTY_KEY, owner);
-}
-
 const IoCContext = createContext();
-class ServiceInstanceStatusManager {
-  constructor() {
-    this.store = new WeakMap();
-  }
-  record(cls) {
-    this.store.set(cls, true);
-  }
-  isInstantiated(cls) {
-    return this.store.has(cls);
-  }
-}
 function Solidium(props) {
   var _a;
+  const owner = getOwner();
   const appCtx = new ApplicationContext();
-  const manager = appCtx.getInstance(ServiceInstanceStatusManager);
+  const IS_MANAGED = Symbol('IS_MANAGED');
   const originGetInstance = appCtx.getInstance;
-  appCtx.getInstance = function (id, owner) {
-    if (typeof id === 'function') {
-      const metadata = ClassMetadata.getInstance(id).reader();
-      if (metadata.getScope() === InstanceScope.TRANSIENT) {
-        return originGetInstance.call(this, id, owner);
-      }
-      if (manager.isInstantiated(id)) {
-        return originGetInstance.call(this, id, owner);
-      }
-    }
+  appCtx.getInstance = function (id, instanceOwner) {
     const [dispose, instance] = createRoot(dispose => {
-      return [dispose, originGetInstance.call(this, id, owner)];
-    });
-    this.onPreDestroy(() => {
-      queueMicrotask(dispose);
-    });
+      return [dispose, originGetInstance.call(this, id, instanceOwner)];
+    }, owner);
+    if (instance !== null && typeof instance === 'object') {
+      const isManaged = Reflect.getMetadata(IS_MANAGED, instance);
+      if (isManaged) {
+        dispose();
+      } else {
+        Reflect.defineMetadata(IS_MANAGED, true, instance);
+      }
+      const removeListener = this.onPreDestroyThat(it => {
+        if (it === instance) {
+          dispose();
+          removeListener();
+        }
+      });
+    }
     return instance;
   };
   appCtx.registerBeforeInstantiationProcessor(function (constructor) {
     return beforeInstantiation(constructor, appCtx);
   });
-  const owner = getOwner();
   appCtx.registerAfterInstantiationProcessor(instance => {
     setupOwner(instance, owner);
     return instance;
@@ -513,7 +504,9 @@ const Batch = defineMemberDecoratorProcessor(BATCH_METHOD_MARK_KEY, {
 });
 
 const TRACK_METHOD_MARK_KEY = Symbol('solidium_track_method');
-const Track = fn => Mark(TRACK_METHOD_MARK_KEY, fn);
+function Track(fn) {
+  return Mark(TRACK_METHOD_MARK_KEY, fn);
+}
 
 function defineClassDecoratorProcessor(key, processor) {
   return Mark(key, Object.assign({
@@ -578,5 +571,30 @@ function useService(cls) {
   return instance;
 }
 
-export { Auto, Batch, Computed, IS_CLASS_DECORATOR_PROCESSOR, IS_MEMBER_DECORATOR_PROCESSOR, Observe, SETTER_INTERCEPTOR_MAP_KEY, Signal, Solidium, Track, appendSetterInterceptor, defineClassDecoratorProcessor, defineMemberDecoratorProcessor, defineSignalMember, getSignal, isSignalMember, resultOf, useApplicationContext, useComputed, useService };
+class Tracker {
+  track(callback) {
+    return runWithSolidiumOwner(this, () => {
+      let dispose;
+      createRoot(_dispose => {
+        dispose = _dispose;
+        createEffect(() => {
+          callback(_dispose);
+        });
+      }, getOwner());
+      return dispose;
+    });
+  }
+  until(contition) {
+    return new Promise(resolve => {
+      this.track(dispose => {
+        if (contition()) {
+          resolve();
+          dispose();
+        }
+      });
+    });
+  }
+}
+
+export { Auto, Batch, Computed, IS_CLASS_DECORATOR_PROCESSOR, IS_MEMBER_DECORATOR_PROCESSOR, Observe, SETTER_INTERCEPTOR_MAP_KEY, Signal, Solidium, Track, Tracker, appendSetterInterceptor, defineClassDecoratorProcessor, defineMemberDecoratorProcessor, defineSignalMember, getSignal, isSignalMember, resultOf, runWithSolidiumOwner, useApplicationContext, useComputed, useService };
 //# sourceMappingURL=index.es.js.map

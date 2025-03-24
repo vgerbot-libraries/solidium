@@ -1,4 +1,4 @@
-import { Newable } from 'packages/ioc/dist';
+import { Newable } from '@vgerbot/ioc';
 import { APPLICATION_CONTEXT } from '../core/EndpointMembers';
 import { getExecutionContext } from '../core/execution-context';
 import { EXECUTE, Resource } from '../resource/Resource';
@@ -17,18 +17,13 @@ export function execute<T, R extends Resource<T>>(
     const isReactive = methodMetadata.isReactive();
     const tracker = appCtx.getInstance(ArgumentsTracker);
     const resource = appCtx.getInstance(ResourceType) as R;
-    if (isReactive) {
-        tracker.track(args, args => {
-            resource[EXECUTE](context, Array.from(args));
-        });
-        return resource;
-    } else {
-        const dispose = tracker.track(args, args => {
-            resource[EXECUTE](context, Array.from(args));
+    const dispose = tracker.track(args, args => {
+        resource[EXECUTE](context, Array.from(args));
+        if (!isReactive) {
             Promise.resolve().then(() => {
                 dispose();
             });
-        });
-        return resource;
-    }
+        }
+    });
+    return resource;
 }

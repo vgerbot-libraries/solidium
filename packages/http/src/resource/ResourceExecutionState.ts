@@ -1,12 +1,12 @@
 import { InstanceScope, PostInject, Scope } from '@vgerbot/ioc';
 import { Signal } from '@vgerbot/solidium';
-import { Subject } from 'rxjs';
+import { ReplaySubject } from 'rxjs';
 import { HttpHeaders } from '../http/HttpHeaders';
 import { RequestStatus } from './RequestStatus';
 import { ResourceError } from './ResourceError';
 
 @Scope(InstanceScope.TRANSIENT)
-export class ResourceExecutionState<T, E = unknown> extends Subject<T> {
+export class ResourceExecutionState<T, E = unknown> extends ReplaySubject<T> {
     @Signal()
     public messages: T[] = [];
     @Signal()
@@ -18,7 +18,9 @@ export class ResourceExecutionState<T, E = unknown> extends Subject<T> {
     public headers: HttpHeaders = new HttpHeaders();
     public httpStatus = 0;
     public abortController = new AbortController();
-
+    constructor() {
+        super(1);
+    }
     @PostInject()
     protected init() {
         this.subscribe({

@@ -140,6 +140,57 @@
     var DEFAULT_BUCKET_CONFIGURATION = Symbol('solidium-default-bucket-configuration');
     var DEFAULT_BUCKET = Symbol('solidium-default-bucket');
 
+    var STORAGE_LOAD_EVENTS = Symbol();
+    function notifyStorageLoad(event) {
+      var _a;
+      var prototype = Object.getPrototypeOf(event.instance);
+      var events = (_a = Reflect.getMetadata(STORAGE_LOAD_EVENTS, prototype)) !== null && _a !== undefined ? _a : [];
+      events.forEach(function (handle) {
+        handle.call(event.instance, event);
+      });
+    }
+    function OnStorageLoad(options) {
+      return function (target, propertyKey) {
+        var _a;
+        var events = (_a = Reflect.getMetadata(STORAGE_LOAD_EVENTS, target)) !== null && _a !== undefined ? _a : [];
+        Reflect.defineMetadata(STORAGE_LOAD_EVENTS, events, target);
+        var loadedMembers = new Set();
+        events.push(function listener(event) {
+          loadedMembers.add(event.member);
+          if ((options === null || options === undefined ? undefined : options.members) && !options.members.includes(event.member)) {
+            return;
+          }
+          var method = Reflect.get(this, propertyKey);
+          method.call(this, __assign(__assign({}, event), {
+            loadedMembers: new Set(loadedMembers)
+          }));
+          if (options === null || options === undefined ? undefined : options.members) {
+            var isAllHandled = loadedMembers.isSupersetOf(new Set(options.members));
+            if (isAllHandled) {
+              var index = events.indexOf(listener);
+              if (index === -1) {
+                return;
+              }
+              var newEvents = events.slice(0).splice(index, 1);
+              Reflect.defineMetadata(STORAGE_LOAD_EVENTS, newEvents, target);
+            }
+          }
+        });
+      };
+    }
+
+    var ActionType;
+    (function (ActionType) {
+      ActionType[ActionType["UPDATE"] = 0] = "UPDATE";
+      ActionType[ActionType["REMOVE"] = 1] = "REMOVE";
+    })(ActionType || (ActionType = {}));
+
+    var ChangeBy;
+    (function (ChangeBy) {
+      ChangeBy[ChangeBy["SELF"] = 0] = "SELF";
+      ChangeBy[ChangeBy["OTHER"] = 1] = "OTHER";
+    })(ChangeBy || (ChangeBy = {}));
+
     var Storage = function (options) {
       if (options === undefined) {
         options = {};
@@ -154,18 +205,49 @@
           var bucket = typeof bucketOrName != 'object' ? container.getInstance(bucketOrName) : bucketOrName;
           var observe = function () {
             return bucket.observe(key, function (event) {
+              if (bucket.debug) {
+                console.debug("[Storage] ".concat(ActionType[event.action], " ").concat(JSON.stringify({
+                  action: ActionType[event.action],
+                  changeBy: ChangeBy[event.changeBy],
+                  key: event.key,
+                  bucketName: event.target.name,
+                  newValue: event.newValue,
+                  originValue: event.originValue
+                })));
+              }
               set(event.newValue);
             });
           };
-          var unobserve = observe();
-          solidJs.createEffect(solidJs.on(function () {
-            return instance[member];
-          }, function (newValue) {
-            unobserve();
-            bucket.setItem(key, newValue).finally(function () {
-              unobserve = observe();
+          if (bucket.debug) {
+            console.debug("[Storage] ".concat(key, " is loaded from ").concat(bucket.name));
+          }
+          var owner = solidJs.getOwner();
+          bucket.getItem(key).then(function (value) {
+            if (bucket.debug) {
+              console.debug("[Storage] ".concat(key, " is loaded, value: ").concat(value));
+            }
+            set(value);
+            notifyStorageLoad({
+              instance: instance,
+              member: member,
+              value: value,
+              timestamp: Date.now()
             });
-          }));
+            solidJs.runWithOwner(owner, function () {
+              var unobserve = observe();
+              solidJs.createEffect(solidJs.on(function () {
+                return instance[member];
+              }, function (newValue) {
+                unobserve();
+                if (bucket.debug) {
+                  console.debug("[Storage] ".concat(instance.constructor.name, ".").concat(member.toString(), " \n                                        changed to ").concat(newValue).replace(/\s+/g, ' '));
+                }
+                bucket.setItem(key, newValue).finally(function () {
+                  unobserve = observe();
+                });
+              }));
+            });
+          });
         }
       });
     };
@@ -189,18 +271,6 @@
         type: 'text/plain'
       });
     }
-
-    var ChangeBy;
-    (function (ChangeBy) {
-      ChangeBy[ChangeBy["SELF"] = 0] = "SELF";
-      ChangeBy[ChangeBy["OTHER"] = 1] = "OTHER";
-    })(ChangeBy || (ChangeBy = {}));
-
-    var ActionType;
-    (function (ActionType) {
-      ActionType[ActionType["UPDATE"] = 0] = "UPDATE";
-      ActionType[ActionType["REMOVE"] = 1] = "REMOVE";
-    })(ActionType || (ActionType = {}));
 
     var BrowserStorageDriver = /** @class */function () {
       function BrowserStorageDriver(options, storage) {
@@ -437,11 +507,11 @@
             type: type
           });
         }
-        var len = hexData.length / 2;
-        var u8a = new Uint8Array(len);
-        for (var i = 0; i < len; i += 2) {
-          var hex = hexData.substring(i * 2, i * 2 + 2);
-          u8a[i] = parseInt(hex, 16);
+        var u8a = new Uint8Array(hexData.length / 2);
+        var view = new DataView(u8a.buffer);
+        for (var i = 0; i < hexData.length; i += 2) {
+          var hex = hexData.substring(i, i + 2);
+          view.setUint8(i / 2, parseInt(hex, 16));
         }
         return createBlob([u8a], {
           type: type
@@ -449,7 +519,7 @@
       };
       BrowserStorageDriver.prototype.serialize = function (blob) {
         return __awaiter(this, undefined, undefined, function () {
-          var text, buffer, u8a, hex_1;
+          var text, buffer, u8a, hexArray, i, hex;
           return __generator(this, function (_a) {
             switch (_a.label) {
               case 0:
@@ -466,13 +536,14 @@
               case 3:
                 buffer = _a.sent();
                 u8a = new Uint8Array(buffer);
-                hex_1 = '';
-                u8a.forEach(function (v) {
-                  hex_1 += v.toString(16).padStart(2, '0');
-                });
+                hexArray = new Array(u8a.length);
+                for (i = 0; i < u8a.length; i++) {
+                  hexArray[i] = u8a[i].toString(16).padStart(2, '0');
+                }
+                hex = hexArray.join('');
                 return [2 /*return*/, JSON.stringify({
                   type: blob.type,
-                  hex: hex_1
+                  hex: hex
                 })];
             }
           });
@@ -867,19 +938,20 @@
             args[_i] = arguments[_i];
           }
           return __awaiter(this, undefined, undefined, function () {
+            var _this = this;
             return __generator(this, function (_a) {
               switch (_a.label) {
                 case 0:
                   if (!prepare_promise) {
-                    prepare_promise = target[PREPARE]().finally(function () {
+                    prepare_promise = this[PREPARE]().finally(function () {
                       descriptor.value = origin;
-                      Object.defineProperty(target, propertyKey, descriptor);
+                      Object.defineProperty(_this, propertyKey, descriptor);
                     });
                   }
                   return [4 /*yield*/, prepare_promise];
                 case 1:
                   _a.sent();
-                  return [2 /*return*/, origin.apply(target, args)];
+                  return [2 /*return*/, origin.apply(this, args)];
               }
             });
           });
@@ -889,8 +961,10 @@
     }
     var Bucket = /** @class */function () {
       function Bucket(config) {
+        var _a;
         this.name = config.name;
         this.serializer = config.serializer || new DefaultSerializer();
+        this.debug = (_a = config.debug) !== null && _a !== undefined ? _a : false;
         var driver = config.driver;
         if (driver === exports.DefaultDrivers.LOCAL_STORAGE) {
           this.driver = LocalStorageDriver.createInstance(this.name);
@@ -922,13 +996,24 @@
           });
         });
       };
+      Bucket.prototype.prepared = function () {
+        return __awaiter(this, undefined, undefined, function () {
+          return __generator(this, function (_a) {
+            return [2 /*return*/, undefined];
+          });
+        });
+      };
       Bucket.prototype.observe = function (key, onChange) {
         var _this = this;
-        return this.driver.observe(key, function (event) {
+        var preparePromise = this.prepared();
+        var unobserve = this.driver.observe(key, function (event) {
           return onChange(__assign(__assign({}, event), {
             target: _this
           }));
         });
+        return function () {
+          preparePromise.then(unobserve);
+        };
       };
       Bucket.prototype.setItem = function (key, value) {
         return __awaiter(this, undefined, undefined, function () {
@@ -970,7 +1055,7 @@
           key: key
         });
       };
-      __decorate([Prepared(), __metadata("design:type", Function), __metadata("design:paramtypes", [String, Function]), __metadata("design:returntype", Function)], Bucket.prototype, "observe", null);
+      __decorate([Prepared(), __metadata("design:type", Function), __metadata("design:paramtypes", []), __metadata("design:returntype", Promise)], Bucket.prototype, "prepared", null);
       __decorate([Prepared(), __metadata("design:type", Function), __metadata("design:paramtypes", [String, Object]), __metadata("design:returntype", Promise)], Bucket.prototype, "setItem", null);
       __decorate([Prepared(), __metadata("design:type", Function), __metadata("design:paramtypes", [String]), __metadata("design:returntype", Promise)], Bucket.prototype, "getItem", null);
       __decorate([Prepared(), __metadata("design:type", Function), __metadata("design:paramtypes", []), __metadata("design:returntype", undefined)], Bucket.prototype, "clear", null);
@@ -1047,8 +1132,10 @@
     }();
 
     exports.DefaultSerializer = DefaultSerializer;
+    exports.OnStorageLoad = OnStorageLoad;
     exports.Persistence = Persistence;
     exports.Storage = Storage;
+    exports.notifyStorageLoad = notifyStorageLoad;
 
 }));
 //# sourceMappingURL=index.umd.js.map
