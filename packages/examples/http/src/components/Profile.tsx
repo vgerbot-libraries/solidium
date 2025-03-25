@@ -13,6 +13,7 @@ export function Profile() {
             <div>Name: {profile.data?.data?.username}</div>
             <div>Role: {profile.data?.data?.role}</div>
             <div>Email: {info.data?.data?.email}</div>
+            <button onClick={() => service.refresh()}>Refresh</button>
         </div>
     );
 }

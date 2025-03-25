@@ -38,6 +38,8 @@ export * from './common/resolveURL';
 export * from './decorators/Endpoint';
 export * from './decorators/Get';
 export * from './decorators/Post';
+export * from './decorators/Put';
+export * from './decorators/Delete';
 export * from './decorators/Header';
 export * from './decorators/PathVariable';
 export * from './decorators/Query';
@@ -53,6 +55,8 @@ export * from './progress/ProgressHandler';
 export * from './swr/SWRInstance';
 export * from './swr/SWRConfig';
 export * from './swr/SWR';
+export * from './swr/Mutate';
+export * from './swr/Key';
 
 export * from './executions/restful';
 export * from './executions/jsonsse';

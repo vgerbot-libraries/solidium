@@ -1,11 +1,16 @@
 import { Inject, InstanceScope, Scope } from '@vgerbot/ioc';
-import { EXECUTE, Resource } from './Resource';
-import { ExecutionContext } from '../core/execution-context';
-import { ResourceExecutionState } from './ResourceExecutionState';
-import { SWRService } from '../swr/SWRService';
-import { SWR_CONFIG_EXTRA_KEY } from '../swr/consts';
-import { SWRConfig } from '../swr/SWRConfig';
 import { lastValueFrom } from 'rxjs';
+import { SWRDecoratorConfig } from 'src/swr/SWR';
+import { ExecutionContext } from '../core/execution-context';
+import {
+    EXTRA_METADATA_MUTATE,
+    EXTRA_METADATA_SWR_CONFIG,
+    EXTRA_METADATA_SWR_KEYGEN
+} from '../swr/consts';
+import { SWRService } from '../swr/SWRService';
+import { EXECUTE, Resource } from './Resource';
+import { ResourceExecutionState } from './ResourceExecutionState';
+import { SWRConfig } from 'src/swr/SWRConfig';
 
 @Scope(InstanceScope.TRANSIENT)
 export class RestfulResource<T, E = unknown> extends Resource<T, E> {
@@ -13,17 +18,39 @@ export class RestfulResource<T, E = unknown> extends Resource<T, E> {
     private swrService!: SWRService;
     protected [EXECUTE](context: ExecutionContext, args: unknown[]) {
         const methodMetadata = context.method.metadata;
-        const swrConfig = methodMetadata.getExtra<SWRConfig | undefined>(
-            SWR_CONFIG_EXTRA_KEY
-        );
+        const _keygen = methodMetadata.getExtra<
+            string | ((...args: unknown[]) => string) | undefined
+        >(EXTRA_METADATA_SWR_KEYGEN);
+
+        const mutate =
+            methodMetadata.getExtra<boolean>(EXTRA_METADATA_MUTATE) ?? false;
+
+        const swrConfig = methodMetadata.getExtra<
+            SWRDecoratorConfig | undefined
+        >(EXTRA_METADATA_SWR_CONFIG);
+
+        if (mutate && swrConfig) {
+            throw new Error('@SWR and @Mutate cannot be used together');
+        }
+
+        if (mutate) {
+            // TODO:
+        }
+
         if (!swrConfig) {
             return super[EXECUTE](context, args);
         }
         const keygen = () => {
+            if (typeof _keygen === 'string') {
+                return _keygen;
+            }
+            if (typeof _keygen === 'function') {
+                return _keygen(...args);
+            }
             return context.method.resolveURL(context.params);
         };
 
-        this.swrService.useSWR(
+        const instance = this.swrService.useSWR(
             keygen,
             () => {
                 const state = this.ioc.getInstance(
@@ -34,9 +61,8 @@ export class RestfulResource<T, E = unknown> extends Resource<T, E> {
                     () => state as ResourceExecutionState<unknown, unknown>
                 );
             },
-            swrConfig
+            swrConfig as SWRConfig
         );
-        const instance = this.swrService.obtainInstance(keygen());
         instance?.onStateChange(state => {
             this.state = state.data as ResourceExecutionState<T, E>;
         });

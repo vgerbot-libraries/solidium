@@ -1,4 +1,14 @@
-import { R, Endpoint, Get, PathVariable, restfull, SWR } from '@vgerbot/http';
+import {
+    R,
+    Endpoint,
+    Get,
+    PathVariable,
+    restfull,
+    SWR,
+    Put,
+    Payload,
+    Mutate
+} from '@vgerbot/http';
 import { BaseAPIEndpoint } from './BaseAPIEndpoint';
 
 @Endpoint({
@@ -16,5 +26,13 @@ export class UserAPI {
         return restfull<{ data: { id: number; name: string; email: string } }>(
             userId
         );
+    }
+    @Put(':userId')
+    @Mutate((userId: string) => `users/${userId}`)
+    updateUser(
+        @PathVariable('userId') userId: R<string>,
+        @Payload() userInfo: R<{ name: string; email: string }>
+    ) {
+        return restfull(userId, userInfo);
     }
 }

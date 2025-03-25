@@ -28,9 +28,11 @@ export class SWRService {
                     ResourceExecutionState<unknown, unknown>
                 >
             );
+            return instance;
         } else {
-            // const instance = this.instances.get(key);
-            // instance?.mutate();
+            return this.instances.get(key) as SWRInstance<
+                ResourceExecutionState<unknown, unknown>
+            >;
         }
     }
 }

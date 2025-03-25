@@ -5,8 +5,8 @@ import { AuthActionService } from '../auth/AuthActionService';
 import { createSignal } from 'solid-js';
 
 export function LoginDialog() {
-    const [username, setUserName] = createSignal('');
-    const [password, setPassword] = createSignal('');
+    const [username, setUserName] = createSignal('admin');
+    const [password, setPassword] = createSignal('admin123');
     const authService = useService(AuthStateService);
     const authActionService = useService(AuthActionService);
 
