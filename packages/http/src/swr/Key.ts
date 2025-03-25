@@ -1,4 +1,4 @@
-import { EndpointMetadata } from 'src/metadata/EndpointMetadata';
+import { EndpointMetadata } from '../metadata/EndpointMetadata';
 import { EXTRA_METADATA_SWR_KEYGEN } from './consts';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

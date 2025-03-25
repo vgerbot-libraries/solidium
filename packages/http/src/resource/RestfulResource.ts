@@ -1,6 +1,6 @@
 import { Inject, InstanceScope, Scope } from '@vgerbot/ioc';
 import { lastValueFrom } from 'rxjs';
-import { SWRDecoratorConfig } from 'src/swr/SWR';
+import { SWRDecoratorConfig } from '../swr/SWR';
 import { ExecutionContext } from '../core/execution-context';
 import {
     EXTRA_METADATA_MUTATE,
@@ -10,7 +10,7 @@ import {
 import { SWRService } from '../swr/SWRService';
 import { EXECUTE, Resource } from './Resource';
 import { ResourceExecutionState } from './ResourceExecutionState';
-import { SWRConfig } from 'src/swr/SWRConfig';
+import { SWRConfig } from '../swr/SWRConfig';
 
 @Scope(InstanceScope.TRANSIENT)
 export class RestfulResource<T, E = unknown> extends Resource<T, E> {
