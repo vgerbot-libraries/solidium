@@ -8,5 +8,9 @@ if (pkg.scripts && pkg.scripts.start) {
     if (pkg.scripts && pkg.scripts.prestart) {
         await $`npm run prestart`;
     }
+    if (pkg.scripts && pkg.scripts['parallel:start']) {
+        // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+        $`npm run parallel:start`;
+    }
     await $`rollup -w -c $ROOT_DIR/rollup.config.js`;
 }
