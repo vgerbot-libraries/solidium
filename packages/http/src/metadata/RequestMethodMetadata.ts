@@ -1,3 +1,4 @@
+import { Interceptor } from '../core/Interceptor';
 import { EndpointInstance } from '../core/EndpointInstance';
 import { ExecuteRequestMethodParams } from '../core/ExecuteRequestParams';
 import { RequestMethod } from '../core/RequestMethod';
@@ -15,6 +16,7 @@ export class RequestMethodMetadata {
     private readonly executionHandlers: ExecutionHandler[] = [];
     private readonly extra = new Map<string | symbol, unknown>();
     private readonly options: RequestOptions = { path: '/', method: 'GET' };
+    private readonly externalInterceptors: Interceptor[] = [];
     constructor(public readonly name: string | symbol) {}
     setOptions(options: RequestOptions) {
         Object.assign(this.options, options);
@@ -49,7 +51,9 @@ export class RequestMethodMetadata {
         return this.options.timeout ?? 0;
     }
     getInterceptors() {
-        return this.options.interceptors ?? [];
+        return (this.options.interceptors ?? []).concat(
+            this.externalInterceptors
+        );
     }
     getExcludeInterceptors() {
         return this.options.excludeInterceptors ?? [];
@@ -59,5 +63,8 @@ export class RequestMethodMetadata {
     }
     isReactive() {
         return this.options.reactive ?? true;
+    }
+    appendInterceptor(interceptor: Interceptor) {
+        this.externalInterceptors.push(interceptor);
     }
 }

@@ -8,4 +8,5 @@ export interface ExecuteRequestMethodParams {
     readonly queryParams: URLSearchParams;
     payload?: BodyInit;
     adapter?: RequestAdapterConstructor;
+    args: unknown[];
 }

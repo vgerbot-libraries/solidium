@@ -1,4 +1,5 @@
 import {
+    EndpointInstance,
     ExecuteRequestMethodParams,
     HttpResponse,
     Interceptor,
@@ -15,6 +16,7 @@ export class AuthInterceptor implements Interceptor {
     @Inject()
     service!: AuthStateService;
     async invoke(
+        instance: EndpointInstance,
         method: RequestMethod,
         params: ExecuteRequestMethodParams,
         next: InterceptorNextFunction
@@ -22,11 +24,11 @@ export class AuthInterceptor implements Interceptor {
         if (this.service.hasToken && this.service.isExpired) {
             const service = this.appCtx.getInstance(AuthActionService);
             await service.refresh();
-            return next(method, params);
+            return next(instance, method, params);
         } else if (!this.service.hasToken) {
             await this.service.waitUntilAuthenticated();
         }
         params.headers.set('Authorization', `Bearer ${this.service.token}`);
-        return next(method, params);
+        return next(instance, method, params);
     }
 }

@@ -9,7 +9,8 @@ export function cloneParams(
         pathVariables: { ...params.pathVariables },
         queryParams: new URLSearchParams(params.queryParams),
         payload: clonePayload(params.payload),
-        adapter: params.adapter
+        adapter: params.adapter,
+        args: params.args
     };
 }
 function clonePayload(

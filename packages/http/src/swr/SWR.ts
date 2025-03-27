@@ -1,4 +1,4 @@
-import { EndpointMetadata } from '../metadata/EndpointMetadata';
+import { decorateEndpointMethod } from '../helper/decorateEndpointMethod';
 import { EXTRA_METADATA_SWR_CONFIG, EXTRA_METADATA_SWR_KEYGEN } from './consts';
 import { SWRConfig } from './SWRConfig';
 
@@ -13,17 +13,8 @@ export interface SWRDecoratorConfig extends DeepPartial<SWRConfig> {
     key?: string | ((...args: any[]) => string);
 }
 export function SWR(config: SWRDecoratorConfig) {
-    return (
-        target: object,
-        propertyKey: ClassMethodDecoratorContext | string | symbol
-    ) => {
-        const methodName =
-            typeof propertyKey === 'object' ? propertyKey.name : propertyKey;
-        const methodMetadata = EndpointMetadata.from(
-            target.constructor
-        ).getMethodMetadata(methodName);
+    return decorateEndpointMethod((clazz, methodName, methodMetadata) => {
         methodMetadata.setExtra(EXTRA_METADATA_SWR_KEYGEN, config.key);
-
         methodMetadata.setExtra(EXTRA_METADATA_SWR_CONFIG, config);
-    };
+    });
 }

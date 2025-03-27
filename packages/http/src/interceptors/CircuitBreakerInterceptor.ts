@@ -7,6 +7,7 @@ import { RequestMethod } from '../core/RequestMethod';
 import { ExecuteRequestMethodParams } from '../core/ExecuteRequestParams';
 import { HttpResponse } from '../core/HttpResponse';
 import { HttpError } from '../errors/HttpError';
+import { EndpointInstance } from '../core/EndpointInstance';
 
 export interface CircuitBreakerConfig {
     threshold: number;
@@ -47,6 +48,7 @@ export class CircuitBreakerInterceptor implements Interceptor {
     }
 
     async invoke(
+        instance: EndpointInstance,
         method: RequestMethod,
         params: ExecuteRequestMethodParams,
         next: InterceptorNextFunction
@@ -60,7 +62,7 @@ export class CircuitBreakerInterceptor implements Interceptor {
         }
 
         try {
-            const response = await next(method, params);
+            const response = await next(instance, method, params);
 
             if (this.state === 'HALF_OPEN') {
                 this.state = 'CLOSED';

@@ -1,4 +1,5 @@
 import {
+    EndpointInstance,
     ExecuteRequestMethodParams,
     HttpResponse,
     HttpStatusError,
@@ -14,12 +15,13 @@ export class HandleErrorInterceptor implements Interceptor {
     @Inject()
     notifyService!: NotifyService;
     async invoke(
+        instance: EndpointInstance,
         method: RequestMethod,
         params: ExecuteRequestMethodParams,
         next: InterceptorNextFunction
     ): Promise<HttpResponse> {
         try {
-            return await next(method, params);
+            return await next(instance, method, params);
         } catch (e) {
             const originError =
                 e instanceof ResourceError ? e.originalError : e;

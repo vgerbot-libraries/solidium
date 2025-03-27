@@ -33,10 +33,6 @@ export class RestfulResource<T, E = unknown> extends Resource<T, E> {
             throw new Error('@SWR and @Mutate cannot be used together');
         }
 
-        if (mutate) {
-            // TODO:
-        }
-
         if (!swrConfig) {
             return super[EXECUTE](context, args);
         }

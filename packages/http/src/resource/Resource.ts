@@ -12,6 +12,7 @@ import { HttpStatusErrorFactory } from '../errors/HttpStatusErrorFactory';
 import { RequestStatus } from './RequestStatus';
 import { ResourceError } from './ResourceError';
 import { ResourceExecutionState } from './ResourceExecutionState';
+import { EndpointInstance } from '../core/EndpointInstance';
 
 export const EXECUTE = Symbol('execute');
 export const SET_DATA = Symbol('setData');
@@ -69,9 +70,6 @@ export abstract class Resource<T, B = unknown> {
         });
     }
 
-    abort() {
-        this.abortController.abort();
-    }
     wait() {
         return lastValueFrom(
             this.$state.pipe(
@@ -116,13 +114,18 @@ export abstract class Resource<T, B = unknown> {
                   )
                 : this.abortController.signal;
         }
-        const allInterceptors = method.getAlInterceptors(instance);
+        const allInterceptors = method.getAllInterceptors(instance);
         const sendRequest = allInterceptors.reduceRight(
             (next, interceptor) =>
-                (method: RequestMethod, params: ExecuteRequestMethodParams) => {
-                    return interceptor.invoke(method, params, next);
+                (
+                    instance: EndpointInstance,
+                    method: RequestMethod,
+                    params: ExecuteRequestMethodParams
+                ) => {
+                    return interceptor.invoke(instance, method, params, next);
                 },
             async (
+                instance: EndpointInstance,
                 method: RequestMethod,
                 params: ExecuteRequestMethodParams
             ): Promise<HttpResponse> => {
@@ -136,7 +139,7 @@ export abstract class Resource<T, B = unknown> {
                 return response;
             }
         );
-        sendRequest(method, params).catch(error => {
+        sendRequest(instance, method, params).catch(error => {
             state.error(ResourceError.wrap(error));
         });
     }

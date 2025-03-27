@@ -4,6 +4,7 @@ import { ExecuteRequestMethodParams } from '../core/ExecuteRequestParams';
 import { HttpResponse } from '../core/HttpResponse';
 import { TimeoutError } from '../errors/HttpError';
 import { mergeAbortSignal } from '../common/mergeAbortSignal';
+import { EndpointInstance } from '../core/EndpointInstance';
 
 export interface TimeoutConfig {
     timeout: number;
@@ -21,6 +22,7 @@ export class TimeoutInterceptor implements Interceptor {
     }
 
     async invoke(
+        instance: EndpointInstance,
         method: RequestMethod,
         params: ExecuteRequestMethodParams,
         next: InterceptorNextFunction
@@ -36,7 +38,7 @@ export class TimeoutInterceptor implements Interceptor {
             const signal = mergeAbortSignal(params.signal, controller.signal);
 
             return await Promise.race([
-                next(method, { ...params, signal }),
+                next(instance, method, { ...params, signal }),
                 new Promise<never>((_, reject) =>
                     setTimeout(
                         () =>

@@ -3,6 +3,7 @@ import { RequestMethod } from '../core/RequestMethod';
 import { ExecuteRequestMethodParams } from '../core/ExecuteRequestParams';
 import { HttpResponse } from '../core/HttpResponse';
 import { HttpError, HttpStatusError } from '../errors/HttpError';
+import { EndpointInstance } from '../core/EndpointInstance';
 
 export interface RetryConfig {
     maxAttempts: number;
@@ -39,6 +40,7 @@ export class RetryInterceptor implements Interceptor {
     }
 
     async invoke(
+        instance: EndpointInstance,
         method: RequestMethod,
         params: ExecuteRequestMethodParams,
         next: InterceptorNextFunction
@@ -48,7 +50,7 @@ export class RetryInterceptor implements Interceptor {
 
         while (attempt < this.config.maxAttempts) {
             try {
-                return await next(method, params);
+                return await next(instance, method, params);
             } catch (error) {
                 const retryable = await this.config.retryable(error);
                 if (!retryable) {

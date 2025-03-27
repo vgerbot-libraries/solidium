@@ -43,7 +43,7 @@ export class RequestMethod {
         }
     }
 
-    getAlInterceptors(instance: EndpointInstance) {
+    getAllInterceptors(instance: EndpointInstance) {
         const timeout =
             this.metadata.getTimeout() || this.endpointMetadata.getTimeout();
         const extInterceptors: Interceptor[] = [];

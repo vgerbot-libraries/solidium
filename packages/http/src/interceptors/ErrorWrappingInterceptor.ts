@@ -1,3 +1,4 @@
+import { EndpointInstance } from '../core/EndpointInstance';
 import { ExecuteRequestMethodParams } from '../core/ExecuteRequestParams';
 import { HttpResponse } from '../core/HttpResponse';
 import { Interceptor, InterceptorNextFunction } from '../core/Interceptor';
@@ -12,12 +13,13 @@ import { ResourceError } from '../resource/ResourceError';
 
 export class ErrorWrappingInterceptor implements Interceptor {
     async invoke(
+        instance: EndpointInstance,
         method: RequestMethod,
         params: ExecuteRequestMethodParams,
         next: InterceptorNextFunction
     ): Promise<HttpResponse> {
         try {
-            const response = await next(method, params);
+            const response = await next(instance, method, params);
             return response;
         } catch (error) {
             // Handle different error types

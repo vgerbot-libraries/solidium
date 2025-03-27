@@ -1,9 +1,11 @@
+import { EndpointInstance } from './EndpointInstance';
 import { ExecuteRequestMethodParams } from './ExecuteRequestParams';
 import { HttpResponse } from './HttpResponse';
 import { RequestMethod } from './RequestMethod';
 
 export interface Interceptor {
     invoke(
+        instance: EndpointInstance,
         method: RequestMethod,
         params: ExecuteRequestMethodParams,
         next: InterceptorNextFunction
@@ -12,6 +14,7 @@ export interface Interceptor {
 export type InterceptorConstructor = new () => Interceptor;
 
 export type InterceptorNextFunction = (
+    instance: EndpointInstance,
     method: RequestMethod,
     params: ExecuteRequestMethodParams
 ) => Promise<HttpResponse>;
