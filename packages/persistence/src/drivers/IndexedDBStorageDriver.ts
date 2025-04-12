@@ -41,7 +41,7 @@ export class IndexedDBStorageDriver implements StorageDriver {
             await openDB(checkDBName);
             await deleteDB(checkDBName);
             return true;
-        } catch (error) {
+        } catch {
             return false;
         }
     }

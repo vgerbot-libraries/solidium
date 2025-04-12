@@ -1,5 +1,5 @@
 import { defineMemberDecoratorProcessor, getSignal } from '@vgerbot/solidium';
-import { createEffect, getOwner, on, runWithOwner } from 'solid-js';
+import { createEffect, getOwner, on, onCleanup, runWithOwner } from 'solid-js';
 import {
     ApplicationContext,
     ClassMetadataReader,
@@ -95,6 +95,10 @@ export const Storage = (options: StorageOptions = {}) => {
                             }
                         )
                     );
+
+                    onCleanup(() => {
+                        unobserve();
+                    });
                 });
             });
         }
