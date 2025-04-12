@@ -30,10 +30,23 @@ export class EndpointMetadata {
         }
         const metadata = new EndpointMetadata();
         Reflect.defineMetadata(ENDPOINT_METADATA_KEY, metadata, target);
+        Reflect.defineMetadata(
+            ENDPOINT_METADATA_KEY,
+            metadata,
+            target.prototype
+        );
 
         buildEndpointClass(target as Class<EndpointInstance>, metadata);
 
         return metadata;
+    }
+    static fromInstance(target: EndpointInstance) {
+        const prototype = Object.getPrototypeOf(target);
+        const metadata = Reflect.getMetadata(ENDPOINT_METADATA_KEY, prototype);
+        if (metadata instanceof EndpointMetadata) {
+            return metadata;
+        }
+        return EndpointMetadata.from(prototype.constructor);
     }
     private baseURL!: string;
     private timeout: number = 0;

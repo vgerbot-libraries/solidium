@@ -20,8 +20,8 @@ export interface SWROptions extends Partial<SWRConfig> {
 
 const defaultConfig: SWRConfig = {
     revalidate: {
-        focus: false,
-        reconnect: false,
+        focus: true,
+        reconnect: true,
         ifStale: true,
         events: []
     },

@@ -55,7 +55,7 @@ export * from './progress/ProgressHandler';
 export * from './swr/SWRInstance';
 export * from './swr/SWRConfig';
 export * from './swr/SWR';
-export * from './swr/Mutate';
+export * from './swr/SWRMutation';
 export * from './swr/Key';
 
 export * from './executions/restful';

@@ -17,8 +17,6 @@ export const ADAPTER: unique symbol = Symbol('endpoint-adapter');
 export const CONSTRUCT_INTERCEPTORS: unique symbol = Symbol(
     'endpoint-construct-interceptors'
 );
-/** Stores the SWR instances for an endpoint */
-export const SWR_INSTANCES: unique symbol = Symbol('swr-instances');
 
 export const ABORT_CONTROLLER = Symbol('abort-controller');
 

@@ -12,7 +12,7 @@ export interface SWRDecoratorConfig extends DeepPartial<SWRConfig> {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     key?: string | ((...args: any[]) => string);
 }
-export function SWR(config: SWRDecoratorConfig) {
+export function SWR(config: SWRDecoratorConfig = {}) {
     return decorateEndpointMethod((clazz, methodName, methodMetadata) => {
         methodMetadata.setExtra(EXTRA_METADATA_SWR_KEYGEN, config.key);
         methodMetadata.setExtra(EXTRA_METADATA_SWR_CONFIG, config);

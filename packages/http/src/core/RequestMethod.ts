@@ -12,7 +12,8 @@ import {
     GET_INTERCEPTORS,
     ADAPTER,
     CONSTRUCT_INTERCEPTORS,
-    ABORT_CONTROLLER
+    ABORT_CONTROLLER,
+    METHODS
 } from './EndpointMembers';
 import { type EndpointInstance } from './EndpointInstance';
 import { ExecuteRequestMethodParams } from './ExecuteRequestParams';
@@ -22,6 +23,9 @@ import { mergeAbortSignal } from '../common/mergeAbortSignal';
 import { ErrorWrappingInterceptor } from '../interceptors/ErrorWrappingInterceptor';
 
 export class RequestMethod {
+    public static get(instance: EndpointInstance, name: string | symbol) {
+        return instance[METHODS]?.get(name);
+    }
     public readonly url: string;
     private readonly baseInterceptors: Interceptor[] = [];
     constructor(

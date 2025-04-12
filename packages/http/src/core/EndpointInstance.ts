@@ -1,15 +1,15 @@
 import { ApplicationContext, Generate, Inject } from '@vgerbot/ioc';
+import { lazyMember } from '@vgerbot/lazy';
+import { RequestAdapterConstructor } from '../adapter/RequestAdapter';
 import { Class } from '../common/Class';
 import { EndpointMetadata } from '../metadata/EndpointMetadata';
-import { RequestMethod } from './RequestMethod';
 import {
-    METHODS,
-    GET_INTERCEPTORS,
-    ADAPTER,
-    CONSTRUCT_INTERCEPTORS,
-    SWR_INSTANCES,
     ABORT_CONTROLLER,
-    APPLICATION_CONTEXT
+    ADAPTER,
+    APPLICATION_CONTEXT,
+    CONSTRUCT_INTERCEPTORS,
+    GET_INTERCEPTORS,
+    METHODS
 } from './EndpointMembers';
 import {
     Interceptor,
@@ -17,10 +17,7 @@ import {
     InterceptorTypeIdentifier,
     isInterceptor
 } from './Interceptor';
-import { RequestAdapterConstructor } from '../adapter/RequestAdapter';
-import { SWRInstance } from '../swr/SWRInstance';
-import { lazyMember } from '@vgerbot/lazy';
-import { HttpResponse } from './HttpResponse';
+import { RequestMethod } from './RequestMethod';
 
 export interface EndpointInstance {
     [METHODS]: Map<string | symbol, RequestMethod>;
@@ -31,7 +28,6 @@ export interface EndpointInstance {
     [CONSTRUCT_INTERCEPTORS]: (
         interceptors: Array<InterceptorTypeIdentifier | Interceptor>
     ) => Interceptor[];
-    [SWR_INSTANCES]: Map<string | symbol, SWRInstance<HttpResponse>>;
     [ABORT_CONTROLLER]: AbortController;
     [APPLICATION_CONTEXT]: ApplicationContext;
 }
@@ -79,7 +75,6 @@ export function buildEndpointClass(
         };
     })(endpointClass.prototype, CONSTRUCT_INTERCEPTORS);
 
-    lazyMember(() => new Map())(endpointClass.prototype, SWR_INSTANCES);
     lazyMember(() => new AbortController())(
         endpointClass.prototype,
         ABORT_CONTROLLER
