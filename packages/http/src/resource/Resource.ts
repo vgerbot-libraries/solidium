@@ -17,6 +17,7 @@ import { EndpointInstance } from '../core/EndpointInstance';
 export const EXECUTE = Symbol('execute');
 export const SET_DATA = Symbol('setData');
 export const SET_ERROR = Symbol('setError');
+export const SETUP = Symbol('setup');
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type AnyResource = Resource<any, unknown>;
@@ -60,6 +61,7 @@ export abstract class Resource<T, B = unknown> {
     }
 
     protected readonly abortController = new AbortController();
+    protected context?: ExecutionContext;
 
     @PostInject()
     protected init() {
@@ -68,6 +70,15 @@ export abstract class Resource<T, B = unknown> {
                 this.state = value;
             }
         });
+    }
+
+    [SETUP](context: ExecutionContext) {
+        if (this.context) {
+            throw new Error(
+                'Unknown Error: Cannot setup resource more than once'
+            );
+        }
+        this.context = context;
     }
 
     wait() {
@@ -87,12 +98,15 @@ export abstract class Resource<T, B = unknown> {
     }
 
     protected [EXECUTE](
-        context: ExecutionContext,
         args: unknown[],
         state = this.ioc.getInstance(
             ResourceExecutionState
         ) as ResourceExecutionState<T, B>
     ) {
+        const context = this.context;
+        if (!context) {
+            throw new Error('Execution context is not setup!');
+        }
         const lastExecutionAbortController = this.state?.abortController;
         lastExecutionAbortController?.abort();
 

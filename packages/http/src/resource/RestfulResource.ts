@@ -1,22 +1,25 @@
 import { Inject, InstanceScope, Scope } from '@vgerbot/ioc';
 import { lastValueFrom } from 'rxjs';
-import { SWRDecoratorConfig } from '../swr/SWR';
-import { ExecutionContext } from '../core/execution-context';
 import {
     EXTRA_METADATA_MUTATE,
     EXTRA_METADATA_SWR_CONFIG,
     EXTRA_METADATA_SWR_KEYGEN
 } from '../swr/consts';
+import { SWRDecoratorConfig } from '../swr/SWR';
+import { SWRConfig } from '../swr/SWRConfig';
 import { SWRService } from '../swr/SWRService';
 import { EXECUTE, Resource } from './Resource';
 import { ResourceExecutionState } from './ResourceExecutionState';
-import { SWRConfig } from '../swr/SWRConfig';
 
 @Scope(InstanceScope.TRANSIENT)
 export class RestfulResource<T, E = unknown> extends Resource<T, E> {
     @Inject()
     private swrService!: SWRService;
-    protected [EXECUTE](context: ExecutionContext, args: unknown[]) {
+    protected [EXECUTE](args: unknown[]) {
+        const context = this.context;
+        if (!context) {
+            throw new Error('Execution context is not setup!');
+        }
         const methodMetadata = context.method.metadata;
         const _keygen = methodMetadata.getExtra<
             string | ((...args: unknown[]) => string) | undefined
@@ -34,7 +37,7 @@ export class RestfulResource<T, E = unknown> extends Resource<T, E> {
         }
 
         if (!swrConfig) {
-            return super[EXECUTE](context, args);
+            return super[EXECUTE](args);
         }
         const keygen = () => {
             if (typeof _keygen === 'string') {
@@ -52,7 +55,7 @@ export class RestfulResource<T, E = unknown> extends Resource<T, E> {
                 const state = this.ioc.getInstance(
                     ResourceExecutionState
                 ) as ResourceExecutionState<T, E>;
-                super[EXECUTE](context, args, state);
+                super[EXECUTE](args, state);
                 return lastValueFrom(state).then(
                     () => state as ResourceExecutionState<unknown, unknown>
                 );
