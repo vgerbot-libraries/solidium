@@ -1,6 +1,7 @@
 export * from './core/Persistence';
 export * from './core/bucket/BucketConfiguration';
 export * from './core/bucket/ChangeEvent';
+export * from './core/bucket/Bucket';
 export * from './core/driver/StorageDriver';
 export * from './core/driver/StorageDriverOptions';
 export * from './core/driver/ChangeEvent';

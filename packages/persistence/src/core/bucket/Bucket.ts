@@ -1,7 +1,6 @@
 import { Storage } from '../../decorators/Storage';
 import { DefaultDrivers } from '../../drivers/DefaultDrivers';
 import { LocalStorageDriver } from '../../drivers/LocalStorageDriver';
-import { Data } from '../../types/Data';
 import { DataSerializer } from '../serializer/DataSerializer';
 import { StorageDriver } from '../driver/StorageDriver';
 import { BucketConfiguration } from './BucketConfiguration';
@@ -96,17 +95,17 @@ export class Bucket {
         };
     }
     @Prepared()
-    async setItem(key: string, value: Data): Promise<void> {
+    async setItem(key: string, value: unknown): Promise<void> {
         const blob = await this.serializer.serialize(value);
         return this.driver.setItem(key, blob);
     }
     @Prepared()
-    async getItem(key: string): Promise<Data | undefined> {
+    async getItem<T>(key: string): Promise<T | undefined> {
         const blob = await this.driver.getItem(key);
         if (!blob) {
             return;
         }
-        return this.serializer.deserialize<Data>(blob);
+        return this.serializer.deserialize<T>(blob);
     }
     @Prepared()
     clear() {

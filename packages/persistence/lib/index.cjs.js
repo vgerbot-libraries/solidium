@@ -248,6 +248,9 @@ var Storage = function (options) {
               unobserve = observe();
             });
           }));
+          solidJs.onCleanup(function () {
+            unobserve();
+          });
         });
       });
     }
@@ -766,20 +769,20 @@ var IndexedDBStorageDriver = /** @class */function () {
   IndexedDBStorageDriver.prototype.supports = function () {
     return __awaiter(this, undefined, undefined, function () {
       var checkDBName;
-      return __generator(this, function (_a) {
-        switch (_a.label) {
+      return __generator(this, function (_b) {
+        switch (_b.label) {
           case 0:
-            _a.trys.push([0, 3,, 4]);
+            _b.trys.push([0, 3,, 4]);
             checkDBName = '_vgerbot_check_idb';
             return [4 /*yield*/, idb.openDB(checkDBName)];
           case 1:
-            _a.sent();
+            _b.sent();
             return [4 /*yield*/, idb.deleteDB(checkDBName)];
           case 2:
-            _a.sent();
+            _b.sent();
             return [2 /*return*/, true];
           case 3:
-            _a.sent();
+            _b.sent();
             return [2 /*return*/, false];
           case 4:
             return [2 /*return*/];
@@ -1133,6 +1136,7 @@ var Persistence = /** @class */function () {
   return Persistence;
 }();
 
+exports.Bucket = Bucket;
 exports.DefaultSerializer = DefaultSerializer;
 exports.OnStorageLoad = OnStorageLoad;
 exports.Persistence = Persistence;

@@ -1,6 +1,6 @@
 import { Inject, Factory, PostInject } from '@vgerbot/ioc';
 import { defineMemberDecoratorProcessor, getSignal } from '@vgerbot/solidium';
-import { getOwner, runWithOwner, createEffect, on } from 'solid-js';
+import { getOwner, runWithOwner, createEffect, on, onCleanup } from 'solid-js';
 import { encode, decode } from '@vgerbot/msgpack-ext';
 import { openDB, deleteDB } from 'idb';
 
@@ -194,6 +194,9 @@ const Storage = (options = {}) => {
               unobserve = observe();
             });
           }));
+          onCleanup(() => {
+            unobserve();
+          });
         });
       });
     }
@@ -548,7 +551,7 @@ class IndexedDBStorageDriver {
         yield openDB(checkDBName);
         yield deleteDB(checkDBName);
         return true;
-      } catch (error) {
+      } catch (_a) {
         return false;
       }
     });
@@ -790,5 +793,5 @@ __decorate([Inject(DEFAULT_BUCKET_CONFIGURATION), __metadata("design:type", Obje
 __decorate([Factory(DEFAULT_BUCKET), __metadata("design:type", Function), __metadata("design:paramtypes", []), __metadata("design:returntype", undefined)], Persistence.prototype, "getDefaultBucket", null);
 __decorate([PostInject(), __metadata("design:type", Function), __metadata("design:paramtypes", []), __metadata("design:returntype", undefined)], Persistence.prototype, "init", null);
 
-export { DefaultDrivers, DefaultSerializer, OnStorageLoad, Persistence, Storage, notifyStorageLoad };
+export { Bucket, DefaultDrivers, DefaultSerializer, OnStorageLoad, Persistence, Storage, notifyStorageLoad };
 //# sourceMappingURL=index.es.js.map
