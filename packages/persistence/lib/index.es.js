@@ -793,5 +793,5 @@ __decorate([Inject(DEFAULT_BUCKET_CONFIGURATION), __metadata("design:type", Obje
 __decorate([Factory(DEFAULT_BUCKET), __metadata("design:type", Function), __metadata("design:paramtypes", []), __metadata("design:returntype", undefined)], Persistence.prototype, "getDefaultBucket", null);
 __decorate([PostInject(), __metadata("design:type", Function), __metadata("design:paramtypes", []), __metadata("design:returntype", undefined)], Persistence.prototype, "init", null);
 
-export { Bucket, DefaultDrivers, DefaultSerializer, OnStorageLoad, Persistence, Storage, notifyStorageLoad };
+export { Bucket, DEFAULT_BUCKET, DEFAULT_BUCKET_CONFIGURATION, DefaultDrivers, DefaultSerializer, OnStorageLoad, Persistence, Storage, notifyStorageLoad };
 //# sourceMappingURL=index.es.js.map

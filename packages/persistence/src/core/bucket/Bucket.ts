@@ -51,7 +51,7 @@ export class Bucket {
     private readonly serializer: DataSerializer;
     readonly debug: boolean;
     constructor(config: BucketConfiguration) {
-        this.name = config.name;
+        this.name = config.name ?? '';
         this.serializer = config.serializer || new DefaultSerializer();
         this.debug = config.debug ?? false;
         const driver = config.driver;

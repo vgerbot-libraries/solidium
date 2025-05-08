@@ -1137,6 +1137,8 @@ var Persistence = /** @class */function () {
 }();
 
 exports.Bucket = Bucket;
+exports.DEFAULT_BUCKET = DEFAULT_BUCKET;
+exports.DEFAULT_BUCKET_CONFIGURATION = DEFAULT_BUCKET_CONFIGURATION;
 exports.DefaultSerializer = DefaultSerializer;
 exports.OnStorageLoad = OnStorageLoad;
 exports.Persistence = Persistence;
