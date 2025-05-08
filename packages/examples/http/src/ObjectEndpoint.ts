@@ -6,7 +6,7 @@ import {
     Post,
     Query,
     R,
-    restfull
+    restful
 } from '@vgerbot/http';
 
 export interface ObjectDef {
@@ -21,18 +21,18 @@ export interface ObjectDef {
 export class ObjectsEndpoint {
     @Get('objects')
     listAll() {
-        return restfull<ObjectDef[]>();
+        return restful<ObjectDef[]>();
     }
     @Get('objects/:id')
     getItem(@PathVariable('id') id: R<string>) {
-        return restfull<ObjectDef>(id);
+        return restful<ObjectDef>(id);
     }
     @Get('objects')
     listObjectByIds(@Query('id') ids: string[]) {
-        return restfull<ObjectDef[]>(ids);
+        return restful<ObjectDef[]>(ids);
     }
     @Post('objects')
     addObject(@Payload() data: ObjectDef) {
-        return restfull<ObjectDef>(data);
+        return restful<ObjectDef>(data);
     }
 }

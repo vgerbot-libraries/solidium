@@ -1,4 +1,4 @@
-import { Endpoint, Get, Payload, Post, restfull } from '@vgerbot/http';
+import { Endpoint, Get, Payload, Post, restful } from '@vgerbot/http';
 import { AuthInterceptor } from '../auth/AuthInterceptor';
 import { BaseAPIEndpoint } from './BaseAPIEndpoint';
 
@@ -12,7 +12,7 @@ export class AuthAPI {
         excludeInterceptors: [AuthInterceptor]
     })
     login(@Payload() data: { username: string; password: string }) {
-        return restfull<{
+        return restful<{
             status: string;
             data: {
                 userId: string;
@@ -30,15 +30,15 @@ export class AuthAPI {
         reactive: false
     })
     refreshToken(@Payload() data: { refreshToken: string }) {
-        return restfull(data);
+        return restful(data);
     }
     @Post('logout')
     logout() {
-        return restfull();
+        return restful();
     }
     @Get('profile')
     profile() {
-        return restfull<{
+        return restful<{
             data: { id: string; username: string; role: string };
         }>();
     }

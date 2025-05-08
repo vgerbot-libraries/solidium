@@ -3,7 +3,7 @@ import {
     Endpoint,
     Get,
     PathVariable,
-    restfull,
+    restful,
     SWR,
     Put,
     Payload,
@@ -23,7 +23,7 @@ export class UserAPI {
         }
     })
     userInfo(@PathVariable('userId') userId: R<string>) {
-        return restfull<{ data: { id: number; name: string; email: string } }>(
+        return restful<{ data: { id: number; name: string; email: string } }>(
             userId
         );
     }
@@ -33,6 +33,6 @@ export class UserAPI {
         @PathVariable('userId') userId: R<string>,
         @Payload() userInfo: R<{ name: string; email: string }>
     ) {
-        return restfull(userId, userInfo);
+        return restful(userId, userInfo);
     }
 }
