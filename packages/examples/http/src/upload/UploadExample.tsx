@@ -26,6 +26,7 @@ export function UploadExample() {
                         const input = e.target as HTMLInputElement;
                         const file = input.files?.[0];
                         setFile(file);
+                        e.target.value = '';
                     }}
                 />
             </Form.Group>

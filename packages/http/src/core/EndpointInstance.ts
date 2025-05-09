@@ -9,6 +9,7 @@ import {
     APPLICATION_CONTEXT,
     CONSTRUCT_INTERCEPTORS,
     GET_INTERCEPTORS,
+    HTTP_CONFIGURATION,
     METHODS
 } from './EndpointMembers';
 import {
@@ -18,6 +19,7 @@ import {
     isInterceptor
 } from './Interceptor';
 import { RequestMethod } from './RequestMethod';
+import { DEFAULT_HTTP_CONFIGURATION, HttpConfiguration } from './Http';
 
 export interface EndpointInstance {
     [METHODS]: Map<string | symbol, RequestMethod>;
@@ -30,6 +32,7 @@ export interface EndpointInstance {
     ) => Interceptor[];
     [ABORT_CONTROLLER]: AbortController;
     [APPLICATION_CONTEXT]: ApplicationContext;
+    [HTTP_CONFIGURATION]?: HttpConfiguration;
 }
 
 export function buildEndpointClass(
@@ -43,8 +46,9 @@ export function buildEndpointClass(
             this: EndpointInstance,
             exclude?: Array<InterceptorTypeIdentifier | Interceptor>
         ) {
-            return metadata
-                .getInterceptors()
+            const globalInterceptors =
+                this[HTTP_CONFIGURATION]?.interceptors ?? [];
+            return [...globalInterceptors, ...metadata.getInterceptors()]
                 .filter(it => !exclude?.includes(it))
                 .map(identifier => {
                     if (isInterceptor(identifier)) {
@@ -91,4 +95,8 @@ export function buildEndpointClass(
     })(endpointClass.prototype, METHODS);
 
     Inject(ApplicationContext)(endpointClass.prototype, APPLICATION_CONTEXT);
+    Inject(DEFAULT_HTTP_CONFIGURATION)(
+        endpointClass.prototype,
+        HTTP_CONFIGURATION
+    );
 }

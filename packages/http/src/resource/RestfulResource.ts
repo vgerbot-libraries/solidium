@@ -33,11 +33,14 @@ export class RestfulResource<T, E = unknown> extends Resource<T, E> {
         >(EXTRA_METADATA_SWR_CONFIG);
 
         if (mutate && swrConfig) {
-            throw new Error('@SWR and @Mutate cannot be used together');
+            throw new Error('@SWR and @SWRMutation cannot be used together');
         }
+        const state = this.ioc.getInstance(
+            ResourceExecutionState
+        ) as ResourceExecutionState<T, E>;
 
         if (!swrConfig) {
-            return super[EXECUTE](args);
+            return super[EXECUTE](args, state);
         }
         const keygen = () => {
             if (typeof _keygen === 'string') {
@@ -52,9 +55,6 @@ export class RestfulResource<T, E = unknown> extends Resource<T, E> {
         const instance = this.swrService.useSWR(
             keygen,
             () => {
-                const state = this.ioc.getInstance(
-                    ResourceExecutionState
-                ) as ResourceExecutionState<T, E>;
                 super[EXECUTE](args, state);
                 return lastValueFrom(state).then(
                     () => state as ResourceExecutionState<unknown, unknown>

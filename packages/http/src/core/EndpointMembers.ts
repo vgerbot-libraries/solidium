@@ -21,3 +21,5 @@ export const CONSTRUCT_INTERCEPTORS: unique symbol = Symbol(
 export const ABORT_CONTROLLER = Symbol('abort-controller');
 
 export const APPLICATION_CONTEXT = Symbol('application-context');
+
+export const HTTP_CONFIGURATION = Symbol('http-configuration');

@@ -7,7 +7,7 @@ import {
     SWR,
     Put,
     Payload,
-    Mutate
+    SWRMutation
 } from '@vgerbot/http';
 import { BaseAPIEndpoint } from './BaseAPIEndpoint';
 
@@ -19,7 +19,7 @@ export class UserAPI {
     @Get(':userId')
     @SWR({
         revalidate: {
-            focus: true
+            focus: false
         }
     })
     userInfo(@PathVariable('userId') userId: R<string>) {
@@ -28,7 +28,7 @@ export class UserAPI {
         );
     }
     @Put(':userId')
-    @Mutate((userId: string) => `users/${userId}`)
+    @SWRMutation((userId: string) => `users/${userId}`)
     updateUser(
         @PathVariable('userId') userId: R<string>,
         @Payload() userInfo: R<{ name: string; email: string }>
