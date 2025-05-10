@@ -8,4 +8,5 @@ export interface HttpSource {
     body(): Promise<ByteStream>;
     onDownload(listener: ProgressHandler): () => void;
     onUpload(listener: ProgressHandler): () => void;
+    onBodyComplete(listener: (body: ByteStream) => void): () => void;
 }

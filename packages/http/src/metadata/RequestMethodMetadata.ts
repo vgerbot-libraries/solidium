@@ -1,4 +1,4 @@
-import { Interceptor } from '../core/Interceptor';
+import { Interceptor, InterceptorTypeIdentifier } from '../core/Interceptor';
 import { EndpointInstance } from '../core/EndpointInstance';
 import { ExecuteRequestMethodParams } from '../core/ExecuteRequestParams';
 import { RequestMethod } from '../core/RequestMethod';
@@ -16,7 +16,9 @@ export class RequestMethodMetadata {
     private readonly executionHandlers: ExecutionHandler[] = [];
     private readonly extra = new Map<string | symbol, unknown>();
     private readonly options: RequestOptions = { path: '/', method: 'GET' };
-    private readonly externalInterceptors: Interceptor[] = [];
+    private readonly externalInterceptors: Array<
+        Interceptor | InterceptorTypeIdentifier
+    > = [];
     constructor(public readonly name: string | symbol) {}
     setOptions(options: RequestOptions) {
         Object.assign(this.options, options);
@@ -64,7 +66,7 @@ export class RequestMethodMetadata {
     isReactive() {
         return this.options.reactive ?? true;
     }
-    appendInterceptor(interceptor: Interceptor) {
+    appendInterceptor(interceptor: Interceptor | InterceptorTypeIdentifier) {
         this.externalInterceptors.push(interceptor);
     }
 }

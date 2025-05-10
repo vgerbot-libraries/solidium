@@ -1,14 +1,38 @@
-import { RequestMethod } from './RequestMethod';
 import { ByteStream } from '../http/ByteStream';
 import { HttpHeaders } from '../http/HttpHeaders';
 import { HttpSource } from '../http/HttpSource';
 import { ProgressHandler } from '../progress/ProgressHandler';
+import { RequestMethod } from './RequestMethod';
 
 export interface HttpResponseInit {
     method: RequestMethod;
 }
 
 export class HttpResponse implements HttpSource {
+    static of(
+        body: Promise<ByteStream>,
+        headers: HttpHeaders,
+        status: number,
+        method: RequestMethod
+    ) {
+        return new HttpResponse(
+            {
+                status: () => Promise.resolve(status),
+                headers: () => Promise.resolve(headers),
+                body: () => body,
+                onDownload() {
+                    return () => undefined;
+                },
+                onUpload() {
+                    return () => undefined;
+                },
+                onBodyComplete() {
+                    return () => undefined;
+                }
+            },
+            { method }
+        );
+    }
     constructor(
         private readonly source: HttpSource,
         public readonly init: HttpResponseInit
@@ -60,5 +84,8 @@ export class HttpResponse implements HttpSource {
     }
     onDownload(listener: ProgressHandler): () => void {
         return this.source.onDownload(listener);
+    }
+    onBodyComplete(listener: (body: ByteStream) => void): () => void {
+        return this.source.onBodyComplete(listener);
     }
 }

@@ -15,11 +15,12 @@ import { ResourceExecutionState } from './ResourceExecutionState';
 export class RestfulResource<T, E = unknown> extends Resource<T, E> {
     @Inject()
     private swrService!: SWRService;
-    protected [EXECUTE](args: unknown[]) {
+    protected [EXECUTE]() {
         const context = this.context;
         if (!context) {
             throw new Error('Execution context is not setup!');
         }
+        const args = context.params.args;
         const methodMetadata = context.method.metadata;
         const _keygen = methodMetadata.getExtra<
             string | ((...args: unknown[]) => string) | undefined
@@ -40,7 +41,7 @@ export class RestfulResource<T, E = unknown> extends Resource<T, E> {
         ) as ResourceExecutionState<T, E>;
 
         if (!swrConfig) {
-            return super[EXECUTE](args, state);
+            return super[EXECUTE](state);
         }
         const keygen = () => {
             if (typeof _keygen === 'string') {
@@ -55,7 +56,7 @@ export class RestfulResource<T, E = unknown> extends Resource<T, E> {
         const instance = this.swrService.useSWR(
             keygen,
             () => {
-                super[EXECUTE](args, state);
+                super[EXECUTE](state);
                 return lastValueFrom(state).then(
                     () => state as ResourceExecutionState<unknown, unknown>
                 );

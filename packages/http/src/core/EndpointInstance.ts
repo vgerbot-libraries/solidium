@@ -69,10 +69,15 @@ export function buildEndpointClass(
         ) => Interceptor[]
     >(function (appCtx: ApplicationContext) {
         return (
-            interceptors: Array<InterceptorConstructor | string | symbol>
+            interceptors: Array<
+                InterceptorConstructor | string | symbol | Interceptor
+            >
         ) => {
             return interceptors
                 .map(identifier => {
+                    if (typeof identifier === 'object') {
+                        return identifier;
+                    }
                     return appCtx.getInstance(identifier);
                 })
                 .flat();

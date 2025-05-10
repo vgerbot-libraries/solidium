@@ -96,9 +96,13 @@ export abstract class Resource<T, B = unknown> {
     ) {
         return this.$state.subscribe(observerOrNext);
     }
+    async reload() {
+        if (this.context) {
+            return this[EXECUTE]();
+        }
+    }
 
     protected [EXECUTE](
-        args: unknown[],
         state = this.ioc.getInstance(
             ResourceExecutionState
         ) as ResourceExecutionState<T, B>

@@ -86,6 +86,18 @@ export class FetchRequestAdapter implements RequestAdapter {
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             onUpload(_listener: ProgressHandler): () => void {
                 return () => void 0;
+            },
+            onBodyComplete(listener) {
+                let isListenerCancelled = false;
+                bodyDefer.promise.then(body => {
+                    if (isListenerCancelled) {
+                        return;
+                    }
+                    listener(body);
+                });
+                return () => {
+                    isListenerCancelled = true;
+                };
             }
         };
     }

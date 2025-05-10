@@ -111,6 +111,18 @@ export class XMLHttpRequestAdapter implements RequestAdapter {
             },
             onUpload(listener) {
                 return events.on('upload', listener);
+            },
+            onBodyComplete(listener) {
+                let isListenerCancelled = false;
+                bodyDefer.promise.then(body => {
+                    if (isListenerCancelled) {
+                        return;
+                    }
+                    listener(body);
+                });
+                return () => {
+                    isListenerCancelled = true;
+                };
             }
         };
     }

@@ -5,6 +5,7 @@ import { LoginDialog } from './components/LoginDialog';
 import { Profile } from './components/Profile';
 import { UploadExample } from './upload/UploadExample';
 import { RefreshToken } from './components/RefreshToken';
+import { PostViewer } from './cache/CacheExample';
 
 export function App() {
     return (
@@ -21,8 +22,12 @@ export function App() {
             <Profile></Profile>
             <RefreshToken></RefreshToken>
             <UploadExample></UploadExample>
+            <span>{'='.repeat(100)}</span>
+            <PostViewer></PostViewer>
             <AlertDialog></AlertDialog>
             <LoginDialog></LoginDialog>
+            <hr></hr>
+            <PostViewer></PostViewer>
         </Solidium>
     );
 }

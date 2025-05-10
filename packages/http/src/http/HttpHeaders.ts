@@ -97,4 +97,8 @@ export class HttpHeaders {
     clear() {
         this.headers.clear();
     }
+    getContentLength(): number {
+        const [contentLengthStr] = this.get('content-length') ?? [];
+        return parseInt(contentLengthStr) || 0;
+    }
 }

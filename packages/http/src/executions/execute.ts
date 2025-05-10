@@ -24,7 +24,7 @@ export function execute<T, R extends Resource<T>>(
         executionHandlers.forEach(handler => {
             handler(instance, method, params, args);
         });
-        resource[EXECUTE](args);
+        resource[EXECUTE]();
         if (!isReactive) {
             Promise.resolve().then(() => {
                 dispose();

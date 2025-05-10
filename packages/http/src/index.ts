@@ -45,6 +45,7 @@ export * from './decorators/PathVariable';
 export * from './decorators/Query';
 export * from './decorators/Request';
 export * from './decorators/Payload';
+export * from './decorators/Cache';
 
 // Progress tracking
 export * from './progress/Progress';
