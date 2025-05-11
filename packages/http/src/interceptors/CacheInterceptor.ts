@@ -4,7 +4,11 @@ import { EndpointInstance } from '../core/EndpointInstance';
 import { ExecuteRequestMethodParams } from '../core/ExecuteRequestParams';
 import { DEFAULT_HTTP_CONFIGURATION, HttpConfiguration } from '../core/Http';
 import { HttpResponse } from '../core/HttpResponse';
-import { Interceptor, InterceptorNextFunction } from '../core/Interceptor';
+import {
+    Interceptor,
+    InterceptorConstructor,
+    InterceptorNextFunction
+} from '../core/Interceptor';
 import { RequestMethod } from '../core/RequestMethod';
 import { HttpHeaders } from '../http/HttpHeaders';
 import { BlobByteStream } from '../http/streams/BlobByteStream';
@@ -17,7 +21,7 @@ interface CacheEntry {
     response: {
         status: number;
         headers: Record<string, string[]>;
-        body: Blob;
+        body: Uint8Array;
     };
     /** When the entry was cached */
     cachedAt: number;
@@ -100,6 +104,15 @@ const DEFAULT_CONFIG: CacheInterceptorConfig = {
  * ```
  */
 export class CacheInterceptor implements Interceptor {
+    public static createWithConfig(config: CacheInterceptorConfig = {}) {
+        class SubCacheInterceptor extends CacheInterceptor {
+            constructor() {
+                super(config);
+            }
+        }
+        return SubCacheInterceptor as InterceptorConstructor;
+    }
+
     private readonly config: CacheInterceptorConfig;
     private bucket?: Bucket;
 
@@ -107,9 +120,9 @@ export class CacheInterceptor implements Interceptor {
     private appCtx!: ApplicationContext;
 
     @Inject(DEFAULT_HTTP_CONFIGURATION)
-    private httpConfig!: HttpConfiguration;
+    private httpConfig?: HttpConfiguration;
 
-    constructor(config: CacheInterceptorConfig = {}) {
+    protected constructor(config: CacheInterceptorConfig = {}) {
         this.config = { ...DEFAULT_CONFIG, ...config };
     }
 
@@ -119,7 +132,7 @@ export class CacheInterceptor implements Interceptor {
         }
 
         const bucketName =
-            this.config.bucketName ?? this.httpConfig.cacheBucket;
+            this.config.bucketName ?? this.httpConfig?.cacheBucket;
 
         if (bucketName) {
             try {
@@ -216,7 +229,7 @@ export class CacheInterceptor implements Interceptor {
             const headers = new HttpHeaders(response.headers);
             // Create a new HttpResponse from the cached data
             return HttpResponse.of(
-                Promise.resolve(new BlobByteStream(response.body)),
+                Promise.resolve(new BlobByteStream(new Blob([response.body]))),
                 headers,
                 response.status,
                 method
@@ -231,7 +244,7 @@ export class CacheInterceptor implements Interceptor {
         if (status >= 200 && status < 300) {
             response.onBodyComplete(async body => {
                 const headers = await response.headers();
-                const bodyBlob = await body.readAsBlob();
+                const bodyArrayBuffer = await body.readAsBuffer();
                 // Determine expiration time
                 const headerExpiration = this.getExpirationFromHeaders(headers);
                 const expiresAt =
@@ -247,7 +260,7 @@ export class CacheInterceptor implements Interceptor {
                         response: {
                             status,
                             headers: headers.toJSON(),
-                            body: bodyBlob
+                            body: new Uint8Array(bodyArrayBuffer)
                         },
                         cachedAt: Date.now(),
                         expiresAt

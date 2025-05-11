@@ -1,4 +1,4 @@
-import { Cache, Endpoint, Get, restful } from '@vgerbot/http';
+import { Cache, Endpoint, Get, PathVariable, restful } from '@vgerbot/http';
 import { Auto, Signal, useService } from '@vgerbot/solidium';
 import { Inject } from '@vgerbot/ioc';
 import { createSignal } from 'solid-js';
@@ -8,9 +8,9 @@ import { createSignal } from 'solid-js';
     baseURL: 'https://jsonplaceholder.typicode.com'
 })
 class JsonPlaceholderAPI {
-    @Get('/posts/{id}')
+    @Get('/posts/:id')
     @Cache({})
-    getPost(id: number) {
+    getPost(@PathVariable('id') id: number) {
         return restful<Post>(id);
     }
 
@@ -51,7 +51,7 @@ export function PostViewer() {
     const [postId, setPostId] = createSignal(1);
 
     // Get the post data
-    const postResource = () => service.getPost(postId());
+    const postResource = service.getPost(postId());
 
     // Get all posts
     const postsResource = service.getPosts();
@@ -111,12 +111,12 @@ export function PostViewer() {
                         </small>
                     </p>
 
-                    {postResource().loading && <p>Loading post...</p>}
+                    {postResource.loading && <p>Loading post...</p>}
 
-                    {postResource().data && (
+                    {postResource.data && (
                         <div>
-                            <h3>{postResource().data?.title}</h3>
-                            <p>{postResource().data?.body}</p>
+                            <h3>{postResource.data?.title}</h3>
+                            <p>{postResource.data?.body}</p>
                         </div>
                     )}
 
@@ -136,9 +136,9 @@ export function PostViewer() {
                             Next Post
                         </button>
                         <button
-                            onClick={() => postResource().reload()}
+                            onClick={() => postResource.reload()}
                             style={{ 'margin-left': '10px' }}
-                            disabled={postResource().loading}
+                            disabled={postResource.loading}
                         >
                             Reload (Force Refresh)
                         </button>

@@ -12,7 +12,9 @@ export function Cache(config: CacheInterceptorConfig = {}) {
             methodName: string | symbol,
             methodMetadata: RequestMethodMetadata
         ) => {
-            methodMetadata.appendInterceptor(new CacheInterceptor(config));
+            methodMetadata.appendInterceptor(
+                CacheInterceptor.createWithConfig(config)
+            );
         }
     );
 }

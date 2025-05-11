@@ -153,13 +153,16 @@ export abstract class Resource<T, B = unknown> {
                     signal
                 });
                 state.status = RequestStatus.LOADING;
-                await this.handleResponse(response, state);
                 return response;
             }
         );
-        sendRequest(instance, method, params).catch(error => {
-            state.error(ResourceError.wrap(error));
-        });
+        sendRequest(instance, method, params)
+            .then(response => {
+                return this.handleResponse(response, state);
+            })
+            .catch(error => {
+                state.error(ResourceError.wrap(error));
+            });
     }
     protected async *resolveResponseBody(response: HttpResponse) {
         const headers = await response.headers();
