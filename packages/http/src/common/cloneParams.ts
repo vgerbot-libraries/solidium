@@ -4,6 +4,7 @@ export function cloneParams(
     params: ExecuteRequestMethodParams
 ): ExecuteRequestMethodParams {
     return {
+        method: params.method,
         signal: params.signal,
         headers: params.headers.clone(),
         pathVariables: { ...params.pathVariables },

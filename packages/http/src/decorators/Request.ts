@@ -43,6 +43,7 @@ export function Request(options: RequestOptions) {
     ) {
         return function (this: unknown, ...args: unknown[]) {
             const params: ExecuteRequestMethodParams = {
+                method: methodMetadata.getHttpMethod(),
                 headers: methodMetadata.getHeaders().clone(),
                 pathVariables: {},
                 queryParams: new URLSearchParams(),
