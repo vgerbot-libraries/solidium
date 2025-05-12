@@ -1,4 +1,4 @@
-import { Cache, Endpoint, Get, PathVariable, restful } from '@vgerbot/http';
+import { Cache, Endpoint, Get, PathVariable, R, restful } from '@vgerbot/http';
 import { Auto, Signal, useService } from '@vgerbot/solidium';
 import { Inject } from '@vgerbot/ioc';
 import { createSignal } from 'solid-js';
@@ -10,7 +10,7 @@ import { createSignal } from 'solid-js';
 class JsonPlaceholderAPI {
     @Get('/posts/:id')
     @Cache({})
-    getPost(@PathVariable('id') id: number) {
+    getPost(@PathVariable('id') id: R<number>) {
         return restful<Post>(id);
     }
 
@@ -36,7 +36,7 @@ class PostService {
     @Inject()
     private api!: JsonPlaceholderAPI;
 
-    getPost(id: number) {
+    getPost(id: R<number>) {
         return this.api.getPost(id);
     }
 
@@ -51,7 +51,7 @@ export function PostViewer() {
     const [postId, setPostId] = createSignal(1);
 
     // Get the post data
-    const postResource = service.getPost(postId());
+    const postResource = service.getPost(postId);
 
     // Get all posts
     const postsResource = service.getPosts();
