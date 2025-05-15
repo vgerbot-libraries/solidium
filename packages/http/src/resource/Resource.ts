@@ -96,13 +96,14 @@ export abstract class Resource<T, B = unknown> {
     ) {
         return this.$state.subscribe(observerOrNext);
     }
-    async reload() {
+    async reload(force: boolean = false) {
         if (this.context) {
-            return this[EXECUTE]();
+            return this[EXECUTE](force);
         }
     }
 
     protected [EXECUTE](
+        force: boolean = false,
         state = this.ioc.getInstance(
             ResourceExecutionState
         ) as ResourceExecutionState<T, B>
@@ -117,6 +118,11 @@ export abstract class Resource<T, B = unknown> {
         this.$state.next(state);
 
         const { instance, method, params } = context;
+        // Add force parameter to the request params
+        const requestParams = {
+            ...params,
+            force
+        };
         state.status = RequestStatus.LOADING;
         let signal = params.signal;
         if (signal) {
@@ -156,7 +162,7 @@ export abstract class Resource<T, B = unknown> {
                 return response;
             }
         );
-        sendRequest(instance, method, params)
+        sendRequest(instance, method, requestParams)
             .then(response => {
                 return this.handleResponse(response, state);
             })

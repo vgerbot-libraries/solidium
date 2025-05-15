@@ -12,75 +12,10 @@ import {
 import { RequestMethod } from '../core/RequestMethod';
 import { HttpHeaders } from '../http/HttpHeaders';
 import { BlobByteStream } from '../http/streams/BlobByteStream';
-
-/**
- * Cache entry structure stored in the bucket
- */
-interface CacheEntry {
-    /** The cached response data */
-    response: {
-        status: number;
-        headers: Record<string, string[]>;
-        body: Uint8Array;
-    };
-    /** When the entry was cached */
-    cachedAt: number;
-    /** When the entry expires (based on Cache-Control or config) */
-    expiresAt: number;
-}
-/**
- * The function used to interpret all headers from a request and determine a time to live (ttl) number.
- * The possible returns are:
- * - positive `number`: used as the `ttl` value
- * - negative `number` or 0: the request will not be cached
- * - `null`: Use the default TTL number 300000ms (5 minutes)
- */
-export type HeaderInterpreter = (headers: HttpHeaders) => number | null;
-
-export interface CacheInterceptorConfig {
-    /**
-     * Time-to-live for cached responses in milliseconds or a function to determine TTL.
-     *
-     * If a number is provided, it sets a fixed TTL for all cached responses.
-     * If a function is provided, it allows dynamic TTL calculation based on response headers.
-     *
-     * @default 300000 (5 minutes)
-     */
-    ttl?: number | HeaderInterpreter;
-
-    /**
-     * Whether to respect Cache-Control headers from the response
-     * @default true
-     */
-    respectCacheControl?: boolean;
-
-    /**
-     * Custom function to determine if a request should be cached
-     */
-    shouldCache?: (
-        method: RequestMethod,
-        params: ExecuteRequestMethodParams
-    ) => boolean;
-
-    /**
-     * Custom function to generate a cache key
-     */
-    generateKey?: (
-        method: RequestMethod,
-        params: ExecuteRequestMethodParams
-    ) => string;
-
-    /**
-     * Name of the bucket to use for caching
-     * If not provided, uses the default bucket from HttpConfiguration
-     */
-    bucketName?: string;
-}
-
-const DEFAULT_CONFIG: CacheInterceptorConfig = {
-    ttl: 5 * 60 * 1000, // 5 minutes
-    respectCacheControl: true
-};
+import { CacheConfig } from './CacheConfig';
+import { CacheEntry } from './CacheEntry';
+import { DEFAULT_CACHE_CONFIG } from './constants';
+import { CachePolicies } from './CachePolicies';
 
 /**
  * An interceptor that caches HTTP responses and serves them from cache when appropriate.
@@ -95,7 +30,7 @@ const DEFAULT_CONFIG: CacheInterceptorConfig = {
  * class ExampleAPI {
  *   @Get('/user/:id')
  *   @Cache({
- *     ttl: 60 * 1000,
+ *     Policies.createTimeBasedPolicy(60 * 1000)
  *   })
  *   getUser(id: string) {
  *     return restful(id);
@@ -104,7 +39,7 @@ const DEFAULT_CONFIG: CacheInterceptorConfig = {
  * ```
  */
 export class CacheInterceptor implements Interceptor {
-    public static createWithConfig(config: CacheInterceptorConfig = {}) {
+    public static createWithConfig(config: CacheConfig = {}) {
         class SubCacheInterceptor extends CacheInterceptor {
             constructor() {
                 super(config);
@@ -113,7 +48,10 @@ export class CacheInterceptor implements Interceptor {
         return SubCacheInterceptor as InterceptorConstructor;
     }
 
-    private readonly config: CacheInterceptorConfig;
+    private readonly config: CacheConfig;
+    private get policy() {
+        return this.config.policy ?? CachePolicies.Default;
+    }
     private bucket?: Bucket;
 
     @Inject()
@@ -122,8 +60,8 @@ export class CacheInterceptor implements Interceptor {
     @Inject(DEFAULT_HTTP_CONFIGURATION)
     private httpConfig?: HttpConfiguration;
 
-    protected constructor(config: CacheInterceptorConfig = {}) {
-        this.config = { ...DEFAULT_CONFIG, ...config };
+    protected constructor(config: CacheConfig = {}) {
+        this.config = { ...DEFAULT_CACHE_CONFIG, ...config };
     }
 
     private async getBucket(): Promise<Bucket> {
@@ -164,11 +102,13 @@ export class CacheInterceptor implements Interceptor {
         method: RequestMethod,
         params: ExecuteRequestMethodParams
     ): boolean {
+        if (params.force) {
+            return false;
+        }
         if (this.config.shouldCache) {
             return this.config.shouldCache(method, params);
         }
-
-        return true;
+        return this.policy.shouldCache(method, params);
     }
 
     private getExpirationFromHeaders(headers: HttpHeaders): number | null {
@@ -210,7 +150,7 @@ export class CacheInterceptor implements Interceptor {
         params: ExecuteRequestMethodParams,
         next: InterceptorNextFunction
     ): Promise<HttpResponse> {
-        // Skip caching for non-cacheable methods
+        // Skip caching for non-cacheable methods or when force=true
         if (!this.shouldCache(method, params)) {
             return next(instance, method, params);
         }
@@ -221,7 +161,7 @@ export class CacheInterceptor implements Interceptor {
         // Try to get from cache
         const cachedEntry = await bucket.getItem<CacheEntry>(cacheKey);
 
-        if (cachedEntry && cachedEntry.expiresAt > Date.now()) {
+        if (cachedEntry && this.policy.isValid(cachedEntry, method, params)) {
             // Cache hit and not expired
             const { response } = cachedEntry;
 
@@ -247,12 +187,9 @@ export class CacheInterceptor implements Interceptor {
                 const bodyArrayBuffer = await body.readAsBuffer();
                 // Determine expiration time
                 const headerExpiration = this.getExpirationFromHeaders(headers);
+                const ttl = this.policy.getTTL(method, params);
                 const expiresAt =
-                    headerExpiration ??
-                    Date.now() +
-                        (typeof this.config.ttl === 'number'
-                            ? this.config.ttl
-                            : (this.config.ttl?.(headers) ?? 0));
+                    headerExpiration ?? (ttl === 0 ? 0 : Date.now() + ttl);
 
                 // Don't cache if expiration is 0 (no-cache)
                 if (expiresAt > 0) {
@@ -263,11 +200,20 @@ export class CacheInterceptor implements Interceptor {
                             body: new Uint8Array(bodyArrayBuffer)
                         },
                         cachedAt: Date.now(),
-                        expiresAt
+                        expiresAt,
+                        metadata: {}
                     };
 
+                    // use policy to override cache metadata
+                    const overrideEntry =
+                        this.policy.overrideCacheEntry?.(
+                            cacheEntry,
+                            method,
+                            params
+                        ) ?? cacheEntry;
+
                     // Store in cache
-                    await bucket.setItem(cacheKey, cacheEntry);
+                    await bucket.setItem(cacheKey, overrideEntry);
                 }
             });
         }

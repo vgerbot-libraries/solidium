@@ -96,7 +96,7 @@ export function PostViewer() {
                     )}
 
                     <button
-                        onClick={() => postsResource.reload()}
+                        onClick={() => postsResource.reload(true)}
                         disabled={postsResource.loading}
                     >
                         Reload Posts (Force Refresh)
@@ -136,7 +136,7 @@ export function PostViewer() {
                             Next Post
                         </button>
                         <button
-                            onClick={() => postResource.reload()}
+                            onClick={() => postResource.reload(true)}
                             style={{ 'margin-left': '10px' }}
                             disabled={postResource.loading}
                         >

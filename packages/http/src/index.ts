@@ -12,6 +12,7 @@ export * from './interceptors/RetryInterceptor';
 export * from './interceptors/CircuitBreakerInterceptor';
 export * from './interceptors/TimeoutInterceptor';
 export * from './interceptors/ErrorContextInterceptor';
+// export * from './interceptors/CacheInterceptor';
 
 // HTTP utilities
 export * from './http/HttpHeaders';
@@ -45,7 +46,6 @@ export * from './decorators/PathVariable';
 export * from './decorators/Query';
 export * from './decorators/Request';
 export * from './decorators/Payload';
-export * from './decorators/Cache';
 
 // Progress tracking
 export * from './progress/Progress';
@@ -70,3 +70,6 @@ export * from './resource/ResourceError';
 
 export * from './core/Reactive';
 export * from './core/EndpointInstance';
+
+// Cache management
+export * from './cache';

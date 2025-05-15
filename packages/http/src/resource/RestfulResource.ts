@@ -15,7 +15,7 @@ import { ResourceExecutionState } from './ResourceExecutionState';
 export class RestfulResource<T, E = unknown> extends Resource<T, E> {
     @Inject()
     private swrService!: SWRService;
-    protected [EXECUTE]() {
+    protected [EXECUTE](force = false) {
         const context = this.context;
         if (!context) {
             throw new Error('Execution context is not setup!');
@@ -36,12 +36,12 @@ export class RestfulResource<T, E = unknown> extends Resource<T, E> {
         if (mutate && swrConfig) {
             throw new Error('@SWR and @SWRMutation cannot be used together');
         }
-        const state = this.ioc.getInstance(
-            ResourceExecutionState
-        ) as ResourceExecutionState<T, E>;
 
         if (!swrConfig) {
-            return super[EXECUTE](state);
+            const state = this.ioc.getInstance(
+                ResourceExecutionState
+            ) as ResourceExecutionState<T, E>;
+            return super[EXECUTE](force, state);
         }
         const keygen = () => {
             if (typeof _keygen === 'string') {
@@ -56,7 +56,10 @@ export class RestfulResource<T, E = unknown> extends Resource<T, E> {
         const instance = this.swrService.useSWR(
             keygen,
             () => {
-                super[EXECUTE](state);
+                const state = this.ioc.getInstance(
+                    ResourceExecutionState
+                ) as ResourceExecutionState<T, E>;
+                super[EXECUTE](force, state);
                 return lastValueFrom(state).then(
                     () => state as ResourceExecutionState<unknown, unknown>
                 );

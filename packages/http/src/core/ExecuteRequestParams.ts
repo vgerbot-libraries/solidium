@@ -11,4 +11,8 @@ export interface ExecuteRequestMethodParams {
     payload?: BodyInit;
     adapter?: RequestAdapterConstructor;
     args: unknown[];
+    /**
+     * When true, indicates that the request should bypass cache
+     */
+    force?: boolean;
 }
