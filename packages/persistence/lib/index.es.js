@@ -655,10 +655,10 @@ function Prepared() {
 }
 class Bucket {
   constructor(config) {
-    var _a;
-    this.name = config.name;
+    var _a, _b;
+    this.name = (_a = config.name) !== null && _a !== undefined ? _a : '';
     this.serializer = config.serializer || new DefaultSerializer();
-    this.debug = (_a = config.debug) !== null && _a !== undefined ? _a : false;
+    this.debug = (_b = config.debug) !== null && _b !== undefined ? _b : false;
     const driver = config.driver;
     if (driver === DefaultDrivers.LOCAL_STORAGE) {
       this.driver = LocalStorageDriver.createInstance(this.name);
@@ -715,6 +715,9 @@ class Bucket {
   }
   clear() {
     return this.driver.clear();
+  }
+  removeItem(key) {
+    return this.driver.removeItem(key);
   }
   value(key) {
     return Storage({

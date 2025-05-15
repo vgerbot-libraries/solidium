@@ -111,6 +111,9 @@ export class Bucket {
     clear() {
         return this.driver.clear();
     }
+    removeItem(key: string) {
+        return this.driver.removeItem(key);
+    }
     value(key: string): PropertyDecorator {
         return Storage({
             bucket: this,

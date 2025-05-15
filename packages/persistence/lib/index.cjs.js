@@ -966,10 +966,10 @@ function Prepared() {
 }
 var Bucket = /** @class */function () {
   function Bucket(config) {
-    var _a;
-    this.name = config.name;
+    var _a, _b;
+    this.name = (_a = config.name) !== null && _a !== undefined ? _a : '';
     this.serializer = config.serializer || new DefaultSerializer();
-    this.debug = (_a = config.debug) !== null && _a !== undefined ? _a : false;
+    this.debug = (_b = config.debug) !== null && _b !== undefined ? _b : false;
     var driver = config.driver;
     if (driver === exports.DefaultDrivers.LOCAL_STORAGE) {
       this.driver = LocalStorageDriver.createInstance(this.name);
@@ -1053,6 +1053,9 @@ var Bucket = /** @class */function () {
   };
   Bucket.prototype.clear = function () {
     return this.driver.clear();
+  };
+  Bucket.prototype.removeItem = function (key) {
+    return this.driver.removeItem(key);
   };
   Bucket.prototype.value = function (key) {
     return Storage({
