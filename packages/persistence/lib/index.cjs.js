@@ -193,6 +193,52 @@ var ChangeBy;
   ChangeBy[ChangeBy["OTHER"] = 1] = "OTHER";
 })(ChangeBy || (ChangeBy = {}));
 
+/**
+ * Symbol to mark class with default storage options
+ * This is used internally to store and retrieve default storage options for a class
+ */
+var DEFAULT_STORAGE_OPTIONS = Symbol('solidium-default-storage-options');
+/**
+ * Class decorator to configure default storage options for all @Storage decorated properties
+ * in a class that don't specify their own options.
+ *
+ * @example
+ * ```typescript
+ * @DefaultStorage({
+ *   bucket: 'default-bucket-name'
+ * })
+ * class MyService {
+ *   @Signal()
+ *   @Storage() // Will use the default bucket from class decorator
+ *   myProperty: string = 'default value';
+ *
+ *   @Signal()
+ *   @Storage({ bucket: 'another-bucket' }) // Will override the default
+ *   anotherProperty: number = 42;
+ * }
+ * ```
+ */
+var DefaultStorage = function (options) {
+  if (options === undefined) {
+    options = {};
+  }
+  return solidium.defineClassDecoratorProcessor(DEFAULT_STORAGE_OPTIONS, {
+    beforeInstantiation: function (constructor) {
+      // Store the default options in class metadata using Mark
+      var classMetadata = ioc.ClassMetadata.getInstance(constructor);
+      classMetadata.marker().ctor(DEFAULT_STORAGE_OPTIONS, options);
+    }
+  });
+};
+/**
+ * Gets the default storage options for a class if they exist
+ * This is used internally by the Storage decorator
+ */
+function getDefaultStorageOptions(metadata) {
+  var ctorMarkInfo = metadata.getCtorMarkInfo();
+  return ctorMarkInfo === null || ctorMarkInfo === undefined ? undefined : ctorMarkInfo[DEFAULT_STORAGE_OPTIONS];
+}
+
 var Storage = function (options) {
   if (options === undefined) {
     options = {};
@@ -200,10 +246,14 @@ var Storage = function (options) {
   return solidium.defineMemberDecoratorProcessor('storage', {
     afterInstantiation: function (instance, member, metadata, container) {
       var _a;
+      // Get default options from class decorator if they exist
+      var defaultOptions = getDefaultStorageOptions(metadata);
+      // Merge options, with member-specific options taking precedence
+      var mergedOptions = __assign(__assign({}, defaultOptions), options);
       var _b = solidium.getSignal(instance, member),
         set = _b[1];
-      var key = (_a = options.key) !== null && _a !== undefined ? _a : member.toString();
-      var bucketOrName = options.bucket || DEFAULT_BUCKET;
+      var key = (_a = mergedOptions.key) !== null && _a !== undefined ? _a : member.toString();
+      var bucketOrName = mergedOptions.bucket || DEFAULT_BUCKET;
       var bucket = typeof bucketOrName != 'object' ? container.getInstance(bucketOrName) : bucketOrName;
       var observe = function () {
         return bucket.observe(key, function (event) {
@@ -242,7 +292,7 @@ var Storage = function (options) {
           }, function (newValue) {
             unobserve();
             if (bucket.debug) {
-              console.debug("[Storage] ".concat(instance.constructor.name, ".").concat(member.toString(), " \n                                        changed to ").concat(newValue).replace(/\s+/g, ' '));
+              console.debug("[Storage] ".concat(instance.constructor.name, ".").concat(member.toString(), "\n                                        changed to ").concat(newValue).replace(/\s+/g, ' '));
             }
             bucket.setItem(key, newValue).finally(function () {
               unobserve = observe();
@@ -1142,9 +1192,12 @@ var Persistence = /** @class */function () {
 exports.Bucket = Bucket;
 exports.DEFAULT_BUCKET = DEFAULT_BUCKET;
 exports.DEFAULT_BUCKET_CONFIGURATION = DEFAULT_BUCKET_CONFIGURATION;
+exports.DEFAULT_STORAGE_OPTIONS = DEFAULT_STORAGE_OPTIONS;
 exports.DefaultSerializer = DefaultSerializer;
+exports.DefaultStorage = DefaultStorage;
 exports.OnStorageLoad = OnStorageLoad;
 exports.Persistence = Persistence;
 exports.Storage = Storage;
+exports.getDefaultStorageOptions = getDefaultStorageOptions;
 exports.notifyStorageLoad = notifyStorageLoad;
 //# sourceMappingURL=index.cjs.js.map

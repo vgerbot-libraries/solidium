@@ -11,6 +11,7 @@ import { DEFAULT_BUCKET } from '../core/constants';
 import { notifyStorageLoad } from './OnStorageLoad';
 import { ActionType } from '../types/ActionType';
 import { ChangeBy } from '../types/ChangeBy';
+import { getDefaultStorageOptions } from './DefaultStorage';
 
 export interface StorageOptions {
     bucket?: string | symbol | Bucket;
@@ -25,9 +26,18 @@ export const Storage = (options: StorageOptions = {}) => {
             metadata: ClassMetadataReader<T>,
             container: ApplicationContext
         ) {
+            // Get default options from class decorator if they exist
+            const defaultOptions = getDefaultStorageOptions(metadata);
+
+            // Merge options, with member-specific options taking precedence
+            const mergedOptions: StorageOptions = {
+                ...defaultOptions,
+                ...options
+            };
+
             const [, set] = getSignal(instance, member);
-            const key = options.key ?? member.toString();
-            const bucketOrName = options.bucket || DEFAULT_BUCKET;
+            const key = mergedOptions.key ?? member.toString();
+            const bucketOrName = mergedOptions.bucket || DEFAULT_BUCKET;
 
             const bucket =
                 typeof bucketOrName != 'object'
@@ -80,7 +90,7 @@ export const Storage = (options: StorageOptions = {}) => {
                                 unobserve();
                                 if (bucket.debug) {
                                     console.debug(
-                                        `[Storage] ${instance.constructor.name}.${member.toString()} 
+                                        `[Storage] ${instance.constructor.name}.${member.toString()}
                                         changed to ${newValue}`.replace(
                                             /\s+/g,
                                             ' '

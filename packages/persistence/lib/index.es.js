@@ -1,5 +1,5 @@
-import { Inject, Factory, PostInject } from '@vgerbot/ioc';
-import { defineMemberDecoratorProcessor, getSignal } from '@vgerbot/solidium';
+import { ClassMetadata, Inject, Factory, PostInject } from '@vgerbot/ioc';
+import { defineClassDecoratorProcessor, defineMemberDecoratorProcessor, getSignal } from '@vgerbot/solidium';
 import { getOwner, runWithOwner, createEffect, on, onCleanup } from 'solid-js';
 import { encode, decode } from '@vgerbot/msgpack-ext';
 import { openDB, deleteDB } from 'idb';
@@ -142,13 +142,60 @@ var ChangeBy;
   ChangeBy[ChangeBy["OTHER"] = 1] = "OTHER";
 })(ChangeBy || (ChangeBy = {}));
 
+/**
+ * Symbol to mark class with default storage options
+ * This is used internally to store and retrieve default storage options for a class
+ */
+const DEFAULT_STORAGE_OPTIONS = Symbol('solidium-default-storage-options');
+/**
+ * Class decorator to configure default storage options for all @Storage decorated properties
+ * in a class that don't specify their own options.
+ *
+ * @example
+ * ```typescript
+ * @DefaultStorage({
+ *   bucket: 'default-bucket-name'
+ * })
+ * class MyService {
+ *   @Signal()
+ *   @Storage() // Will use the default bucket from class decorator
+ *   myProperty: string = 'default value';
+ *
+ *   @Signal()
+ *   @Storage({ bucket: 'another-bucket' }) // Will override the default
+ *   anotherProperty: number = 42;
+ * }
+ * ```
+ */
+const DefaultStorage = (options = {}) => {
+  return defineClassDecoratorProcessor(DEFAULT_STORAGE_OPTIONS, {
+    beforeInstantiation(constructor) {
+      // Store the default options in class metadata using Mark
+      const classMetadata = ClassMetadata.getInstance(constructor);
+      classMetadata.marker().ctor(DEFAULT_STORAGE_OPTIONS, options);
+    }
+  });
+};
+/**
+ * Gets the default storage options for a class if they exist
+ * This is used internally by the Storage decorator
+ */
+function getDefaultStorageOptions(metadata) {
+  const ctorMarkInfo = metadata.getCtorMarkInfo();
+  return ctorMarkInfo === null || ctorMarkInfo === undefined ? undefined : ctorMarkInfo[DEFAULT_STORAGE_OPTIONS];
+}
+
 const Storage = (options = {}) => {
   return defineMemberDecoratorProcessor('storage', {
     afterInstantiation(instance, member, metadata, container) {
       var _a;
+      // Get default options from class decorator if they exist
+      const defaultOptions = getDefaultStorageOptions(metadata);
+      // Merge options, with member-specific options taking precedence
+      const mergedOptions = Object.assign(Object.assign({}, defaultOptions), options);
       const [, set] = getSignal(instance, member);
-      const key = (_a = options.key) !== null && _a !== undefined ? _a : member.toString();
-      const bucketOrName = options.bucket || DEFAULT_BUCKET;
+      const key = (_a = mergedOptions.key) !== null && _a !== undefined ? _a : member.toString();
+      const bucketOrName = mergedOptions.bucket || DEFAULT_BUCKET;
       const bucket = typeof bucketOrName != 'object' ? container.getInstance(bucketOrName) : bucketOrName;
       const observe = () => {
         return bucket.observe(key, event => {
@@ -187,7 +234,7 @@ const Storage = (options = {}) => {
           }, newValue => {
             unobserve();
             if (bucket.debug) {
-              console.debug(`[Storage] ${instance.constructor.name}.${member.toString()} 
+              console.debug(`[Storage] ${instance.constructor.name}.${member.toString()}
                                         changed to ${newValue}`.replace(/\s+/g, ' '));
             }
             bucket.setItem(key, newValue).finally(() => {
@@ -796,5 +843,5 @@ __decorate([Inject(DEFAULT_BUCKET_CONFIGURATION), __metadata("design:type", Obje
 __decorate([Factory(DEFAULT_BUCKET), __metadata("design:type", Function), __metadata("design:paramtypes", []), __metadata("design:returntype", undefined)], Persistence.prototype, "getDefaultBucket", null);
 __decorate([PostInject(), __metadata("design:type", Function), __metadata("design:paramtypes", []), __metadata("design:returntype", undefined)], Persistence.prototype, "init", null);
 
-export { Bucket, DEFAULT_BUCKET, DEFAULT_BUCKET_CONFIGURATION, DefaultDrivers, DefaultSerializer, OnStorageLoad, Persistence, Storage, notifyStorageLoad };
+export { Bucket, DEFAULT_BUCKET, DEFAULT_BUCKET_CONFIGURATION, DEFAULT_STORAGE_OPTIONS, DefaultDrivers, DefaultSerializer, DefaultStorage, OnStorageLoad, Persistence, Storage, getDefaultStorageOptions, notifyStorageLoad };
 //# sourceMappingURL=index.es.js.map

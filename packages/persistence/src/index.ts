@@ -8,6 +8,7 @@ export * from './core/driver/ChangeEvent';
 export * from './core/serializer/DataSerializer';
 export * from './core/serializer/DefaultSerializer';
 export * from './decorators/Storage';
+export * from './decorators/DefaultStorage';
 export * from './decorators/OnStorageLoad';
 export * from './drivers/DefaultDrivers';
 export * from './core/constants';
