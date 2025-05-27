@@ -1,3 +1,9 @@
+import { ThemeSwitcher } from '../../components/theme-switcher';
+
 export function MainPage() {
-    return <></>;
+    return (
+        <>
+            <ThemeSwitcher></ThemeSwitcher>
+        </>
+    );
 }

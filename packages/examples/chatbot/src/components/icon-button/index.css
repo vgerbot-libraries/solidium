@@ -1,0 +1,11 @@
+.icon-button {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: .5rem;
+    cursor: pointer;
+    
+    background-image: none;
+    background-color: transparent;
+    text-transform: none;
+}
