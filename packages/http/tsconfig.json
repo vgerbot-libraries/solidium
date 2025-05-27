@@ -4,8 +4,7 @@
     "compilerOptions": {
         "composite": true,
         "rootDir": "../../",
-        "declaration": true,
-        "emitDecoratorMetadata": false
+        "declaration": true
     },
     "references": [{
         "path": "../solidium"

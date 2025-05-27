@@ -1,8 +1,8 @@
 (function (global, factory) {
-    typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('@vgerbot/ioc'), require('@vgerbot/lazy'), require('@vgerbot/solidium'), require('rxjs'), require('solid-js'), require('@solid-primitives/scheduled')) :
-    typeof define === 'function' && define.amd ? define(['exports', '@vgerbot/ioc', '@vgerbot/lazy', '@vgerbot/solidium', 'rxjs', 'solid-js', '@solid-primitives/scheduled'], factory) :
-    (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.SolidiumHttp = {}, global.IOC, global.lazy, global.Solidium, global.rxjs, global.solidJs, global.scheduled));
-})(this, (function (exports, ioc, lazy, solidium, rxjs, solidJs, scheduled) { 'use strict';
+    typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('@vgerbot/ioc'), require('@vgerbot/lazy'), require('@vgerbot/solidium-persistence'), require('@vgerbot/solidium'), require('rxjs'), require('solid-js'), require('@solid-primitives/scheduled')) :
+    typeof define === 'function' && define.amd ? define(['exports', '@vgerbot/ioc', '@vgerbot/lazy', '@vgerbot/solidium-persistence', '@vgerbot/solidium', 'rxjs', 'solid-js', '@solid-primitives/scheduled'], factory) :
+    (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.SolidiumHttp = {}, global.IOC, global.lazy, global.solidiumPersistence, global.Solidium, global.rxjs, global.solidJs, global.scheduled));
+})(this, (function (exports, ioc, lazy, solidiumPersistence, solidium, rxjs, solidJs, scheduled) { 'use strict';
 
     function isInterceptorConstructor(value) {
       return typeof value === 'function' && typeof value.prototype['invoke'] === 'function';
@@ -58,6 +58,10 @@
         if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
         else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
         return c > 3 && r && Object.defineProperty(target, key, r), r;
+    }
+
+    function __metadata(metadataKey, metadataValue) {
+        if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(metadataKey, metadataValue);
     }
 
     function __awaiter(thisArg, _arguments, P, generator) {
@@ -161,6 +165,36 @@
         this.source = source;
         this.init = init;
       }
+      HttpResponse.of = function (body, headers, status, method) {
+        return new HttpResponse({
+          status: function () {
+            return Promise.resolve(status);
+          },
+          headers: function () {
+            return Promise.resolve(headers);
+          },
+          body: function () {
+            return body;
+          },
+          onDownload: function () {
+            return function () {
+              return undefined;
+            };
+          },
+          onUpload: function () {
+            return function () {
+              return undefined;
+            };
+          },
+          onBodyComplete: function () {
+            return function () {
+              return undefined;
+            };
+          }
+        }, {
+          method: method
+        });
+      };
       HttpResponse.prototype.status = function () {
         return this.source.status();
       };
@@ -307,6 +341,9 @@
       };
       HttpResponse.prototype.onDownload = function (listener) {
         return this.source.onDownload(listener);
+      };
+      HttpResponse.prototype.onBodyComplete = function (listener) {
+        return this.source.onBodyComplete(listener);
       };
       return HttpResponse;
     }();
@@ -626,8 +663,133 @@
       HttpHeaders.prototype.clear = function () {
         this.headers.clear();
       };
+      HttpHeaders.prototype.getContentLength = function () {
+        var _a;
+        var contentLengthStr = ((_a = this.get('content-length')) !== null && _a !== undefined ? _a : [])[0];
+        return parseInt(contentLengthStr) || 0;
+      };
       return HttpHeaders;
     }();
+
+    function readStream(stream) {
+      return __asyncGenerator(this, arguments, function readStream_1() {
+        var reader, _a, value, done;
+        return __generator(this, function (_b) {
+          switch (_b.label) {
+            case 0:
+              reader = stream.getReader();
+              _b.label = 1;
+            case 1:
+              _b.trys.push([1,, 7, 8]);
+              _b.label = 2;
+            case 2:
+              return [4 /*yield*/, __await(reader.read())];
+            case 3:
+              _a = _b.sent(), value = _a.value, done = _a.done;
+              if (done) {
+                return [3 /*break*/, 6];
+              }
+              return [4 /*yield*/, __await(value)];
+            case 4:
+              return [4 /*yield*/, _b.sent()];
+            case 5:
+              _b.sent();
+              return [3 /*break*/, 2];
+            case 6:
+              return [3 /*break*/, 8];
+            case 7:
+              reader.releaseLock();
+              return [7 /*endfinally*/];
+            case 8:
+              return [2 /*return*/];
+          }
+        });
+      });
+    }
+
+    function createProgressiveReadableStream(stream, progress) {
+      var _this = this;
+      if (progress === undefined) {
+        progress = function () {
+          return undefined;
+        };
+      }
+      var loaded = 0;
+      var abortController = new AbortController();
+      return new ReadableStream({
+        start: function (controller) {
+          return __awaiter(_this, undefined, undefined, function () {
+            var _a, _b, _c, chunk, e_1_1, e_2;
+            var _d, e_1, _e, _f;
+            return __generator(this, function (_g) {
+              switch (_g.label) {
+                case 0:
+                  _g.trys.push([0, 13, 14, 15]);
+                  progress(loaded);
+                  _g.label = 1;
+                case 1:
+                  _g.trys.push([1, 6, 7, 12]);
+                  _a = true, _b = __asyncValues(readStream(stream));
+                  _g.label = 2;
+                case 2:
+                  return [4 /*yield*/, _b.next()];
+                case 3:
+                  if (!(_c = _g.sent(), _d = _c.done, !_d)) return [3 /*break*/, 5];
+                  _f = _c.value;
+                  _a = false;
+                  chunk = _f;
+                  loaded += chunk.byteLength;
+                  progress(loaded);
+                  controller.enqueue(chunk.buffer);
+                  if (abortController.signal.aborted) {
+                    return [3 /*break*/, 5];
+                  }
+                  _g.label = 4;
+                case 4:
+                  _a = true;
+                  return [3 /*break*/, 2];
+                case 5:
+                  return [3 /*break*/, 12];
+                case 6:
+                  e_1_1 = _g.sent();
+                  e_1 = {
+                    error: e_1_1
+                  };
+                  return [3 /*break*/, 12];
+                case 7:
+                  _g.trys.push([7,, 10, 11]);
+                  if (!(!_a && !_d && (_e = _b.return))) return [3 /*break*/, 9];
+                  return [4 /*yield*/, _e.call(_b)];
+                case 8:
+                  _g.sent();
+                  _g.label = 9;
+                case 9:
+                  return [3 /*break*/, 11];
+                case 10:
+                  if (e_1) throw e_1.error;
+                  return [7 /*endfinally*/];
+                case 11:
+                  return [7 /*endfinally*/];
+                case 12:
+                  return [3 /*break*/, 15];
+                case 13:
+                  e_2 = _g.sent();
+                  controller.error(e_2);
+                  return [3 /*break*/, 15];
+                case 14:
+                  controller.close();
+                  return [7 /*endfinally*/];
+                case 15:
+                  return [2 /*return*/];
+              }
+            });
+          });
+        },
+        cancel: function () {
+          abortController.abort();
+        }
+      });
+    }
 
     var Progress = /** @class */function () {
       function Progress(total, loaded, chunk) {
@@ -661,117 +823,40 @@
       return ProgressiveByteStream;
     }();
 
-    var NativeReadableStream = /** @class */function (_super) {
-      __extends(NativeReadableStream, _super);
-      function NativeReadableStream(contentLength, stream) {
-        var _this = _super.call(this) || this;
-        _this.contentLength = contentLength;
-        _this.stream = stream;
-        return _this;
-      }
-      NativeReadableStream.prototype.total = function () {
-        return Promise.resolve(this.contentLength);
-      };
-      NativeReadableStream.prototype.readAsBuffer = function () {
-        return __awaiter(this, undefined, undefined, function () {
-          var reader, chunks, _a, done, value, realTotal, result, offset, _i, chunks_1, chunk;
-          return __generator(this, function (_b) {
-            switch (_b.label) {
-              case 0:
-                reader = this.readAsStream().getReader();
-                chunks = [];
-                _b.label = 1;
-              case 1:
-                return [4 /*yield*/, reader.read()];
-              case 2:
-                _a = _b.sent(), done = _a.done, value = _a.value;
-                if (done) {
-                  return [3 /*break*/, 3];
-                }
-                chunks.push(new Uint8Array(value));
-                return [3 /*break*/, 1];
-              case 3:
-                realTotal = chunks.reduce(function (sum, it) {
-                  return sum + it.byteLength;
-                }, 0);
-                result = new Uint8Array(realTotal);
-                {
-                  offset = 0;
-                  for (_i = 0, chunks_1 = chunks; _i < chunks_1.length; _i++) {
-                    chunk = chunks_1[_i];
-                    result.set(chunk, offset);
-                    offset += chunk.byteLength;
-                  }
-                }
-                return [2 /*return*/, result.buffer];
-            }
-          });
-        });
-      };
-      NativeReadableStream.prototype.readAsStream = function () {
-        var stream = this.stream;
-        var total = this.contentLength;
-        var loaded = 0;
-        // eslint-disable-next-line @typescript-eslint/no-this-alias
-        var that = this;
-        return new ReadableStream({
-          start: function (controller) {
-            that.updateProgress(new Progress(total, 0));
-            var reader = stream.getReader();
-            reader.read().then(function process(_a) {
-              var done = _a.done,
-                value = _a.value;
-              if (done) {
-                controller.close();
-                return;
-              }
-              controller.enqueue(value);
-              loaded += value.byteLength;
-              that.updateProgress(new Progress(total, loaded));
-              reader.read().then(process);
-            });
-          }
-        });
-      };
-      NativeReadableStream.prototype.readAsBlob = function () {
-        return __awaiter(this, arguments, undefined, function (contentType) {
-          var reader, chunks, _a, chunk, done;
-          if (contentType === undefined) {
-            contentType = 'application/octet-stream';
-          }
-          return __generator(this, function (_b) {
-            switch (_b.label) {
-              case 0:
-                reader = this.readAsStream().getReader();
-                chunks = [];
-                _b.label = 1;
-              case 1:
-                return [4 /*yield*/, reader.read()];
-              case 2:
-                _a = _b.sent(), chunk = _a.value, done = _a.done;
-                if (done) {
-                  return [3 /*break*/, 3];
-                }
-                chunks.push(new Blob([chunk]));
-                return [3 /*break*/, 1];
-              case 3:
-                return [2 /*return*/, new Blob(chunks, {
-                  type: contentType
-                })];
-            }
-          });
-        });
-      };
-      return NativeReadableStream;
-    }(ProgressiveByteStream);
-
     var BlobByteStream = /** @class */function (_super) {
       __extends(BlobByteStream, _super);
       function BlobByteStream(blob) {
-        return _super.call(this, blob.size, blob.stream()) || this;
+        var _this = _super.call(this) || this;
+        _this.blob = blob;
+        return _this;
       }
+      BlobByteStream.prototype.readAsStream = function () {
+        var _this = this;
+        var total = this.blob.size;
+        return createProgressiveReadableStream(this.blob.stream(), function (loaded) {
+          _this.updateProgress(new Progress(total, loaded));
+        });
+      };
+      BlobByteStream.prototype.readAsBlob = function (contentType) {
+        return __awaiter(this, undefined, undefined, function () {
+          return __generator(this, function (_a) {
+            if (contentType === this.blob.type) {
+              return [2 /*return*/, this.blob];
+            }
+            return [2 /*return*/, new Blob([this.blob], {
+              type: contentType
+            })];
+          });
+        });
+      };
+      BlobByteStream.prototype.readAsBuffer = function () {
+        return this.blob.arrayBuffer();
+      };
+      BlobByteStream.prototype.total = function () {
+        return Promise.resolve(this.blob.size);
+      };
       return BlobByteStream;
-    }(NativeReadableStream);
+    }(ProgressiveByteStream);
 
     var IGNORE_DUPLICATE_OF = new Set(['age', 'authorization', 'content-length', 'content-type', 'etag', 'expires', 'from', 'host', 'if-modified-since', 'if-unmodified-since', 'last-modified', 'location', 'max-forwards', 'proxy-authorization', 'referer', 'retry-after', 'user-agent']);
     function parseHeaders(rawHeaders) {
@@ -912,6 +997,18 @@
               },
               onUpload: function (listener) {
                 return events.on('upload', listener);
+              },
+              onBodyComplete: function (listener) {
+                var isListenerCancelled = false;
+                bodyDefer.promise.then(function (body) {
+                  if (isListenerCancelled) {
+                    return;
+                  }
+                  listener(body);
+                });
+                return function () {
+                  isListenerCancelled = true;
+                };
               }
             }];
           });
@@ -1600,14 +1697,14 @@
 
     var ErrorContextInterceptor = /** @class */function () {
       function ErrorContextInterceptor() {}
-      ErrorContextInterceptor.prototype.invoke = function (method, params, next) {
+      ErrorContextInterceptor.prototype.invoke = function (instance, method, params, next) {
         return __awaiter(this, undefined, undefined, function () {
           var error_1;
           return __generator(this, function (_a) {
             switch (_a.label) {
               case 0:
                 _a.trys.push([0, 2,, 3]);
-                return [4 /*yield*/, next(method, params)];
+                return [4 /*yield*/, next(instance, method, params)];
               case 1:
                 return [2 /*return*/, _a.sent()];
               case 2:
@@ -1663,7 +1760,7 @@
           return setTimeout(resolve, ms);
         });
       };
-      RetryInterceptor.prototype.invoke = function (method, params, next) {
+      RetryInterceptor.prototype.invoke = function (instance, method, params, next) {
         return __awaiter(this, undefined, undefined, function () {
           function throwMaxRetryAttempsReachedError(error) {
             throw new MaxRetryAttemptsReachedError(attempt, error);
@@ -1680,7 +1777,7 @@
                 _a.label = 2;
               case 2:
                 _a.trys.push([2, 4,, 7]);
-                return [4 /*yield*/, next(method, params)];
+                return [4 /*yield*/, next(instance, method, params)];
               case 3:
                 return [2 /*return*/, _a.sent()];
               case 4:
@@ -1753,7 +1850,7 @@
         }
         this.config = __assign(__assign({}, DEFAULT_CONFIG$1), config);
       }
-      TimeoutInterceptor.prototype.invoke = function (method, params, next) {
+      TimeoutInterceptor.prototype.invoke = function (instance, method, params, next) {
         return __awaiter(this, undefined, undefined, function () {
           var controller, timeoutId, signal;
           var _this = this;
@@ -1768,7 +1865,7 @@
               case 1:
                 _a.trys.push([1,, 3, 4]);
                 signal = mergeAbortSignal(params.signal, controller.signal);
-                return [4 /*yield*/, Promise.race([next(method, __assign(__assign({}, params), {
+                return [4 /*yield*/, Promise.race([next(instance, method, __assign(__assign({}, params), {
                   signal: signal
                 })), new Promise(function (_, reject) {
                   return setTimeout(function () {
@@ -1803,10 +1900,9 @@
     var ADAPTER = Symbol('endpoint-adapter');
     /** Stores the interceptor construction logic for an endpoint */
     var CONSTRUCT_INTERCEPTORS = Symbol('endpoint-construct-interceptors');
-    /** Stores the SWR instances for an endpoint */
-    var SWR_INSTANCES = Symbol('swr-instances');
     var ABORT_CONTROLLER = Symbol('abort-controller');
     var APPLICATION_CONTEXT = Symbol('application-context');
+    var HTTP_CONFIGURATION = Symbol('http-configuration');
 
     /**
      * Represents an error that occurred during resource processing
@@ -1911,14 +2007,14 @@
 
     var ErrorWrappingInterceptor = /** @class */function () {
       function ErrorWrappingInterceptor() {}
-      ErrorWrappingInterceptor.prototype.invoke = function (method, params, next) {
+      ErrorWrappingInterceptor.prototype.invoke = function (instance, method, params, next) {
         return __awaiter(this, undefined, undefined, function () {
           var response, error_1, abortError, networkError, timeoutError, parseError;
           return __generator(this, function (_a) {
             switch (_a.label) {
               case 0:
                 _a.trys.push([0, 2,, 3]);
-                return [4 /*yield*/, next(method, params)];
+                return [4 /*yield*/, next(instance, method, params)];
               case 1:
                 response = _a.sent();
                 return [2 /*return*/, response];
@@ -1968,7 +2064,11 @@
           this.baseInterceptors.push(new RetryInterceptor(retryConfig));
         }
       }
-      RequestMethod.prototype.getAlInterceptors = function (instance) {
+      RequestMethod.get = function (instance, name) {
+        var _a;
+        return (_a = instance[METHODS]) === null || _a === undefined ? undefined : _a.get(name);
+      };
+      RequestMethod.prototype.getAllInterceptors = function (instance) {
         var timeout = this.metadata.getTimeout() || this.endpointMetadata.getTimeout();
         var extInterceptors = [];
         if (timeout > 0) {
@@ -2055,7 +2155,7 @@
       CircuitBreakerInterceptor.prototype.shouldReset = function () {
         return this.state === 'OPEN' && Date.now() - this.lastFailureTime >= this.config.resetTimeout;
       };
-      CircuitBreakerInterceptor.prototype.invoke = function (method, params, next) {
+      CircuitBreakerInterceptor.prototype.invoke = function (instance, method, params, next) {
         return __awaiter(this, undefined, undefined, function () {
           var response, error_1;
           return __generator(this, function (_a) {
@@ -2071,7 +2171,7 @@
                 _a.label = 1;
               case 1:
                 _a.trys.push([1, 3,, 4]);
-                return [4 /*yield*/, next(method, params)];
+                return [4 /*yield*/, next(instance, method, params)];
               case 2:
                 response = _a.sent();
                 if (this.state === 'HALF_OPEN') {
@@ -2105,6 +2205,203 @@
       }
       return CircuitBreakerError;
     }(HttpError);
+
+    var NativeReadableStream = /** @class */function (_super) {
+      __extends(NativeReadableStream, _super);
+      function NativeReadableStream(contentLength, stream) {
+        var _this = _super.call(this) || this;
+        _this.contentLength = contentLength;
+        _this.stream = stream;
+        _this.blobPromise = null;
+        return _this;
+      }
+      NativeReadableStream.prototype.total = function () {
+        return Promise.resolve(this.contentLength);
+      };
+      NativeReadableStream.prototype.readAsStoredBlob = function () {
+        return __awaiter(this, undefined, undefined, function () {
+          var total, loaded;
+          var _this = this;
+          return __generator(this, function (_a) {
+            if (this.blobPromise !== null) {
+              return [2 /*return*/, this.blobPromise];
+            }
+            total = this.contentLength;
+            loaded = 0;
+            this.blobPromise = new Promise(function (resolve, reject) {
+              var chunks = [];
+              _this.updateProgress(new Progress(total, 0));
+              (function () {
+                return __awaiter(_this, undefined, undefined, function () {
+                  var _a, _b, _c, chunk, e_1_1, blob;
+                  var _d, e_1, _e, _f;
+                  return __generator(this, function (_g) {
+                    switch (_g.label) {
+                      case 0:
+                        _g.trys.push([0, 5, 6, 11]);
+                        _a = true, _b = __asyncValues(readStream(this.stream));
+                        _g.label = 1;
+                      case 1:
+                        return [4 /*yield*/, _b.next()];
+                      case 2:
+                        if (!(_c = _g.sent(), _d = _c.done, !_d)) return [3 /*break*/, 4];
+                        _f = _c.value;
+                        _a = false;
+                        chunk = _f;
+                        loaded += chunk.byteLength;
+                        chunks.push(chunk);
+                        this.updateProgress(new Progress(total, loaded));
+                        _g.label = 3;
+                      case 3:
+                        _a = true;
+                        return [3 /*break*/, 1];
+                      case 4:
+                        return [3 /*break*/, 11];
+                      case 5:
+                        e_1_1 = _g.sent();
+                        e_1 = {
+                          error: e_1_1
+                        };
+                        return [3 /*break*/, 11];
+                      case 6:
+                        _g.trys.push([6,, 9, 10]);
+                        if (!(!_a && !_d && (_e = _b.return))) return [3 /*break*/, 8];
+                        return [4 /*yield*/, _e.call(_b)];
+                      case 7:
+                        _g.sent();
+                        _g.label = 8;
+                      case 8:
+                        return [3 /*break*/, 10];
+                      case 9:
+                        if (e_1) throw e_1.error;
+                        return [7 /*endfinally*/];
+                      case 10:
+                        return [7 /*endfinally*/];
+                      case 11:
+                        blob = new Blob(chunks);
+                        resolve(blob);
+                        return [2 /*return*/];
+                    }
+                  });
+                });
+              })().catch(reject);
+            });
+            return [2 /*return*/, this.blobPromise];
+          });
+        });
+      };
+      NativeReadableStream.prototype.readAsBuffer = function () {
+        return __awaiter(this, undefined, undefined, function () {
+          var blob;
+          return __generator(this, function (_a) {
+            switch (_a.label) {
+              case 0:
+                return [4 /*yield*/, this.readAsStoredBlob()];
+              case 1:
+                blob = _a.sent();
+                return [4 /*yield*/, blob.arrayBuffer()];
+              case 2:
+                return [2 /*return*/, _a.sent()];
+            }
+          });
+        });
+      };
+      NativeReadableStream.prototype.readAsStream = function () {
+        var _this = this;
+        return new ReadableStream({
+          start: function (controller) {
+            return __awaiter(_this, undefined, undefined, function () {
+              var blob, blobStream, _a, _b, _c, chunk, e_2_1, error_1;
+              var _d, e_2, _e, _f;
+              return __generator(this, function (_g) {
+                switch (_g.label) {
+                  case 0:
+                    _g.trys.push([0, 14,, 15]);
+                    return [4 /*yield*/, this.readAsStoredBlob()];
+                  case 1:
+                    blob = _g.sent();
+                    blobStream = blob.stream();
+                    _g.label = 2;
+                  case 2:
+                    _g.trys.push([2, 7, 8, 13]);
+                    _a = true, _b = __asyncValues(readStream(blobStream));
+                    _g.label = 3;
+                  case 3:
+                    return [4 /*yield*/, _b.next()];
+                  case 4:
+                    if (!(_c = _g.sent(), _d = _c.done, !_d)) return [3 /*break*/, 6];
+                    _f = _c.value;
+                    _a = false;
+                    chunk = _f;
+                    controller.enqueue(chunk.buffer);
+                    _g.label = 5;
+                  case 5:
+                    _a = true;
+                    return [3 /*break*/, 3];
+                  case 6:
+                    return [3 /*break*/, 13];
+                  case 7:
+                    e_2_1 = _g.sent();
+                    e_2 = {
+                      error: e_2_1
+                    };
+                    return [3 /*break*/, 13];
+                  case 8:
+                    _g.trys.push([8,, 11, 12]);
+                    if (!(!_a && !_d && (_e = _b.return))) return [3 /*break*/, 10];
+                    return [4 /*yield*/, _e.call(_b)];
+                  case 9:
+                    _g.sent();
+                    _g.label = 10;
+                  case 10:
+                    return [3 /*break*/, 12];
+                  case 11:
+                    if (e_2) throw e_2.error;
+                    return [7 /*endfinally*/];
+                  case 12:
+                    return [7 /*endfinally*/];
+                  case 13:
+                    controller.close();
+                    return [3 /*break*/, 15];
+                  case 14:
+                    error_1 = _g.sent();
+                    console.error('Error in readAsStream:', error_1);
+                    controller.error(error_1);
+                    return [3 /*break*/, 15];
+                  case 15:
+                    return [2 /*return*/];
+                }
+              });
+            });
+          }
+        });
+      };
+      NativeReadableStream.prototype.readAsBlob = function () {
+        return __awaiter(this, arguments, undefined, function (contentType) {
+          var blob;
+          if (contentType === undefined) {
+            contentType = 'application/octet-stream';
+          }
+          return __generator(this, function (_a) {
+            switch (_a.label) {
+              case 0:
+                return [4 /*yield*/, this.readAsStoredBlob()];
+              case 1:
+                blob = _a.sent();
+                // If the requested content type is different from the stored blob's type,
+                // create a new blob with the requested type
+                if (blob.type !== contentType) {
+                  return [2 /*return*/, new Blob([blob], {
+                    type: contentType
+                  })];
+                }
+                return [2 /*return*/, blob];
+            }
+          });
+        });
+      };
+      return NativeReadableStream;
+    }(ProgressiveByteStream);
 
     var FetchRequestAdapter = /** @class */function () {
       function FetchRequestAdapter(options) {
@@ -2178,6 +2475,18 @@
                 return function () {
                   return undefined;
                 };
+              },
+              onBodyComplete: function (listener) {
+                var isListenerCancelled = false;
+                bodyDefer.promise.then(function (body) {
+                  if (isListenerCancelled) {
+                    return;
+                  }
+                  listener(body);
+                });
+                return function () {
+                  isListenerCancelled = true;
+                };
               }
             }];
           });
@@ -2186,10 +2495,34 @@
       return FetchRequestAdapter;
     }();
 
+    var DEFAULT_HTTP_CONFIGURATION = Symbol('solidium-default-http-configuration');
+    /** @class */(function () {
+      function Http() {}
+      Http.configure = function (config) {
+        /** @class */(function () {
+          function HttpConfigurationFactory() {}
+          HttpConfigurationFactory.prototype.produce = function () {
+            var _a;
+            (_a = config.cacheBucket) !== null && _a !== undefined ? _a : config.cacheBucket = this.defaultBucket.name;
+            return config;
+          };
+          __decorate([ioc.Inject(), __metadata("design:type", solidiumPersistence.Persistence)], HttpConfigurationFactory.prototype, "persistence", undefined);
+          __decorate([ioc.Inject(solidiumPersistence.DEFAULT_BUCKET), __metadata("design:type", solidiumPersistence.Bucket)], HttpConfigurationFactory.prototype, "defaultBucket", undefined);
+          __decorate([ioc.Factory(DEFAULT_HTTP_CONFIGURATION), __metadata("design:type", Function), __metadata("design:paramtypes", []), __metadata("design:returntype", undefined)], HttpConfigurationFactory.prototype, "produce", null);
+          return HttpConfigurationFactory;
+        })();
+        return Http;
+      };
+      Http.prototype.init = function () {};
+      return Http;
+    })();
+
     function buildEndpointClass(endpointClass, metadata) {
       Reflect.set(endpointClass.prototype, GET_INTERCEPTORS, function (exclude) {
         var _this = this;
-        return metadata.getInterceptors().filter(function (it) {
+        var _a, _b;
+        var globalInterceptors = (_b = (_a = this[HTTP_CONFIGURATION]) === null || _a === undefined ? undefined : _a.interceptors) !== null && _b !== undefined ? _b : [];
+        return __spreadArray(__spreadArray([], globalInterceptors, true), metadata.getInterceptors(), true).filter(function (it) {
           return !(exclude === null || exclude === undefined ? undefined : exclude.includes(it));
         }).map(function (identifier) {
           if (isInterceptor(identifier)) {
@@ -2202,13 +2535,13 @@
       ioc.Generate(function (appCtx) {
         return function (interceptors) {
           return interceptors.map(function (identifier) {
+            if (typeof identifier === 'object') {
+              return identifier;
+            }
             return appCtx.getInstance(identifier);
           }).flat();
         };
       })(endpointClass.prototype, CONSTRUCT_INTERCEPTORS);
-      lazy.lazyMember(function () {
-        return new Map();
-      })(endpointClass.prototype, SWR_INSTANCES);
       lazy.lazyMember(function () {
         return new AbortController();
       })(endpointClass.prototype, ABORT_CONTROLLER);
@@ -2220,6 +2553,7 @@
         return methods;
       })(endpointClass.prototype, METHODS);
       ioc.Inject(ioc.ApplicationContext)(endpointClass.prototype, APPLICATION_CONTEXT);
+      ioc.Inject(DEFAULT_HTTP_CONFIGURATION)(endpointClass.prototype, HTTP_CONFIGURATION);
     }
 
     var RequestMethodMetadata = /** @class */function () {
@@ -2231,6 +2565,7 @@
           path: '/',
           method: 'GET'
         };
+        this.externalInterceptors = [];
       }
       RequestMethodMetadata.prototype.setOptions = function (options) {
         Object.assign(this.options, options);
@@ -2268,7 +2603,7 @@
       };
       RequestMethodMetadata.prototype.getInterceptors = function () {
         var _a;
-        return (_a = this.options.interceptors) !== null && _a !== undefined ? _a : [];
+        return ((_a = this.options.interceptors) !== null && _a !== undefined ? _a : []).concat(this.externalInterceptors);
       };
       RequestMethodMetadata.prototype.getExcludeInterceptors = function () {
         var _a;
@@ -2280,6 +2615,9 @@
       RequestMethodMetadata.prototype.isReactive = function () {
         var _a;
         return (_a = this.options.reactive) !== null && _a !== undefined ? _a : true;
+      };
+      RequestMethodMetadata.prototype.appendInterceptor = function (interceptor) {
+        this.externalInterceptors.push(interceptor);
       };
       return RequestMethodMetadata;
     }();
@@ -2297,8 +2635,17 @@
         }
         var metadata = new EndpointMetadata();
         Reflect.defineMetadata(ENDPOINT_METADATA_KEY, metadata, target);
+        Reflect.defineMetadata(ENDPOINT_METADATA_KEY, metadata, target.prototype);
         buildEndpointClass(target, metadata);
         return metadata;
+      };
+      EndpointMetadata.fromInstance = function (target) {
+        var prototype = Object.getPrototypeOf(target);
+        var metadata = Reflect.getMetadata(ENDPOINT_METADATA_KEY, prototype);
+        if (metadata instanceof EndpointMetadata) {
+          return metadata;
+        }
+        return EndpointMetadata.from(prototype.constructor);
       };
       EndpointMetadata.prototype.setOptions = function (endpointOptions) {
         var _a, _b;
@@ -2376,6 +2723,29 @@
       };
     }
 
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    function decorateEndpointMethod(decorator) {
+      return function decorateMethod(target, context, descriptor) {
+        if (typeof target === 'function' && typeof context === 'object') {
+          var propertyKey_1 = context.name;
+          context.addInitializer(function () {
+            var clazz = this.constructor;
+            var method = EndpointMetadata.from(clazz).getMethodMetadata(propertyKey_1);
+            var descriptor = decorator(clazz, propertyKey_1, method);
+            if (descriptor) {
+              Reflect.set(this, propertyKey_1, descriptor.value);
+            }
+          });
+        } else if (typeof target === 'object' && typeof context !== 'object' && typeof descriptor === 'object') {
+          var propertyKey = context;
+          var clazz = target.constructor;
+          var method = EndpointMetadata.from(clazz).getMethodMetadata(propertyKey);
+          var descriptor_1 = decorator(clazz, propertyKey, method);
+          return descriptor_1;
+        }
+      };
+    }
+
     var executionContext;
     function getExecutionContext() {
       return executionContext;
@@ -2385,55 +2755,40 @@
     }
 
     function Request(options) {
-      return function decorateMethod(target, context, descriptor) {
-        if (typeof target === 'function' && typeof context === 'object') {
-          var propertyKey_1 = context.name;
-          context.addInitializer(function () {
-            var clazz = this.constructor;
-            var method = EndpointMetadata.from(clazz).getMethodMetadata(propertyKey_1);
-            method.setOptions(options);
-            Reflect.set(this, propertyKey_1, delegator(Reflect.get(this, propertyKey_1), method));
-          });
-        } else if (typeof target === 'object' && typeof context !== 'object' && typeof descriptor === 'object') {
-          var propertyKey = context;
-          var clazz = target.constructor;
-          var methodMetadata = EndpointMetadata.from(clazz).getMethodMetadata(propertyKey);
-          methodMetadata.setOptions(options);
-          return __assign(__assign({}, descriptor), {
-            value: delegator(Reflect.get(target, propertyKey), methodMetadata)
-          });
-        }
-        function delegator(originFunction, methodMetadata) {
-          return function () {
-            var args = [];
-            for (var _i = 0; _i < arguments.length; _i++) {
-              args[_i] = arguments[_i];
-            }
-            var params = {
-              headers: methodMetadata.getHeaders().clone(),
-              pathVariables: {},
-              queryParams: new URLSearchParams(),
-              adapter: methodMetadata.getAdapter()
-            };
-            var instance = this;
-            var method = instance[METHODS].get(methodMetadata.name);
-            if (!method) {
-              var error = new Error("Not found method ".concat(methodMetadata.name.toString()));
-              throw error;
-            }
-            setExecutionContext({
-              instance: instance,
-              method: method,
-              params: params
-            });
-            var executionHandlers = methodMetadata.getExecutionHandlers();
-            executionHandlers.forEach(function (handler) {
-              handler(instance, method, params, args);
-            });
-            return originFunction.apply(this, args);
+      return decorateEndpointMethod(function (clazz, methodName, methodMetadata) {
+        methodMetadata.setOptions(options);
+        return {
+          value: delegator(Reflect.get(clazz.prototype, methodName), methodMetadata)
+        };
+      });
+      function delegator(originFunction, methodMetadata) {
+        return function () {
+          var args = [];
+          for (var _i = 0; _i < arguments.length; _i++) {
+            args[_i] = arguments[_i];
+          }
+          var params = {
+            method: methodMetadata.getHttpMethod(),
+            headers: methodMetadata.getHeaders().clone(),
+            pathVariables: {},
+            queryParams: new URLSearchParams(),
+            adapter: methodMetadata.getAdapter(),
+            args: args
           };
-        }
-      };
+          var instance = this;
+          var method = instance[METHODS].get(methodMetadata.name);
+          if (!method) {
+            var error = new Error("Not found method ".concat(methodMetadata.name.toString()));
+            throw error;
+          }
+          setExecutionContext({
+            instance: instance,
+            method: method,
+            params: params
+          });
+          return originFunction.apply(this, args);
+        };
+      }
     }
     function createRequestDecorator(options, method) {
       if (typeof options === 'string') {
@@ -2454,6 +2809,14 @@
 
     function Post(options) {
       return createRequestDecorator(options, 'POST');
+    }
+
+    function Put(options) {
+      return createRequestDecorator(options, 'PUT');
+    }
+
+    function Delete(options) {
+      return createRequestDecorator(options, 'DELETE');
     }
 
     function appendExecHandler(target, methodName, handler) {
@@ -2730,6 +3093,86 @@
       SWRInstance: SWRInstance
     });
 
+    var EXTRA_METADATA_SWR_CONFIG = Symbol('swr-config');
+    var EXTRA_METADATA_MUTATE = Symbol('swr-mutate');
+    var EXTRA_METADATA_SWR_KEYGEN = Symbol('swr-key-gen');
+
+    function SWR(config) {
+      if (config === undefined) {
+        config = {};
+      }
+      return decorateEndpointMethod(function (clazz, methodName, methodMetadata) {
+        methodMetadata.setExtra(EXTRA_METADATA_SWR_KEYGEN, config.key);
+        methodMetadata.setExtra(EXTRA_METADATA_SWR_CONFIG, config);
+      });
+    }
+
+    var SWRService = /** @class */function () {
+      function SWRService() {
+        this.instances = new Map();
+      }
+      SWRService.prototype.obtainInstance = function (key) {
+        return this.instances.get(key);
+      };
+      SWRService.prototype.useSWR = function (keygen, fetcher, config) {
+        var key = keygen();
+        if (!this.instances.has(key)) {
+          var instance = new SWRInstance(key, fetcher, config);
+          this.instances.set(key, instance);
+          return instance;
+        } else {
+          return this.instances.get(key);
+        }
+      };
+      return SWRService;
+    }();
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    function SWRMutation(_keygen) {
+      var _this = this;
+      return decorateEndpointMethod(function (clazz, methodName, methodMetadata) {
+        methodMetadata.setExtra(EXTRA_METADATA_MUTATE, true);
+        methodMetadata.appendInterceptor({
+          invoke: function (instance, method, params, next) {
+            return __awaiter(_this, undefined, undefined, function () {
+              var result, swrService, args, key, swrInstance;
+              return __generator(this, function (_a) {
+                switch (_a.label) {
+                  case 0:
+                    return [4 /*yield*/, next(instance, method, params)];
+                  case 1:
+                    result = _a.sent();
+                    swrService = instance[APPLICATION_CONTEXT].getInstance(SWRService);
+                    args = params.args;
+                    key = function () {
+                      if (typeof _keygen === 'string') {
+                        return _keygen;
+                      }
+                      if (typeof _keygen === 'function') {
+                        return _keygen.apply(undefined, args);
+                      }
+                      return method.resolveURL(params);
+                    }();
+                    swrInstance = swrService.obtainInstance(key);
+                    swrInstance === null || swrInstance === undefined ? undefined : swrInstance.mutate();
+                    return [2 /*return*/, result];
+                }
+              });
+            });
+          }
+        });
+      });
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    function Key(key) {
+      return function (target, propertyKey) {
+        var methodName = typeof propertyKey === 'object' ? propertyKey.name : propertyKey;
+        var methodMetadata = EndpointMetadata.from(target.constructor).getMethodMetadata(methodName);
+        methodMetadata.setExtra(EXTRA_METADATA_SWR_KEYGEN, key);
+      };
+    }
+
     var JSON_CONTENT_TYPES = ['application/json', 'application/json-patch+json', 'application/vnd.api+json', 'application/geo+json', 'application/schema+json'];
     function isJSON(contentType) {
       return !!contentType && JSON_CONTENT_TYPES.some(function (type) {
@@ -2790,7 +3233,7 @@
     var ResourceExecutionState = /** @class */function (_super) {
       __extends(ResourceExecutionState, _super);
       function ResourceExecutionState() {
-        var _this = _super !== null && _super.apply(this, arguments) || this;
+        var _this = _super.call(this, 1) || this;
         _this.messages = [];
         _this.status = exports.RequestStatus.IDLE;
         _this.headers = new HttpHeaders();
@@ -2865,21 +3308,22 @@
         this.reason = null;
         this.messages = [];
       };
-      __decorate([solidium.Signal()], ResourceExecutionState.prototype, "messages", undefined);
-      __decorate([solidium.Signal()], ResourceExecutionState.prototype, "data", undefined);
-      __decorate([solidium.Signal()], ResourceExecutionState.prototype, "reason", undefined);
-      __decorate([solidium.Signal()], ResourceExecutionState.prototype, "status", undefined);
-      __decorate([ioc.PostInject()], ResourceExecutionState.prototype, "init", null);
-      ResourceExecutionState = __decorate([ioc.Scope(ioc.InstanceScope.TRANSIENT)], ResourceExecutionState);
+      __decorate([solidium.Signal(), __metadata("design:type", Array)], ResourceExecutionState.prototype, "messages", undefined);
+      __decorate([solidium.Signal(), __metadata("design:type", Object)], ResourceExecutionState.prototype, "data", undefined);
+      __decorate([solidium.Signal(), __metadata("design:type", Object)], ResourceExecutionState.prototype, "reason", undefined);
+      __decorate([solidium.Signal(), __metadata("design:type", Number)], ResourceExecutionState.prototype, "status", undefined);
+      __decorate([ioc.PostInject(), __metadata("design:type", Function), __metadata("design:paramtypes", []), __metadata("design:returntype", undefined)], ResourceExecutionState.prototype, "init", null);
+      ResourceExecutionState = __decorate([ioc.Scope(ioc.InstanceScope.TRANSIENT), __metadata("design:paramtypes", [])], ResourceExecutionState);
       return ResourceExecutionState;
-    }(rxjs.Subject);
+    }(rxjs.ReplaySubject);
 
     var EXECUTE = Symbol('execute');
     var SET_DATA = Symbol('setData');
     var SET_ERROR = Symbol('setError');
+    var SETUP = Symbol('setup');
     var Resource = /** @class */function () {
       function Resource() {
-        this.$state = new rxjs.Subject();
+        this.$state = new rxjs.ReplaySubject(1);
         this.abortController = new AbortController();
       }
       Object.defineProperty(Resource.prototype, "data", {
@@ -2956,22 +3400,45 @@
           }
         });
       };
-      Resource.prototype.abort = function () {
-        this.abortController.abort();
+      Resource.prototype[SETUP] = function (context) {
+        if (this.context) {
+          throw new Error('Unknown Error: Cannot setup resource more than once');
+        }
+        this.context = context;
       };
       Resource.prototype.wait = function () {
-        return rxjs.lastValueFrom(this.$state.pipe(rxjs.mergeMap(function (state) {
+        return rxjs.lastValueFrom(this.$state.pipe(rxjs.switchMap(function (state) {
           return state;
-        })).pipe(rxjs.last()));
+        }), rxjs.take(1)));
       };
       Resource.prototype.subscribe = function (observerOrNext) {
         return this.$state.subscribe(observerOrNext);
       };
-      Resource.prototype[EXECUTE] = function (context, args, state) {
+      Resource.prototype.reload = function () {
+        return __awaiter(this, arguments, undefined, function (force) {
+          if (force === undefined) {
+            force = false;
+          }
+          return __generator(this, function (_a) {
+            if (this.context) {
+              return [2 /*return*/, this[EXECUTE](force)];
+            }
+            return [2 /*return*/];
+          });
+        });
+      };
+      Resource.prototype[EXECUTE] = function (force, state) {
         var _this = this;
         var _a;
+        if (force === undefined) {
+          force = false;
+        }
         if (state === undefined) {
           state = this.ioc.getInstance(ResourceExecutionState);
+        }
+        var context = this.context;
+        if (!context) {
+          throw new Error('Execution context is not setup!');
         }
         var lastExecutionAbortController = (_a = this.state) === null || _a === undefined ? undefined : _a.abortController;
         lastExecutionAbortController === null || lastExecutionAbortController === undefined ? undefined : lastExecutionAbortController.abort();
@@ -2979,6 +3446,10 @@
         var instance = context.instance,
           method = context.method,
           params = context.params;
+        // Add force parameter to the request params
+        var requestParams = __assign(__assign({}, params), {
+          force: force
+        });
         state.status = exports.RequestStatus.LOADING;
         var signal = params.signal;
         if (signal) {
@@ -2986,12 +3457,12 @@
         } else {
           signal = lastExecutionAbortController ? mergeAbortSignal(lastExecutionAbortController.signal, this.abortController.signal) : this.abortController.signal;
         }
-        var allInterceptors = method.getAlInterceptors(instance);
+        var allInterceptors = method.getAllInterceptors(instance);
         var sendRequest = allInterceptors.reduceRight(function (next, interceptor) {
-          return function (method, params) {
-            return interceptor.invoke(method, params, next);
+          return function (instance, method, params) {
+            return interceptor.invoke(instance, method, params, next);
           };
-        }, function (method, params) {
+        }, function (instance, method, params) {
           return __awaiter(_this, undefined, undefined, function () {
             var response;
             return __generator(this, function (_a) {
@@ -3004,15 +3475,14 @@
                 case 1:
                   response = _a.sent();
                   state.status = exports.RequestStatus.LOADING;
-                  return [4 /*yield*/, this.handleResponse(response, state)];
-                case 2:
-                  _a.sent();
                   return [2 /*return*/, response];
               }
             });
           });
         });
-        sendRequest(method, params).catch(function (error) {
+        sendRequest(instance, method, requestParams).then(function (response) {
+          return _this.handleResponse(response, state);
+        }).catch(function (error) {
           state.error(ResourceError.wrap(error));
         });
       };
@@ -3211,9 +3681,9 @@
           });
         });
       };
-      __decorate([solidium.Signal()], Resource.prototype, "state", undefined);
-      __decorate([ioc.Inject()], Resource.prototype, "ioc", undefined);
-      __decorate([ioc.PostInject()], Resource.prototype, "init", null);
+      __decorate([solidium.Signal(), __metadata("design:type", ResourceExecutionState)], Resource.prototype, "state", undefined);
+      __decorate([ioc.Inject(), __metadata("design:type", ioc.ApplicationContext)], Resource.prototype, "ioc", undefined);
+      __decorate([ioc.PostInject(), __metadata("design:type", Function), __metadata("design:paramtypes", []), __metadata("design:returntype", undefined)], Resource.prototype, "init", null);
       return Resource;
     }();
 
@@ -3269,8 +3739,16 @@
       var isReactive = methodMetadata.isReactive();
       var tracker = appCtx.getInstance(ArgumentsTracker);
       var resource = appCtx.getInstance(ResourceType);
+      resource[SETUP](context);
       var dispose = tracker.track(args, function (args) {
-        resource[EXECUTE](context, Array.from(args));
+        var executionHandlers = methodMetadata.getExecutionHandlers();
+        var instance = context.instance,
+          method = context.method,
+          params = context.params;
+        executionHandlers.forEach(function (handler) {
+          handler(instance, method, params, args);
+        });
+        resource[EXECUTE]();
         if (!isReactive) {
           Promise.resolve().then(function () {
             dispose();
@@ -3280,41 +3758,59 @@
       return resource;
     }
 
-    var SWR_CONFIG_EXTRA_KEY = Symbol('swr-config');
-
     var RestfulResource = /** @class */function (_super) {
       __extends(RestfulResource, _super);
       function RestfulResource() {
         return _super !== null && _super.apply(this, arguments) || this;
       }
-      RestfulResource.prototype[EXECUTE] = function (context, args) {
+      RestfulResource.prototype[EXECUTE] = function (force) {
         var _this = this;
+        var _a;
+        if (force === undefined) {
+          force = false;
+        }
+        var context = this.context;
+        if (!context) {
+          throw new Error('Execution context is not setup!');
+        }
+        var args = context.params.args;
         var methodMetadata = context.method.metadata;
-        var swrConfig = methodMetadata.getExtra(SWR_CONFIG_EXTRA_KEY);
+        var _keygen = methodMetadata.getExtra(EXTRA_METADATA_SWR_KEYGEN);
+        var mutate = (_a = methodMetadata.getExtra(EXTRA_METADATA_MUTATE)) !== null && _a !== undefined ? _a : false;
+        var swrConfig = methodMetadata.getExtra(EXTRA_METADATA_SWR_CONFIG);
+        if (mutate && swrConfig) {
+          throw new Error('@SWR and @SWRMutation cannot be used together');
+        }
         if (!swrConfig) {
-          return _super.prototype[EXECUTE].call(this, context, args);
+          var state = this.ioc.getInstance(ResourceExecutionState);
+          return _super.prototype[EXECUTE].call(this, force, state);
         }
         var keygen = function () {
+          if (typeof _keygen === 'string') {
+            return _keygen;
+          }
+          if (typeof _keygen === 'function') {
+            return _keygen.apply(undefined, args);
+          }
           return context.method.resolveURL(context.params);
         };
-        this.swrService.useSWR(keygen, function () {
+        var instance = this.swrService.useSWR(keygen, function () {
           var state = _this.ioc.getInstance(ResourceExecutionState);
-          _super.prototype[EXECUTE].call(_this, context, args, state);
+          _super.prototype[EXECUTE].call(_this, force, state);
           return rxjs.lastValueFrom(state).then(function () {
             return state;
           });
         }, swrConfig);
-        var instance = this.swrService.obtainInstance(keygen());
         instance === null || instance === undefined ? undefined : instance.onStateChange(function (state) {
           _this.state = state.data;
         });
       };
-      __decorate([ioc.Inject()], RestfulResource.prototype, "swrService", undefined);
+      __decorate([ioc.Inject(), __metadata("design:type", SWRService)], RestfulResource.prototype, "swrService", undefined);
       RestfulResource = __decorate([ioc.Scope(ioc.InstanceScope.TRANSIENT)], RestfulResource);
       return RestfulResource;
     }(Resource);
 
-    function restfull() {
+    function restful() {
       var args = [];
       for (var _i = 0; _i < arguments.length; _i++) {
         args[_i] = arguments[_i];
@@ -3385,7 +3881,7 @@
       ProgressiveResource.prototype.updateProgress = function (progress) {
         this.progress = progress;
       };
-      __decorate([solidium.Signal()], ProgressiveResource.prototype, "progress", undefined);
+      __decorate([solidium.Signal(), __metadata("design:type", Progress)], ProgressiveResource.prototype, "progress", undefined);
       return ProgressiveResource;
     }(Resource);
 
@@ -3424,7 +3920,7 @@
           });
         });
       };
-      __decorate([solidium.Signal()], DownloadResource.prototype, "progress", undefined);
+      __decorate([solidium.Signal(), __metadata("design:type", Progress)], DownloadResource.prototype, "progress", undefined);
       DownloadResource = __decorate([ioc.Scope(ioc.InstanceScope.TRANSIENT)], DownloadResource);
       return DownloadResource;
     }(ProgressiveResource);
@@ -3458,7 +3954,7 @@
           });
         });
       };
-      __decorate([solidium.Signal()], UploadResource.prototype, "progress", undefined);
+      __decorate([solidium.Signal(), __metadata("design:type", Progress)], UploadResource.prototype, "progress", undefined);
       return UploadResource;
     }(ProgressiveResource);
 
@@ -3470,14 +3966,280 @@
       return execute(args, UploadResource);
     }
 
+    /**
+     * Creates a time-based caching policy with a fixed TTL
+     *
+     * @param ttl The time-to-live in milliseconds
+     * @param name The name of the policy
+     * @returns A new cache policy
+     */
+    function createTimeBasedPolicy(ttl, name) {
+      if (name === undefined) {
+        name = "TimeBasedPolicy(".concat(ttl, "ms)");
+      }
+      return {
+        name: name,
+        shouldCache: function () {
+          return true;
+        },
+        getTTL: function () {
+          return ttl;
+        },
+        isValid: function (entry) {
+          return entry.expiresAt > Date.now();
+        }
+      };
+    }
+    var CachePolicies = {
+      /**
+       * Default caching policy - caches for 5 minutes
+       */
+      Default: createTimeBasedPolicy(5 * 60 * 1000, 'Default')};
+
+    var DEFAULT_CACHE_CONFIG = {
+      policy: CachePolicies.Default,
+      respectCacheControl: true
+    };
+
+    /**
+     * An interceptor that caches HTTP responses and serves them from cache when appropriate.
+     *
+     * By default, it only caches GET requests and respects Cache-Control headers.
+     *
+     * @example
+     * ```typescript
+     * @Endpoint({
+     *   baseURL: 'https://api.example.com'
+     * })
+     * class ExampleAPI {
+     *   @Get('/user/:id')
+     *   @Cache({
+     *     Policies.createTimeBasedPolicy(60 * 1000)
+     *   })
+     *   getUser(id: string) {
+     *     return restful(id);
+     *   }
+     * }
+     * ```
+     */
+    var CacheInterceptor = /** @class */function () {
+      function CacheInterceptor(config) {
+        if (config === undefined) {
+          config = {};
+        }
+        this.config = __assign(__assign({}, DEFAULT_CACHE_CONFIG), config);
+      }
+      CacheInterceptor.createWithConfig = function (config) {
+        if (config === undefined) {
+          config = {};
+        }
+        var SubCacheInterceptor = /** @class */function (_super) {
+          __extends(SubCacheInterceptor, _super);
+          function SubCacheInterceptor() {
+            return _super.call(this, config) || this;
+          }
+          return SubCacheInterceptor;
+        }(CacheInterceptor);
+        return SubCacheInterceptor;
+      };
+      Object.defineProperty(CacheInterceptor.prototype, "policy", {
+        get: function () {
+          var _a;
+          return (_a = this.config.policy) !== null && _a !== undefined ? _a : CachePolicies.Default;
+        },
+        enumerable: false,
+        configurable: true
+      });
+      CacheInterceptor.prototype.getBucket = function () {
+        return __awaiter(this, undefined, undefined, function () {
+          var bucketName;
+          var _a, _b;
+          return __generator(this, function (_c) {
+            if (this.bucket) {
+              return [2 /*return*/, this.bucket];
+            }
+            bucketName = (_a = this.config.bucketName) !== null && _a !== undefined ? _a : (_b = this.httpConfig) === null || _b === undefined ? undefined : _b.cacheBucket;
+            if (bucketName) {
+              try {
+                this.bucket = this.appCtx.getInstance(bucketName);
+                return [2 /*return*/, this.bucket];
+              } catch (_d) {
+                // Bucket not found, fall back to default
+              }
+            }
+            this.bucket = this.appCtx.getInstance(solidiumPersistence.DEFAULT_BUCKET);
+            return [2 /*return*/, this.bucket];
+          });
+        });
+      };
+      CacheInterceptor.prototype.generateCacheKey = function (method, params) {
+        if (this.config.generateKey) {
+          return this.config.generateKey(method, params);
+        }
+        // Default cache key generation
+        var url = method.resolveURL(params);
+        return "http-cache:".concat(url);
+      };
+      CacheInterceptor.prototype.shouldCache = function (method, params) {
+        if (params.force) {
+          return false;
+        }
+        if (this.config.shouldCache) {
+          return this.config.shouldCache(method, params);
+        }
+        return this.policy.shouldCache(method, params);
+      };
+      CacheInterceptor.prototype.getExpirationFromHeaders = function (headers) {
+        if (!this.config.respectCacheControl) {
+          return null;
+        }
+        var cacheControl = headers.get('cache-control');
+        if (!cacheControl) {
+          return null;
+        }
+        // Parse Cache-Control header
+        var directives = cacheControl.map(function (d) {
+          return d.trim();
+        });
+        // Check for no-cache or no-store directives
+        if (directives.includes('no-cache') || directives.includes('no-store')) {
+          return 0; // Don't cache
+        }
+        // Check for max-age directive
+        var maxAgeDirective = directives.find(function (d) {
+          return d.startsWith('max-age=');
+        });
+        if (maxAgeDirective) {
+          var maxAge = parseInt(maxAgeDirective.split('=')[1], 10);
+          if (!isNaN(maxAge)) {
+            return Date.now() + maxAge * 1000;
+          }
+        }
+        return null;
+      };
+      CacheInterceptor.prototype.invoke = function (instance, method, params, next) {
+        return __awaiter(this, undefined, undefined, function () {
+          var cacheKey, bucket, cachedEntry, response_1, headers, response, status;
+          var _this = this;
+          return __generator(this, function (_a) {
+            switch (_a.label) {
+              case 0:
+                // Skip caching for non-cacheable methods or when force=true
+                if (!this.shouldCache(method, params)) {
+                  return [2 /*return*/, next(instance, method, params)];
+                }
+                cacheKey = this.generateCacheKey(method, params);
+                return [4 /*yield*/, this.getBucket()];
+              case 1:
+                bucket = _a.sent();
+                return [4 /*yield*/, bucket.getItem(cacheKey)];
+              case 2:
+                cachedEntry = _a.sent();
+                if (cachedEntry && this.policy.isValid(cachedEntry, method, params)) {
+                  response_1 = cachedEntry.response;
+                  headers = new HttpHeaders(response_1.headers);
+                  // Create a new HttpResponse from the cached data
+                  return [2 /*return*/, HttpResponse.of(Promise.resolve(new BlobByteStream(new Blob([response_1.body]))), headers, response_1.status, method)];
+                }
+                return [4 /*yield*/, next(instance, method, params)];
+              case 3:
+                response = _a.sent();
+                return [4 /*yield*/, response.status()];
+              case 4:
+                status = _a.sent();
+                if (status >= 200 && status < 300) {
+                  response.onBodyComplete(function (body) {
+                    return __awaiter(_this, undefined, undefined, function () {
+                      var headers, bodyArrayBuffer, headerExpiration, ttl, expiresAt, cacheEntry, overrideEntry;
+                      var _a, _b, _c;
+                      return __generator(this, function (_d) {
+                        switch (_d.label) {
+                          case 0:
+                            return [4 /*yield*/, response.headers()];
+                          case 1:
+                            headers = _d.sent();
+                            return [4 /*yield*/, body.readAsBuffer()];
+                          case 2:
+                            bodyArrayBuffer = _d.sent();
+                            headerExpiration = this.getExpirationFromHeaders(headers);
+                            ttl = this.policy.getTTL(method, params);
+                            expiresAt = headerExpiration !== null && headerExpiration !== undefined ? headerExpiration : ttl === 0 ? 0 : Date.now() + ttl;
+                            if (!(expiresAt > 0)) return [3 /*break*/, 4];
+                            cacheEntry = {
+                              response: {
+                                status: status,
+                                headers: headers.toJSON(),
+                                body: new Uint8Array(bodyArrayBuffer)
+                              },
+                              cachedAt: Date.now(),
+                              expiresAt: expiresAt,
+                              metadata: {}
+                            };
+                            overrideEntry = (_c = (_b = (_a = this.policy).overrideCacheEntry) === null || _b === undefined ? undefined : _b.call(_a, cacheEntry, method, params)) !== null && _c !== undefined ? _c : cacheEntry;
+                            // Store in cache
+                            return [4 /*yield*/, bucket.setItem(cacheKey, overrideEntry)];
+                          case 3:
+                            // Store in cache
+                            _d.sent();
+                            _d.label = 4;
+                          case 4:
+                            return [2 /*return*/];
+                        }
+                      });
+                    });
+                  });
+                }
+                return [2 /*return*/, response];
+            }
+          });
+        });
+      };
+      __decorate([ioc.Inject(), __metadata("design:type", ioc.ApplicationContext)], CacheInterceptor.prototype, "appCtx", undefined);
+      __decorate([ioc.Inject(DEFAULT_HTTP_CONFIGURATION), __metadata("design:type", Object)], CacheInterceptor.prototype, "httpConfig", undefined);
+      return CacheInterceptor;
+    }();
+
+    /**
+     * Decorator that applies the CacheInterceptor to an endpoint method.
+     *
+     * @example
+     * ```typescript
+     * @Endpoint({
+     *   baseURL: 'https://api.example.com'
+     * })
+     * class ExampleAPI {
+     *   @Get('/users/{id}')
+     *   @Cache({
+     *     policy: CachePolicies.createTimeBasedPolicy(60 * 1000) // 1 minute cache
+     *   })
+     *   getUser(id: number) {
+     *     return restful<User>();
+     *   }
+     * }
+     * ```
+     */
+    function Cache(config) {
+      if (config === undefined) {
+        config = DEFAULT_CACHE_CONFIG;
+      }
+      return decorateEndpointMethod(function (clazz, methodName, methodMetadata) {
+        methodMetadata.appendInterceptor(CacheInterceptor.createWithConfig(config));
+      });
+    }
+
     exports.AbortError = AbortError;
     exports.BadGatewayError = BadGatewayError;
     exports.BadRequestError = BadRequestError;
+    exports.Cache = Cache;
+    exports.CacheInterceptor = CacheInterceptor;
+    exports.CachePolicies = CachePolicies;
     exports.CancellationError = CancellationError;
     exports.CircuitBreakerError = CircuitBreakerError;
     exports.CircuitBreakerInterceptor = CircuitBreakerInterceptor;
     exports.ConflictError = ConflictError;
+    exports.DEFAULT_CACHE_CONFIG = DEFAULT_CACHE_CONFIG;
     exports.Defer = Defer;
+    exports.Delete = Delete;
     exports.EXECUTE = EXECUTE;
     exports.Endpoint = Endpoint;
     exports.ErrorContextInterceptor = ErrorContextInterceptor;
@@ -3498,6 +4260,7 @@
     exports.ImATeapotError = ImATeapotError;
     exports.InsufficientStorageError = InsufficientStorageError;
     exports.InternalServerError = InternalServerError;
+    exports.Key = Key;
     exports.LengthRequiredError = LengthRequiredError;
     exports.LockedError = LockedError;
     exports.LoopDetectedError = LoopDetectedError;
@@ -3520,6 +4283,7 @@
     exports.PreconditionRequiredError = PreconditionRequiredError;
     exports.Progress = Progress;
     exports.ProxyAuthenticationRequiredError = ProxyAuthenticationRequiredError;
+    exports.Put = Put;
     exports.Query = Query;
     exports.RangeNotSatisfiableError = RangeNotSatisfiableError;
     exports.Request = Request;
@@ -3530,9 +4294,12 @@
     exports.ResourceError = ResourceError;
     exports.RestfulResource = RestfulResource;
     exports.RetryInterceptor = RetryInterceptor;
+    exports.SETUP = SETUP;
     exports.SET_DATA = SET_DATA;
     exports.SET_ERROR = SET_ERROR;
+    exports.SWR = SWR;
     exports.SWRInstance = SWRInstance;
+    exports.SWRMutation = SWRMutation;
     exports.ServerError = ServerError;
     exports.ServiceUnavailableError = ServiceUnavailableError;
     exports.TimeoutError = TimeoutError;
@@ -3547,6 +4314,7 @@
     exports.UpgradeRequiredError = UpgradeRequiredError;
     exports.VariantAlsoNegotiatesError = VariantAlsoNegotiatesError;
     exports.XMLHttpRequestAdapter = XMLHttpRequestAdapter;
+    exports.buildEndpointClass = buildEndpointClass;
     exports.createRequestDecorator = createRequestDecorator;
     exports.download = download;
     exports.isInterceptor = isInterceptor;
@@ -3557,7 +4325,7 @@
     exports.mergeAbortSignal = mergeAbortSignal;
     exports.parseHeaders = parseHeaders;
     exports.resolveURL = resolveURL;
-    exports.restfull = restfull;
+    exports.restful = restful;
     exports.upload = upload;
 
 }));

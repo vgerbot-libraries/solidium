@@ -1,7 +1,8 @@
 import { Generate, Inject, ApplicationContext, PostInject, Scope, InstanceScope } from '@vgerbot/ioc';
 import { lazyMember } from '@vgerbot/lazy';
+import { DEFAULT_BUCKET } from '@vgerbot/solidium-persistence';
 import { Signal, runWithSolidiumOwner } from '@vgerbot/solidium';
-import { Subject, lastValueFrom, mergeMap, last } from 'rxjs';
+import { ReplaySubject, lastValueFrom, switchMap, take } from 'rxjs';
 import { getOwner, createRoot, createEffect, on } from 'solid-js';
 import { leading, debounce } from '@solid-primitives/scheduled';
 
@@ -34,6 +35,10 @@ function __decorate(decorators, target, key, desc) {
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
+}
+
+function __metadata(metadataKey, metadataValue) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(metadataKey, metadataValue);
 }
 
 function __awaiter(thisArg, _arguments, P, generator) {
@@ -95,6 +100,24 @@ typeof SuppressedError === "function" ? SuppressedError : function (error, suppr
 };
 
 class HttpResponse {
+  static of(body, headers, status, method) {
+    return new HttpResponse({
+      status: () => Promise.resolve(status),
+      headers: () => Promise.resolve(headers),
+      body: () => body,
+      onDownload() {
+        return () => undefined;
+      },
+      onUpload() {
+        return () => undefined;
+      },
+      onBodyComplete() {
+        return () => undefined;
+      }
+    }, {
+      method
+    });
+  }
   constructor(source, init) {
     this.source = source;
     this.init = init;
@@ -174,6 +197,9 @@ class HttpResponse {
   }
   onDownload(listener) {
     return this.source.onDownload(listener);
+  }
+  onBodyComplete(listener) {
+    return this.source.onBodyComplete(listener);
   }
 }
 
@@ -430,6 +456,74 @@ class HttpHeaders {
   clear() {
     this.headers.clear();
   }
+  getContentLength() {
+    var _a;
+    const [contentLengthStr] = (_a = this.get('content-length')) !== null && _a !== undefined ? _a : [];
+    return parseInt(contentLengthStr) || 0;
+  }
+}
+
+function readStream(stream) {
+  return __asyncGenerator(this, arguments, function* readStream_1() {
+    const reader = stream.getReader();
+    try {
+      while (true) {
+        const {
+          value,
+          done
+        } = yield __await(reader.read());
+        if (done) {
+          break;
+        }
+        yield yield __await(value);
+      }
+    } finally {
+      reader.releaseLock();
+    }
+  });
+}
+
+function createProgressiveReadableStream(stream, progress = () => undefined) {
+  let loaded = 0;
+  const abortController = new AbortController();
+  return new ReadableStream({
+    start: controller => __awaiter(this, undefined, undefined, function* () {
+      var _a, e_1, _b, _c;
+      try {
+        progress(loaded);
+        try {
+          for (var _d = true, _e = __asyncValues(readStream(stream)), _f; _f = yield _e.next(), _a = _f.done, !_a; _d = true) {
+            _c = _f.value;
+            _d = false;
+            const chunk = _c;
+            loaded += chunk.byteLength;
+            progress(loaded);
+            controller.enqueue(chunk.buffer);
+            if (abortController.signal.aborted) {
+              break;
+            }
+          }
+        } catch (e_1_1) {
+          e_1 = {
+            error: e_1_1
+          };
+        } finally {
+          try {
+            if (!_d && !_a && (_b = _e.return)) yield _b.call(_e);
+          } finally {
+            if (e_1) throw e_1.error;
+          }
+        }
+      } catch (e) {
+        controller.error(e);
+      } finally {
+        controller.close();
+      }
+    }),
+    cancel: () => {
+      abortController.abort();
+    }
+  });
 }
 
 class Progress {
@@ -456,91 +550,32 @@ class ProgressiveByteStream {
   }
 }
 
-class NativeReadableStream extends ProgressiveByteStream {
-  constructor(contentLength, stream) {
+class BlobByteStream extends ProgressiveByteStream {
+  constructor(blob) {
     super();
-    this.contentLength = contentLength;
-    this.stream = stream;
-  }
-  total() {
-    return Promise.resolve(this.contentLength);
-  }
-  readAsBuffer() {
-    return __awaiter(this, undefined, undefined, function* () {
-      const reader = this.readAsStream().getReader();
-      const chunks = [];
-      while (true) {
-        const {
-          done,
-          value
-        } = yield reader.read();
-        if (done) {
-          break;
-        }
-        chunks.push(new Uint8Array(value));
-      }
-      const realTotal = chunks.reduce((sum, it) => sum + it.byteLength, 0);
-      const result = new Uint8Array(realTotal);
-      {
-        let offset = 0;
-        for (const chunk of chunks) {
-          result.set(chunk, offset);
-          offset += chunk.byteLength;
-        }
-      }
-      return result.buffer;
-    });
+    this.blob = blob;
   }
   readAsStream() {
-    const stream = this.stream;
-    const total = this.contentLength;
-    let loaded = 0;
-    // eslint-disable-next-line @typescript-eslint/no-this-alias
-    const that = this;
-    return new ReadableStream({
-      start(controller) {
-        that.updateProgress(new Progress(total, 0));
-        const reader = stream.getReader();
-        reader.read().then(function process({
-          done,
-          value
-        }) {
-          if (done) {
-            controller.close();
-            return;
-          }
-          controller.enqueue(value);
-          loaded += value.byteLength;
-          that.updateProgress(new Progress(total, loaded));
-          reader.read().then(process);
-        });
-      }
+    const total = this.blob.size;
+    return createProgressiveReadableStream(this.blob.stream(), loaded => {
+      this.updateProgress(new Progress(total, loaded));
     });
   }
-  readAsBlob() {
-    return __awaiter(this, arguments, undefined, function* (contentType = 'application/octet-stream') {
-      const reader = this.readAsStream().getReader();
-      const chunks = [];
-      while (true) {
-        const {
-          value: chunk,
-          done
-        } = yield reader.read();
-        if (done) {
-          break;
-        }
-        chunks.push(new Blob([chunk]));
+  readAsBlob(contentType) {
+    return __awaiter(this, undefined, undefined, function* () {
+      if (contentType === this.blob.type) {
+        return this.blob;
       }
-      return new Blob(chunks, {
+      return new Blob([this.blob], {
         type: contentType
       });
     });
   }
-}
-
-class BlobByteStream extends NativeReadableStream {
-  constructor(blob) {
-    super(blob.size, blob.stream());
+  readAsBuffer() {
+    return this.blob.arrayBuffer();
+  }
+  total() {
+    return Promise.resolve(this.blob.size);
   }
 }
 
@@ -669,6 +704,18 @@ class XMLHttpRequestAdapter {
         },
         onUpload(listener) {
           return events.on('upload', listener);
+        },
+        onBodyComplete(listener) {
+          let isListenerCancelled = false;
+          bodyDefer.promise.then(body => {
+            if (isListenerCancelled) {
+              return;
+            }
+            listener(body);
+          });
+          return () => {
+            isListenerCancelled = true;
+          };
         }
       };
     });
@@ -1117,10 +1164,10 @@ class NetworkAuthenticationRequiredError extends ServerError {
 }
 
 class ErrorContextInterceptor {
-  invoke(method, params, next) {
+  invoke(instance, method, params, next) {
     return __awaiter(this, undefined, undefined, function* () {
       try {
-        return yield next(method, params);
+        return yield next(instance, method, params);
       } catch (error) {
         if (error instanceof HttpError) {
           // Enhance error context with request details
@@ -1162,13 +1209,13 @@ class RetryInterceptor {
   delay(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
-  invoke(method, params, next) {
+  invoke(instance, method, params, next) {
     return __awaiter(this, undefined, undefined, function* () {
       let attempt = 0;
       let delay = this.config.initialDelay;
       while (attempt < this.config.maxAttempts) {
         try {
-          return yield next(method, params);
+          return yield next(instance, method, params);
         } catch (error) {
           const retryable = yield this.config.retryable(error);
           if (!retryable) {
@@ -1220,14 +1267,14 @@ class TimeoutInterceptor {
   constructor(config = {}) {
     this.config = Object.assign(Object.assign({}, DEFAULT_CONFIG$1), config);
   }
-  invoke(method, params, next) {
+  invoke(instance, method, params, next) {
     return __awaiter(this, undefined, undefined, function* () {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), this.config.timeout);
       try {
         // Merge the timeout signal with any existing signal
         const signal = mergeAbortSignal(params.signal, controller.signal);
-        return yield Promise.race([next(method, Object.assign(Object.assign({}, params), {
+        return yield Promise.race([next(instance, method, Object.assign(Object.assign({}, params), {
           signal
         })), new Promise((_, reject) => setTimeout(() => reject(new TimeoutError(`Request timeout after ${this.config.timeout}ms`, {
           timeout: this.config.timeout,
@@ -1251,10 +1298,9 @@ const GET_INTERCEPTORS = Symbol('endpoint-get-interceptors');
 const ADAPTER = Symbol('endpoint-adapter');
 /** Stores the interceptor construction logic for an endpoint */
 const CONSTRUCT_INTERCEPTORS = Symbol('endpoint-construct-interceptors');
-/** Stores the SWR instances for an endpoint */
-const SWR_INSTANCES = Symbol('swr-instances');
 const ABORT_CONTROLLER = Symbol('abort-controller');
 const APPLICATION_CONTEXT = Symbol('application-context');
+const HTTP_CONFIGURATION = Symbol('http-configuration');
 
 /**
  * Represents an error that occurred during resource processing
@@ -1333,10 +1379,10 @@ class ResourceError {
 }
 
 class ErrorWrappingInterceptor {
-  invoke(method, params, next) {
+  invoke(instance, method, params, next) {
     return __awaiter(this, undefined, undefined, function* () {
       try {
-        const response = yield next(method, params);
+        const response = yield next(instance, method, params);
         return response;
       } catch (error) {
         // Handle different error types
@@ -1365,6 +1411,10 @@ class ErrorWrappingInterceptor {
 }
 
 class RequestMethod {
+  static get(instance, name) {
+    var _a;
+    return (_a = instance[METHODS]) === null || _a === undefined ? undefined : _a.get(name);
+  }
   constructor(name, endpointMetadata, metadata) {
     this.name = name;
     this.endpointMetadata = endpointMetadata;
@@ -1383,7 +1433,7 @@ class RequestMethod {
       this.baseInterceptors.push(new RetryInterceptor(retryConfig));
     }
   }
-  getAlInterceptors(instance) {
+  getAllInterceptors(instance) {
     const timeout = this.metadata.getTimeout() || this.endpointMetadata.getTimeout();
     const extInterceptors = [];
     if (timeout > 0) {
@@ -1453,7 +1503,7 @@ class CircuitBreakerInterceptor {
   shouldReset() {
     return this.state === 'OPEN' && Date.now() - this.lastFailureTime >= this.config.resetTimeout;
   }
-  invoke(method, params, next) {
+  invoke(instance, method, params, next) {
     return __awaiter(this, undefined, undefined, function* () {
       if (this.state === 'OPEN') {
         if (this.shouldReset()) {
@@ -1463,7 +1513,7 @@ class CircuitBreakerInterceptor {
         }
       }
       try {
-        const response = yield next(method, params);
+        const response = yield next(instance, method, params);
         if (this.state === 'HALF_OPEN') {
           this.state = 'CLOSED';
           this.failures = 0;
@@ -1483,6 +1533,109 @@ class CircuitBreakerInterceptor {
 class CircuitBreakerError extends HttpError {
   constructor(message = 'Circuit breaker is open') {
     super(message);
+  }
+}
+
+class NativeReadableStream extends ProgressiveByteStream {
+  constructor(contentLength, stream) {
+    super();
+    this.contentLength = contentLength;
+    this.stream = stream;
+    this.blobPromise = null;
+  }
+  total() {
+    return Promise.resolve(this.contentLength);
+  }
+  readAsStoredBlob() {
+    return __awaiter(this, undefined, undefined, function* () {
+      if (this.blobPromise !== null) {
+        return this.blobPromise;
+      }
+      const total = this.contentLength;
+      let loaded = 0;
+      this.blobPromise = new Promise((resolve, reject) => {
+        const chunks = [];
+        this.updateProgress(new Progress(total, 0));
+        (() => __awaiter(this, undefined, undefined, function* () {
+          var _a, e_1, _b, _c;
+          try {
+            for (var _d = true, _e = __asyncValues(readStream(this.stream)), _f; _f = yield _e.next(), _a = _f.done, !_a; _d = true) {
+              _c = _f.value;
+              _d = false;
+              const chunk = _c;
+              loaded += chunk.byteLength;
+              chunks.push(chunk);
+              this.updateProgress(new Progress(total, loaded));
+            }
+          } catch (e_1_1) {
+            e_1 = {
+              error: e_1_1
+            };
+          } finally {
+            try {
+              if (!_d && !_a && (_b = _e.return)) yield _b.call(_e);
+            } finally {
+              if (e_1) throw e_1.error;
+            }
+          }
+          const blob = new Blob(chunks);
+          resolve(blob);
+        }))().catch(reject);
+      });
+      return this.blobPromise;
+    });
+  }
+  readAsBuffer() {
+    return __awaiter(this, undefined, undefined, function* () {
+      const blob = yield this.readAsStoredBlob();
+      return yield blob.arrayBuffer();
+    });
+  }
+  readAsStream() {
+    return new ReadableStream({
+      start: controller => __awaiter(this, undefined, undefined, function* () {
+        var _a, e_2, _b, _c;
+        try {
+          const blob = yield this.readAsStoredBlob();
+          const blobStream = blob.stream();
+          try {
+            for (var _d = true, _e = __asyncValues(readStream(blobStream)), _f; _f = yield _e.next(), _a = _f.done, !_a; _d = true) {
+              _c = _f.value;
+              _d = false;
+              const chunk = _c;
+              controller.enqueue(chunk.buffer);
+            }
+          } catch (e_2_1) {
+            e_2 = {
+              error: e_2_1
+            };
+          } finally {
+            try {
+              if (!_d && !_a && (_b = _e.return)) yield _b.call(_e);
+            } finally {
+              if (e_2) throw e_2.error;
+            }
+          }
+          controller.close();
+        } catch (error) {
+          console.error('Error in readAsStream:', error);
+          controller.error(error);
+        }
+      })
+    });
+  }
+  readAsBlob() {
+    return __awaiter(this, arguments, undefined, function* (contentType = 'application/octet-stream') {
+      const blob = yield this.readAsStoredBlob();
+      // If the requested content type is different from the stored blob's type,
+      // create a new blob with the requested type
+      if (blob.type !== contentType) {
+        return new Blob([blob], {
+          type: contentType
+        });
+      }
+      return blob;
+    });
   }
 }
 
@@ -1556,15 +1709,31 @@ class FetchRequestAdapter {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         onUpload(_listener) {
           return () => undefined;
+        },
+        onBodyComplete(listener) {
+          let isListenerCancelled = false;
+          bodyDefer.promise.then(body => {
+            if (isListenerCancelled) {
+              return;
+            }
+            listener(body);
+          });
+          return () => {
+            isListenerCancelled = true;
+          };
         }
       };
     });
   }
 }
 
+const DEFAULT_HTTP_CONFIGURATION = Symbol('solidium-default-http-configuration');
+
 function buildEndpointClass(endpointClass, metadata) {
   Reflect.set(endpointClass.prototype, GET_INTERCEPTORS, function (exclude) {
-    return metadata.getInterceptors().filter(it => !(exclude === null || exclude === undefined ? undefined : exclude.includes(it))).map(identifier => {
+    var _a, _b;
+    const globalInterceptors = (_b = (_a = this[HTTP_CONFIGURATION]) === null || _a === undefined ? undefined : _a.interceptors) !== null && _b !== undefined ? _b : [];
+    return [...globalInterceptors, ...metadata.getInterceptors()].filter(it => !(exclude === null || exclude === undefined ? undefined : exclude.includes(it))).map(identifier => {
       if (isInterceptor(identifier)) {
         return identifier;
       }
@@ -1575,11 +1744,13 @@ function buildEndpointClass(endpointClass, metadata) {
   Generate(function (appCtx) {
     return interceptors => {
       return interceptors.map(identifier => {
+        if (typeof identifier === 'object') {
+          return identifier;
+        }
         return appCtx.getInstance(identifier);
       }).flat();
     };
   })(endpointClass.prototype, CONSTRUCT_INTERCEPTORS);
-  lazyMember(() => new Map())(endpointClass.prototype, SWR_INSTANCES);
   lazyMember(() => new AbortController())(endpointClass.prototype, ABORT_CONTROLLER);
   lazyMember(() => {
     const methods = new Map();
@@ -1589,6 +1760,7 @@ function buildEndpointClass(endpointClass, metadata) {
     return methods;
   })(endpointClass.prototype, METHODS);
   Inject(ApplicationContext)(endpointClass.prototype, APPLICATION_CONTEXT);
+  Inject(DEFAULT_HTTP_CONFIGURATION)(endpointClass.prototype, HTTP_CONFIGURATION);
 }
 
 class RequestMethodMetadata {
@@ -1600,6 +1772,7 @@ class RequestMethodMetadata {
       path: '/',
       method: 'GET'
     };
+    this.externalInterceptors = [];
   }
   setOptions(options) {
     Object.assign(this.options, options);
@@ -1637,7 +1810,7 @@ class RequestMethodMetadata {
   }
   getInterceptors() {
     var _a;
-    return (_a = this.options.interceptors) !== null && _a !== undefined ? _a : [];
+    return ((_a = this.options.interceptors) !== null && _a !== undefined ? _a : []).concat(this.externalInterceptors);
   }
   getExcludeInterceptors() {
     var _a;
@@ -1650,6 +1823,9 @@ class RequestMethodMetadata {
     var _a;
     return (_a = this.options.reactive) !== null && _a !== undefined ? _a : true;
   }
+  appendInterceptor(interceptor) {
+    this.externalInterceptors.push(interceptor);
+  }
 }
 
 const ENDPOINT_METADATA_KEY = '@http:endpoint';
@@ -1660,8 +1836,17 @@ class EndpointMetadata {
     }
     const metadata = new EndpointMetadata();
     Reflect.defineMetadata(ENDPOINT_METADATA_KEY, metadata, target);
+    Reflect.defineMetadata(ENDPOINT_METADATA_KEY, metadata, target.prototype);
     buildEndpointClass(target, metadata);
     return metadata;
+  }
+  static fromInstance(target) {
+    const prototype = Object.getPrototypeOf(target);
+    const metadata = Reflect.getMetadata(ENDPOINT_METADATA_KEY, prototype);
+    if (metadata instanceof EndpointMetadata) {
+      return metadata;
+    }
+    return EndpointMetadata.from(prototype.constructor);
   }
   constructor() {
     this.timeout = 0;
@@ -1743,6 +1928,29 @@ function Endpoint(options) {
   };
 }
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+function decorateEndpointMethod(decorator) {
+  return function decorateMethod(target, context, descriptor) {
+    if (typeof target === 'function' && typeof context === 'object') {
+      const propertyKey = context.name;
+      context.addInitializer(function () {
+        const clazz = this.constructor;
+        const method = EndpointMetadata.from(clazz).getMethodMetadata(propertyKey);
+        const descriptor = decorator(clazz, propertyKey, method);
+        if (descriptor) {
+          Reflect.set(this, propertyKey, descriptor.value);
+        }
+      });
+    } else if (typeof target === 'object' && typeof context !== 'object' && typeof descriptor === 'object') {
+      const propertyKey = context;
+      const clazz = target.constructor;
+      const method = EndpointMetadata.from(clazz).getMethodMetadata(propertyKey);
+      const descriptor = decorator(clazz, propertyKey, method);
+      return descriptor;
+    }
+  };
+}
+
 let executionContext;
 function getExecutionContext() {
   return executionContext;
@@ -1752,51 +1960,36 @@ function setExecutionContext(context) {
 }
 
 function Request(options) {
-  return function decorateMethod(target, context, descriptor) {
-    if (typeof target === 'function' && typeof context === 'object') {
-      const propertyKey = context.name;
-      context.addInitializer(function () {
-        const clazz = this.constructor;
-        const method = EndpointMetadata.from(clazz).getMethodMetadata(propertyKey);
-        method.setOptions(options);
-        Reflect.set(this, propertyKey, delegator(Reflect.get(this, propertyKey), method));
-      });
-    } else if (typeof target === 'object' && typeof context !== 'object' && typeof descriptor === 'object') {
-      const propertyKey = context;
-      const clazz = target.constructor;
-      const methodMetadata = EndpointMetadata.from(clazz).getMethodMetadata(propertyKey);
-      methodMetadata.setOptions(options);
-      return Object.assign(Object.assign({}, descriptor), {
-        value: delegator(Reflect.get(target, propertyKey), methodMetadata)
-      });
-    }
-    function delegator(originFunction, methodMetadata) {
-      return function (...args) {
-        const params = {
-          headers: methodMetadata.getHeaders().clone(),
-          pathVariables: {},
-          queryParams: new URLSearchParams(),
-          adapter: methodMetadata.getAdapter()
-        };
-        const instance = this;
-        const method = instance[METHODS].get(methodMetadata.name);
-        if (!method) {
-          const error = new Error(`Not found method ${methodMetadata.name.toString()}`);
-          throw error;
-        }
-        setExecutionContext({
-          instance,
-          method,
-          params
-        });
-        const executionHandlers = methodMetadata.getExecutionHandlers();
-        executionHandlers.forEach(handler => {
-          handler(instance, method, params, args);
-        });
-        return originFunction.apply(this, args);
+  return decorateEndpointMethod((clazz, methodName, methodMetadata) => {
+    methodMetadata.setOptions(options);
+    return {
+      value: delegator(Reflect.get(clazz.prototype, methodName), methodMetadata)
+    };
+  });
+  function delegator(originFunction, methodMetadata) {
+    return function (...args) {
+      const params = {
+        method: methodMetadata.getHttpMethod(),
+        headers: methodMetadata.getHeaders().clone(),
+        pathVariables: {},
+        queryParams: new URLSearchParams(),
+        adapter: methodMetadata.getAdapter(),
+        args
       };
-    }
-  };
+      const instance = this;
+      const method = instance[METHODS].get(methodMetadata.name);
+      if (!method) {
+        const error = new Error(`Not found method ${methodMetadata.name.toString()}`);
+        throw error;
+      }
+      setExecutionContext({
+        instance,
+        method,
+        params
+      });
+      return originFunction.apply(this, args);
+    };
+  }
 }
 function createRequestDecorator(options, method) {
   if (typeof options === 'string') {
@@ -1817,6 +2010,14 @@ function Get(options) {
 
 function Post(options) {
   return createRequestDecorator(options, 'POST');
+}
+
+function Put(options) {
+  return createRequestDecorator(options, 'PUT');
+}
+
+function Delete(options) {
+  return createRequestDecorator(options, 'DELETE');
 }
 
 function appendExecHandler(target, methodName, handler) {
@@ -2060,6 +2261,71 @@ Object.assign(window, {
   SWRInstance
 });
 
+const EXTRA_METADATA_SWR_CONFIG = Symbol('swr-config');
+const EXTRA_METADATA_MUTATE = Symbol('swr-mutate');
+const EXTRA_METADATA_SWR_KEYGEN = Symbol('swr-key-gen');
+
+function SWR(config = {}) {
+  return decorateEndpointMethod((clazz, methodName, methodMetadata) => {
+    methodMetadata.setExtra(EXTRA_METADATA_SWR_KEYGEN, config.key);
+    methodMetadata.setExtra(EXTRA_METADATA_SWR_CONFIG, config);
+  });
+}
+
+class SWRService {
+  constructor() {
+    this.instances = new Map();
+  }
+  obtainInstance(key) {
+    return this.instances.get(key);
+  }
+  useSWR(keygen, fetcher, config) {
+    const key = keygen();
+    if (!this.instances.has(key)) {
+      const instance = new SWRInstance(key, fetcher, config);
+      this.instances.set(key, instance);
+      return instance;
+    } else {
+      return this.instances.get(key);
+    }
+  }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function SWRMutation(_keygen) {
+  return decorateEndpointMethod((clazz, methodName, methodMetadata) => {
+    methodMetadata.setExtra(EXTRA_METADATA_MUTATE, true);
+    methodMetadata.appendInterceptor({
+      invoke: (instance, method, params, next) => __awaiter(this, undefined, undefined, function* () {
+        const result = yield next(instance, method, params);
+        const swrService = instance[APPLICATION_CONTEXT].getInstance(SWRService);
+        const args = params.args;
+        const key = (() => {
+          if (typeof _keygen === 'string') {
+            return _keygen;
+          }
+          if (typeof _keygen === 'function') {
+            return _keygen(...args);
+          }
+          return method.resolveURL(params);
+        })();
+        const swrInstance = swrService.obtainInstance(key);
+        swrInstance === null || swrInstance === undefined ? undefined : swrInstance.mutate();
+        return result;
+      })
+    });
+  });
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function Key(key) {
+  return (target, propertyKey) => {
+    const methodName = typeof propertyKey === 'object' ? propertyKey.name : propertyKey;
+    const methodMetadata = EndpointMetadata.from(target.constructor).getMethodMetadata(methodName);
+    methodMetadata.setExtra(EXTRA_METADATA_SWR_KEYGEN, key);
+  };
+}
+
 const JSON_CONTENT_TYPES = ['application/json', 'application/json-patch+json', 'application/vnd.api+json', 'application/geo+json', 'application/schema+json'];
 function isJSON(contentType) {
   return !!contentType && JSON_CONTENT_TYPES.some(type => contentType.includes(type));
@@ -2115,9 +2381,9 @@ var RequestStatus;
   RequestStatus[RequestStatus["ABORTED"] = 5] = "ABORTED";
 })(RequestStatus || (RequestStatus = {}));
 
-let ResourceExecutionState = class ResourceExecutionState extends Subject {
+let ResourceExecutionState = class ResourceExecutionState extends ReplaySubject {
   constructor() {
-    super(...arguments);
+    super(1);
     this.messages = [];
     this.status = RequestStatus.IDLE;
     this.headers = new HttpHeaders();
@@ -2167,19 +2433,20 @@ let ResourceExecutionState = class ResourceExecutionState extends Subject {
     this.messages = [];
   }
 };
-__decorate([Signal()], ResourceExecutionState.prototype, "messages", undefined);
-__decorate([Signal()], ResourceExecutionState.prototype, "data", undefined);
-__decorate([Signal()], ResourceExecutionState.prototype, "reason", undefined);
-__decorate([Signal()], ResourceExecutionState.prototype, "status", undefined);
-__decorate([PostInject()], ResourceExecutionState.prototype, "init", null);
-ResourceExecutionState = __decorate([Scope(InstanceScope.TRANSIENT)], ResourceExecutionState);
+__decorate([Signal(), __metadata("design:type", Array)], ResourceExecutionState.prototype, "messages", undefined);
+__decorate([Signal(), __metadata("design:type", Object)], ResourceExecutionState.prototype, "data", undefined);
+__decorate([Signal(), __metadata("design:type", Object)], ResourceExecutionState.prototype, "reason", undefined);
+__decorate([Signal(), __metadata("design:type", Number)], ResourceExecutionState.prototype, "status", undefined);
+__decorate([PostInject(), __metadata("design:type", Function), __metadata("design:paramtypes", []), __metadata("design:returntype", undefined)], ResourceExecutionState.prototype, "init", null);
+ResourceExecutionState = __decorate([Scope(InstanceScope.TRANSIENT), __metadata("design:paramtypes", [])], ResourceExecutionState);
 
 const EXECUTE = Symbol('execute');
 const SET_DATA = Symbol('setData');
 const SET_ERROR = Symbol('setError');
+const SETUP = Symbol('setup');
 class Resource {
   constructor() {
-    this.$state = new Subject();
+    this.$state = new ReplaySubject(1);
     this.abortController = new AbortController();
   }
   get data() {
@@ -2219,17 +2486,31 @@ class Resource {
       }
     });
   }
-  abort() {
-    this.abortController.abort();
+  [SETUP](context) {
+    if (this.context) {
+      throw new Error('Unknown Error: Cannot setup resource more than once');
+    }
+    this.context = context;
   }
   wait() {
-    return lastValueFrom(this.$state.pipe(mergeMap(state => state)).pipe(last()));
+    return lastValueFrom(this.$state.pipe(switchMap(state => state), take(1)));
   }
   subscribe(observerOrNext) {
     return this.$state.subscribe(observerOrNext);
   }
-  [EXECUTE](context, args, state = this.ioc.getInstance(ResourceExecutionState)) {
+  reload() {
+    return __awaiter(this, arguments, undefined, function* (force = false) {
+      if (this.context) {
+        return this[EXECUTE](force);
+      }
+    });
+  }
+  [EXECUTE](force = false, state = this.ioc.getInstance(ResourceExecutionState)) {
     var _a;
+    const context = this.context;
+    if (!context) {
+      throw new Error('Execution context is not setup!');
+    }
     const lastExecutionAbortController = (_a = this.state) === null || _a === undefined ? undefined : _a.abortController;
     lastExecutionAbortController === null || lastExecutionAbortController === undefined ? undefined : lastExecutionAbortController.abort();
     this.$state.next(state);
@@ -2238,6 +2519,10 @@ class Resource {
       method,
       params
     } = context;
+    // Add force parameter to the request params
+    const requestParams = Object.assign(Object.assign({}, params), {
+      force
+    });
     state.status = RequestStatus.LOADING;
     let signal = params.signal;
     if (signal) {
@@ -2245,19 +2530,20 @@ class Resource {
     } else {
       signal = lastExecutionAbortController ? mergeAbortSignal(lastExecutionAbortController.signal, this.abortController.signal) : this.abortController.signal;
     }
-    const allInterceptors = method.getAlInterceptors(instance);
-    const sendRequest = allInterceptors.reduceRight((next, interceptor) => (method, params) => {
-      return interceptor.invoke(method, params, next);
-    }, (method, params) => __awaiter(this, undefined, undefined, function* () {
+    const allInterceptors = method.getAllInterceptors(instance);
+    const sendRequest = allInterceptors.reduceRight((next, interceptor) => (instance, method, params) => {
+      return interceptor.invoke(instance, method, params, next);
+    }, (instance, method, params) => __awaiter(this, undefined, undefined, function* () {
       state.status = RequestStatus.OPENED;
       const response = yield method.invoke(instance, Object.assign(Object.assign({}, params), {
         signal
       }));
       state.status = RequestStatus.LOADING;
-      yield this.handleResponse(response, state);
       return response;
     }));
-    sendRequest(method, params).catch(error => {
+    sendRequest(instance, method, requestParams).then(response => {
+      return this.handleResponse(response, state);
+    }).catch(error => {
       state.error(ResourceError.wrap(error));
     });
   }
@@ -2351,9 +2637,9 @@ class Resource {
     });
   }
 }
-__decorate([Signal()], Resource.prototype, "state", undefined);
-__decorate([Inject()], Resource.prototype, "ioc", undefined);
-__decorate([PostInject()], Resource.prototype, "init", null);
+__decorate([Signal(), __metadata("design:type", ResourceExecutionState)], Resource.prototype, "state", undefined);
+__decorate([Inject(), __metadata("design:type", ApplicationContext)], Resource.prototype, "ioc", undefined);
+__decorate([PostInject(), __metadata("design:type", Function), __metadata("design:paramtypes", []), __metadata("design:returntype", undefined)], Resource.prototype, "init", null);
 
 class ArgumentsTracker {
   track(args, callback) {
@@ -2401,8 +2687,18 @@ function execute(args, ResourceType) {
   const isReactive = methodMetadata.isReactive();
   const tracker = appCtx.getInstance(ArgumentsTracker);
   const resource = appCtx.getInstance(ResourceType);
+  resource[SETUP](context);
   const dispose = tracker.track(args, args => {
-    resource[EXECUTE](context, Array.from(args));
+    const executionHandlers = methodMetadata.getExecutionHandlers();
+    const {
+      instance,
+      method,
+      params
+    } = context;
+    executionHandlers.forEach(handler => {
+      handler(instance, method, params, args);
+    });
+    resource[EXECUTE]();
     if (!isReactive) {
       Promise.resolve().then(() => {
         dispose();
@@ -2412,33 +2708,48 @@ function execute(args, ResourceType) {
   return resource;
 }
 
-const SWR_CONFIG_EXTRA_KEY = Symbol('swr-config');
-
 let RestfulResource = class RestfulResource extends Resource {
-  [EXECUTE](context, args) {
+  [EXECUTE](force = false) {
+    var _a;
+    const context = this.context;
+    if (!context) {
+      throw new Error('Execution context is not setup!');
+    }
+    const args = context.params.args;
     const methodMetadata = context.method.metadata;
-    const swrConfig = methodMetadata.getExtra(SWR_CONFIG_EXTRA_KEY);
+    const _keygen = methodMetadata.getExtra(EXTRA_METADATA_SWR_KEYGEN);
+    const mutate = (_a = methodMetadata.getExtra(EXTRA_METADATA_MUTATE)) !== null && _a !== undefined ? _a : false;
+    const swrConfig = methodMetadata.getExtra(EXTRA_METADATA_SWR_CONFIG);
+    if (mutate && swrConfig) {
+      throw new Error('@SWR and @SWRMutation cannot be used together');
+    }
     if (!swrConfig) {
-      return super[EXECUTE](context, args);
+      const state = this.ioc.getInstance(ResourceExecutionState);
+      return super[EXECUTE](force, state);
     }
     const keygen = () => {
+      if (typeof _keygen === 'string') {
+        return _keygen;
+      }
+      if (typeof _keygen === 'function') {
+        return _keygen(...args);
+      }
       return context.method.resolveURL(context.params);
     };
-    this.swrService.useSWR(keygen, () => {
+    const instance = this.swrService.useSWR(keygen, () => {
       const state = this.ioc.getInstance(ResourceExecutionState);
-      super[EXECUTE](context, args, state);
+      super[EXECUTE](force, state);
       return lastValueFrom(state).then(() => state);
     }, swrConfig);
-    const instance = this.swrService.obtainInstance(keygen());
     instance === null || instance === undefined ? undefined : instance.onStateChange(state => {
       this.state = state.data;
     });
   }
 };
-__decorate([Inject()], RestfulResource.prototype, "swrService", undefined);
+__decorate([Inject(), __metadata("design:type", SWRService)], RestfulResource.prototype, "swrService", undefined);
 RestfulResource = __decorate([Scope(InstanceScope.TRANSIENT)], RestfulResource);
 
-function restfull(...args) {
+function restful(...args) {
   return execute(args, RestfulResource);
 }
 
@@ -2481,7 +2792,7 @@ class ProgressiveResource extends Resource {
     this.progress = progress;
   }
 }
-__decorate([Signal()], ProgressiveResource.prototype, "progress", undefined);
+__decorate([Signal(), __metadata("design:type", Progress)], ProgressiveResource.prototype, "progress", undefined);
 
 let DownloadResource = class DownloadResource extends ProgressiveResource {
   handleResponse(response, state) {
@@ -2507,7 +2818,7 @@ let DownloadResource = class DownloadResource extends ProgressiveResource {
     });
   }
 };
-__decorate([Signal()], DownloadResource.prototype, "progress", undefined);
+__decorate([Signal(), __metadata("design:type", Progress)], DownloadResource.prototype, "progress", undefined);
 DownloadResource = __decorate([Scope(InstanceScope.TRANSIENT)], DownloadResource);
 
 function download(...args) {
@@ -2536,11 +2847,218 @@ class UploadResource extends ProgressiveResource {
     });
   }
 }
-__decorate([Signal()], UploadResource.prototype, "progress", undefined);
+__decorate([Signal(), __metadata("design:type", Progress)], UploadResource.prototype, "progress", undefined);
 
 function upload(...args) {
   return execute(args, UploadResource);
 }
 
-export { AbortError, BadGatewayError, BadRequestError, CancellationError, CircuitBreakerError, CircuitBreakerInterceptor, ConflictError, Defer, EXECUTE, Endpoint, ErrorContextInterceptor, Events, ExpectationFailedError, FailedDependencyError, FetchRequestAdapter, ForbiddenError, GatewayTimeoutError, Get, GoneError, HTTPVersionNotSupportedError, Header, HttpError, HttpHeaders, HttpResponse, HttpStatusError, ImATeapotError, InsufficientStorageError, InternalServerError, LengthRequiredError, LockedError, LoopDetectedError, MaxRetryAttemptsReachedError, MethodNotAllowedError, MisdirectedRequestError, NetworkAuthenticationRequiredError, NetworkError, NotAcceptableError, NotExtendedError, NotFoundError, NotImplementedError, ParseError, PathVariable, Payload, PayloadTooLargeError, PaymentRequiredError, Post, PreconditionFailedError, PreconditionRequiredError, Progress, PromiseStatus, ProxyAuthenticationRequiredError, Query, RangeNotSatisfiableError, Request, RequestHeaderFieldsTooLargeError, RequestMethod, RequestStatus, RequestTimeoutError, Resource, ResourceError, RestfulResource, RetryInterceptor, SET_DATA, SET_ERROR, SWRInstance, ServerError, ServiceUnavailableError, TimeoutError, TimeoutInterceptor, TooEarlyError, TooManyRequestsError, URITooLongError, UnauthorizedError, UnavailableForLegalReasonsError, UnprocessableEntityError, UnsupportedMediaTypeError, UpgradeRequiredError, VariantAlsoNegotiatesError, XMLHttpRequestAdapter, createRequestDecorator, download, isInterceptor, isInterceptorConstructor, isURL, joinPath, jsonsse, mergeAbortSignal, parseHeaders, resolveURL, restfull, upload };
+/**
+ * Creates a time-based caching policy with a fixed TTL
+ *
+ * @param ttl The time-to-live in milliseconds
+ * @param name The name of the policy
+ * @returns A new cache policy
+ */
+function createTimeBasedPolicy(ttl, name = `TimeBasedPolicy(${ttl}ms)`) {
+  return {
+    name,
+    shouldCache: () => true,
+    getTTL: () => ttl,
+    isValid: entry => entry.expiresAt > Date.now()
+  };
+}
+const CachePolicies = {
+  /**
+   * Default caching policy - caches for 5 minutes
+   */
+  Default: createTimeBasedPolicy(5 * 60 * 1000, 'Default')};
+
+const DEFAULT_CACHE_CONFIG = {
+  policy: CachePolicies.Default,
+  respectCacheControl: true
+};
+
+/**
+ * An interceptor that caches HTTP responses and serves them from cache when appropriate.
+ *
+ * By default, it only caches GET requests and respects Cache-Control headers.
+ *
+ * @example
+ * ```typescript
+ * @Endpoint({
+ *   baseURL: 'https://api.example.com'
+ * })
+ * class ExampleAPI {
+ *   @Get('/user/:id')
+ *   @Cache({
+ *     Policies.createTimeBasedPolicy(60 * 1000)
+ *   })
+ *   getUser(id: string) {
+ *     return restful(id);
+ *   }
+ * }
+ * ```
+ */
+class CacheInterceptor {
+  static createWithConfig(config = {}) {
+    class SubCacheInterceptor extends CacheInterceptor {
+      constructor() {
+        super(config);
+      }
+    }
+    return SubCacheInterceptor;
+  }
+  get policy() {
+    var _a;
+    return (_a = this.config.policy) !== null && _a !== undefined ? _a : CachePolicies.Default;
+  }
+  constructor(config = {}) {
+    this.config = Object.assign(Object.assign({}, DEFAULT_CACHE_CONFIG), config);
+  }
+  getBucket() {
+    return __awaiter(this, undefined, undefined, function* () {
+      var _a, _b;
+      if (this.bucket) {
+        return this.bucket;
+      }
+      const bucketName = (_a = this.config.bucketName) !== null && _a !== undefined ? _a : (_b = this.httpConfig) === null || _b === undefined ? undefined : _b.cacheBucket;
+      if (bucketName) {
+        try {
+          this.bucket = this.appCtx.getInstance(bucketName);
+          return this.bucket;
+        } catch (_c) {
+          // Bucket not found, fall back to default
+        }
+      }
+      this.bucket = this.appCtx.getInstance(DEFAULT_BUCKET);
+      return this.bucket;
+    });
+  }
+  generateCacheKey(method, params) {
+    if (this.config.generateKey) {
+      return this.config.generateKey(method, params);
+    }
+    // Default cache key generation
+    const url = method.resolveURL(params);
+    return `http-cache:${url}`;
+  }
+  shouldCache(method, params) {
+    if (params.force) {
+      return false;
+    }
+    if (this.config.shouldCache) {
+      return this.config.shouldCache(method, params);
+    }
+    return this.policy.shouldCache(method, params);
+  }
+  getExpirationFromHeaders(headers) {
+    if (!this.config.respectCacheControl) {
+      return null;
+    }
+    const cacheControl = headers.get('cache-control');
+    if (!cacheControl) {
+      return null;
+    }
+    // Parse Cache-Control header
+    const directives = cacheControl.map(d => d.trim());
+    // Check for no-cache or no-store directives
+    if (directives.includes('no-cache') || directives.includes('no-store')) {
+      return 0; // Don't cache
+    }
+    // Check for max-age directive
+    const maxAgeDirective = directives.find(d => d.startsWith('max-age='));
+    if (maxAgeDirective) {
+      const maxAge = parseInt(maxAgeDirective.split('=')[1], 10);
+      if (!isNaN(maxAge)) {
+        return Date.now() + maxAge * 1000;
+      }
+    }
+    return null;
+  }
+  invoke(instance, method, params, next) {
+    return __awaiter(this, undefined, undefined, function* () {
+      // Skip caching for non-cacheable methods or when force=true
+      if (!this.shouldCache(method, params)) {
+        return next(instance, method, params);
+      }
+      const cacheKey = this.generateCacheKey(method, params);
+      const bucket = yield this.getBucket();
+      // Try to get from cache
+      const cachedEntry = yield bucket.getItem(cacheKey);
+      if (cachedEntry && this.policy.isValid(cachedEntry, method, params)) {
+        // Cache hit and not expired
+        const {
+          response
+        } = cachedEntry;
+        // Create a response from the cached data
+        const headers = new HttpHeaders(response.headers);
+        // Create a new HttpResponse from the cached data
+        return HttpResponse.of(Promise.resolve(new BlobByteStream(new Blob([response.body]))), headers, response.status, method);
+      }
+      // Cache miss or expired, make the actual request
+      const response = yield next(instance, method, params);
+      // Only cache successful responses
+      const status = yield response.status();
+      if (status >= 200 && status < 300) {
+        response.onBodyComplete(body => __awaiter(this, undefined, undefined, function* () {
+          var _a, _b, _c;
+          const headers = yield response.headers();
+          const bodyArrayBuffer = yield body.readAsBuffer();
+          // Determine expiration time
+          const headerExpiration = this.getExpirationFromHeaders(headers);
+          const ttl = this.policy.getTTL(method, params);
+          const expiresAt = headerExpiration !== null && headerExpiration !== undefined ? headerExpiration : ttl === 0 ? 0 : Date.now() + ttl;
+          // Don't cache if expiration is 0 (no-cache)
+          if (expiresAt > 0) {
+            const cacheEntry = {
+              response: {
+                status,
+                headers: headers.toJSON(),
+                body: new Uint8Array(bodyArrayBuffer)
+              },
+              cachedAt: Date.now(),
+              expiresAt,
+              metadata: {}
+            };
+            // use policy to override cache metadata
+            const overrideEntry = (_c = (_b = (_a = this.policy).overrideCacheEntry) === null || _b === undefined ? undefined : _b.call(_a, cacheEntry, method, params)) !== null && _c !== undefined ? _c : cacheEntry;
+            // Store in cache
+            yield bucket.setItem(cacheKey, overrideEntry);
+          }
+        }));
+      }
+      return response;
+    });
+  }
+}
+__decorate([Inject(), __metadata("design:type", ApplicationContext)], CacheInterceptor.prototype, "appCtx", undefined);
+__decorate([Inject(DEFAULT_HTTP_CONFIGURATION), __metadata("design:type", Object)], CacheInterceptor.prototype, "httpConfig", undefined);
+
+/**
+ * Decorator that applies the CacheInterceptor to an endpoint method.
+ *
+ * @example
+ * ```typescript
+ * @Endpoint({
+ *   baseURL: 'https://api.example.com'
+ * })
+ * class ExampleAPI {
+ *   @Get('/users/{id}')
+ *   @Cache({
+ *     policy: CachePolicies.createTimeBasedPolicy(60 * 1000) // 1 minute cache
+ *   })
+ *   getUser(id: number) {
+ *     return restful<User>();
+ *   }
+ * }
+ * ```
+ */
+function Cache(config = DEFAULT_CACHE_CONFIG) {
+  return decorateEndpointMethod((clazz, methodName, methodMetadata) => {
+    methodMetadata.appendInterceptor(CacheInterceptor.createWithConfig(config));
+  });
+}
+
+export { AbortError, BadGatewayError, BadRequestError, Cache, CacheInterceptor, CachePolicies, CancellationError, CircuitBreakerError, CircuitBreakerInterceptor, ConflictError, DEFAULT_CACHE_CONFIG, Defer, Delete, EXECUTE, Endpoint, ErrorContextInterceptor, Events, ExpectationFailedError, FailedDependencyError, FetchRequestAdapter, ForbiddenError, GatewayTimeoutError, Get, GoneError, HTTPVersionNotSupportedError, Header, HttpError, HttpHeaders, HttpResponse, HttpStatusError, ImATeapotError, InsufficientStorageError, InternalServerError, Key, LengthRequiredError, LockedError, LoopDetectedError, MaxRetryAttemptsReachedError, MethodNotAllowedError, MisdirectedRequestError, NetworkAuthenticationRequiredError, NetworkError, NotAcceptableError, NotExtendedError, NotFoundError, NotImplementedError, ParseError, PathVariable, Payload, PayloadTooLargeError, PaymentRequiredError, Post, PreconditionFailedError, PreconditionRequiredError, Progress, PromiseStatus, ProxyAuthenticationRequiredError, Put, Query, RangeNotSatisfiableError, Request, RequestHeaderFieldsTooLargeError, RequestMethod, RequestStatus, RequestTimeoutError, Resource, ResourceError, RestfulResource, RetryInterceptor, SETUP, SET_DATA, SET_ERROR, SWR, SWRInstance, SWRMutation, ServerError, ServiceUnavailableError, TimeoutError, TimeoutInterceptor, TooEarlyError, TooManyRequestsError, URITooLongError, UnauthorizedError, UnavailableForLegalReasonsError, UnprocessableEntityError, UnsupportedMediaTypeError, UpgradeRequiredError, VariantAlsoNegotiatesError, XMLHttpRequestAdapter, buildEndpointClass, createRequestDecorator, download, isInterceptor, isInterceptorConstructor, isURL, joinPath, jsonsse, mergeAbortSignal, parseHeaders, resolveURL, restful, upload };
 //# sourceMappingURL=index.es.js.map
