@@ -3,6 +3,9 @@
     "compilerOptions": {
         "lib": ["ESNext"],
         "module": "CommonJS",
+        "types": [
+            "./global.d.ts"
+        ]
     },
     "include": ["./**/*.ts"]
 }

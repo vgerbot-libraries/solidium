@@ -8,6 +8,7 @@ import html from '@rollup/plugin-html';
 import { makeHtmlAttributes } from '@rollup/plugin-html';
 import serve from '@rollup-extras/plugin-serve';
 import alias from '@rollup/plugin-alias';
+import hmr from 'rollup-plugin-hot';
 
 const pkg = require(path.resolve(process.cwd(), 'package.json'));
 
@@ -145,6 +146,7 @@ const mainConfig: RollupOptions[] = outputConfig.map(output => {
                     port: Number(process.env.SERVE_PORT),
                     dirs: 'dist'
                 }),
+            isServingExamples && hmr({}),
             isServingExamples &&
                 alias({
                     entries: [
