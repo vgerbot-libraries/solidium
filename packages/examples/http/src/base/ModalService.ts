@@ -1,29 +1,25 @@
 import { Defer } from '@vgerbot/http';
-import { Signal, Tracker } from '@vgerbot/solidium';
 import { Inject } from '@vgerbot/ioc';
+import { Tracker } from '@vgerbot/solidium';
 
-const DEFER_METADATA_KEY = Symbol('defer');
 export class ModalService {
-    @Signal()
-    tasks: Array<() => boolean> = [];
+    private lastPromise = Promise.resolve();
     @Inject()
     private tracker!: Tracker;
 
     async takeUntil(that: () => boolean) {
-        await Promise.all(
-            this.tasks.map(task => {
-                const defer = Reflect.getMetadata(DEFER_METADATA_KEY, task);
-                return defer.promise;
-            })
-        );
         const defer = new Defer<void>();
+        const lastPromise = this.lastPromise;
+        this.lastPromise = this.lastPromise.finally(() => defer.promise);
+        await lastPromise;
 
-        Reflect.defineMetadata(DEFER_METADATA_KEY, defer, that);
-        this.tasks = this.tasks.concat(that);
+        if (that()) {
+            defer.resolve();
+            return defer.promise;
+        }
 
         this.tracker.track(dispose => {
-            const isDone = that();
-            if (isDone) {
+            if (that()) {
                 dispose();
                 defer.resolve();
             }
