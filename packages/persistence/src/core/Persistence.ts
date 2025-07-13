@@ -1,7 +1,11 @@
-import { Factory, Inject, PostInject } from '@vgerbot/ioc';
+import {
+    Factory,
+    Inject,
+    PostInject,
+    createFactoryWrapper
+} from '@vgerbot/ioc';
 import { BucketConfiguration } from './bucket/BucketConfiguration';
 import { DEFAULT_BUCKET, DEFAULT_BUCKET_CONFIGURATION } from './constants';
-import { keep } from '../common/keep';
 import { Bucket } from './bucket/Bucket';
 /**
  * ```jsx
@@ -33,23 +37,14 @@ import { Bucket } from './bucket/Bucket';
  */
 export class Persistence {
     static default(configuration?: Omit<BucketConfiguration, 'name'>) {
-        class StorageConfigurationFactory {
-            @Factory(DEFAULT_BUCKET_CONFIGURATION)
-            getConfiguration() {
-                return configuration;
-            }
-        }
-        keep(StorageConfigurationFactory);
-        return Persistence;
+        return createFactoryWrapper(
+            DEFAULT_BUCKET_CONFIGURATION,
+            configuration,
+            Persistence
+        );
     }
     static bucket(name: string, configuration: BucketConfiguration) {
-        class StorageFactory {
-            @Factory(name)
-            createStorage() {
-                return new Bucket(configuration);
-            }
-        }
-        return StorageFactory;
+        return createFactoryWrapper(name, configuration, Persistence);
     }
     @Inject(DEFAULT_BUCKET_CONFIGURATION)
     private configuration: BucketConfiguration = {
