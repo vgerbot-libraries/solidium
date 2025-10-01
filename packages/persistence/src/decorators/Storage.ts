@@ -13,11 +13,62 @@ import { ActionType } from '../types/ActionType';
 import { ChangeBy } from '../types/ChangeBy';
 import { getDefaultStorageOptions } from './DefaultStorage';
 
+/**
+ * Configuration options for the Storage decorator.
+ * 
+ * @public
+ */
 export interface StorageOptions {
+    /**
+     * The bucket to use for storage. Can be:
+     * - A string name referencing a registered bucket
+     * - A symbol identifier for a bucket
+     * - A Bucket instance directly
+     * 
+     * @defaultValue DEFAULT_BUCKET (the default bucket)
+     */
     bucket?: string | symbol | Bucket;
+    /**
+     * The storage key to use. If not specified, the property name will be used.
+     */
     key?: string;
 }
 
+/**
+ * Property decorator that automatically persists a signal property to storage.
+ * The decorated property must be a signal created with `@Signal()`.
+ * 
+ * When the property changes, the new value is automatically saved to storage.
+ * When the component initializes, the last saved value is automatically loaded.
+ * 
+ * @param options - Configuration options for storage behavior
+ * @returns A property decorator
+ * 
+ * @example
+ * Basic usage with default bucket:
+ * ```typescript
+ * class UserPreferences {
+ *   @Signal()
+ *   @Storage()
+ *   theme: 'light' | 'dark' = 'light';
+ * }
+ * ```
+ * 
+ * @example
+ * Using a custom bucket and key:
+ * ```typescript
+ * class UserPreferences {
+ *   @Signal()
+ *   @Storage({
+ *     bucket: 'user-preferences',
+ *     key: 'app-theme'
+ *   })
+ *   theme: 'light' | 'dark' = 'light';
+ * }
+ * ```
+ * 
+ * @public
+ */
 export const Storage = (options: StorageOptions = {}) => {
     return defineMemberDecoratorProcessor('storage', {
         afterInstantiation<T extends Record<MemberKey, unknown>>(

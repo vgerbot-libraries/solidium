@@ -8,22 +8,49 @@ import { StorageDriverOptions } from '../core/driver/StorageDriverOptions';
 import { DriverChangeEvent } from '../core/driver/ChangeEvent';
 import { ActionType } from '../types/ActionType';
 
+/**
+ * Abstract base class for storage drivers that use browser Web Storage APIs
+ * (localStorage or sessionStorage).
+ * 
+ * This class provides common functionality for:
+ * - Key normalization and namespacing
+ * - Serialization to/from Blob format
+ * - Change event observation
+ * - Cross-tab synchronization via storage events
+ * 
+ * @public
+ */
 export abstract class BrowserStorageDriver implements StorageDriver {
+    /**
+     * The name identifier for this driver implementation.
+     */
     abstract readonly name: string;
     private readonly observers = new Map<
         string,
         StorageDriverChangeEventListener[]
     >();
+    /**
+     * Creates a new BrowserStorageDriver instance.
+     * 
+     * @param options - Configuration options for the driver
+     * @param storage - The Web Storage API object (localStorage or sessionStorage)
+     */
     protected constructor(
         private readonly options: StorageDriverOptions,
         protected readonly storage: Storage
-    ) {}
+    ) { }
     private getKeyPrefix() {
         return this.options.bucketName;
     }
     private normalizeKey(key: string) {
         return `${this.getKeyPrefix()}.${key.replace(/\./g, '_')}`;
     }
+    /**
+     * Prepares the driver for use by setting up storage event listeners.
+     * This enables cross-tab synchronization.
+     * 
+     * @returns A promise that resolves when preparation is complete
+     */
     prepare(): Promise<void> {
         const storageEventListener = (event: StorageEvent) => {
             const { key, newValue, oldValue } = event;
@@ -47,9 +74,19 @@ export abstract class BrowserStorageDriver implements StorageDriver {
         window.addEventListener('storage', storageEventListener);
         return Promise.resolve();
     }
+    /**
+     * Checks if the storage API is supported in the current environment.
+     * 
+     * @returns A promise that resolves to true if supported, false otherwise
+     */
     supports(): Promise<boolean> {
         return Promise.resolve(typeof this.storage !== 'undefined');
     }
+    /**
+     * Iterates over all key-value pairs in this bucket.
+     * 
+     * @yields Objects containing key and value (as Blob)
+     */
     async *iterate(): AsyncGenerator<{ key: string; value: Blob }> {
         const len = this.storage.length;
         const prefix = this.getKeyPrefix();
@@ -69,6 +106,12 @@ export abstract class BrowserStorageDriver implements StorageDriver {
             };
         }
     }
+    /**
+     * Retrieves an item from storage by key.
+     * 
+     * @param key - The key of the item to retrieve
+     * @returns A promise that resolves to the stored Blob, or undefined if not found
+     */
     getItem(key: string): Promise<Blob | undefined> {
         const normalizedKey = this.normalizeKey(key);
         return Promise.resolve(this.getItemByNormalizedKey(normalizedKey));
@@ -80,6 +123,12 @@ export abstract class BrowserStorageDriver implements StorageDriver {
         }
         return this.deserialize(value);
     }
+    /**
+     * Removes an item from storage by key.
+     * 
+     * @param key - The key of the item to remove
+     * @returns A promise that resolves when the item is removed
+     */
     removeItem(key: string): Promise<void> {
         const normalizedKey = this.normalizeKey(key);
         let oldValue: Blob | undefined;
@@ -99,6 +148,13 @@ export abstract class BrowserStorageDriver implements StorageDriver {
         }
         return Promise.resolve();
     }
+    /**
+     * Stores an item in storage.
+     * 
+     * @param key - The key to store the item under
+     * @param value - The Blob value to store
+     * @returns A promise that resolves when the item is stored
+     */
     async setItem(key: string, value: Blob): Promise<void> {
         const normalizeKey = this.normalizeKey(key);
         const needDispatch = this.needDispatch(key);
@@ -118,6 +174,11 @@ export abstract class BrowserStorageDriver implements StorageDriver {
             );
         }
     }
+    /**
+     * Returns the number of items in this bucket.
+     * 
+     * @returns A promise that resolves to the item count
+     */
     async length(): Promise<number> {
         let len = 0;
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -126,6 +187,12 @@ export abstract class BrowserStorageDriver implements StorageDriver {
         }
         return len;
     }
+    /**
+     * Returns the key at the specified index.
+     * 
+     * @param index - The index of the key to retrieve
+     * @returns A promise that resolves to the key, or undefined if index is out of bounds
+     */
     async keyAt(index: number): Promise<string | undefined> {
         let i = 0;
         for await (const key of this.keys()) {
@@ -192,6 +259,11 @@ export abstract class BrowserStorageDriver implements StorageDriver {
             });
         });
     }
+    /**
+     * Iterates over all keys in this bucket.
+     * 
+     * @yields Storage keys belonging to this bucket
+     */
     async *keys(): AsyncGenerator<string> {
         const len = this.storage.length;
         const prefix = this.getKeyPrefix();
@@ -202,11 +274,23 @@ export abstract class BrowserStorageDriver implements StorageDriver {
             }
         }
     }
+    /**
+     * Clears all items from this bucket.
+     * 
+     * @returns A promise that resolves when all items are cleared
+     */
     async clear(): Promise<void> {
         for await (const key of this.keys()) {
             this.storage.removeItem(key);
         }
     }
+    /**
+     * Observes changes to a specific storage key.
+     * 
+     * @param key - The key to observe
+     * @param onChange - Callback function invoked when the key changes
+     * @returns A function that can be called to stop observing
+     */
     observe(
         key: string,
         onChange: (event: DriverChangeEvent) => void

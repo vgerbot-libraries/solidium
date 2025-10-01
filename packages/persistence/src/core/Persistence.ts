@@ -8,34 +8,59 @@ import { BucketConfiguration } from './bucket/BucketConfiguration';
 import { DEFAULT_BUCKET, DEFAULT_BUCKET_CONFIGURATION } from './constants';
 import { Bucket } from './bucket/Bucket';
 /**
- * ```jsx
+ * Main entry point for the persistence system.
+ * Provides factory methods for configuring storage buckets.
+ * 
+ * @example
+ * Configure default and custom buckets in your Solidium application:
+ * ```tsx
  * <Solidium autoRegisterClasses={[
-    Persistence.default({
-        // default storage configuration
-    }),
-    Persistence.bucket(
-        'custom-bucket-name',
-        {
-            // custom storage configuration
-        }
-    )
- ]}></Solidium>
+ *   Persistence.default({
+ *     driver: DefaultDrivers.LOCAL_STORAGE,
+ *     debug: true
+ *   }),
+ *   Persistence.bucket('custom-bucket-name', {
+ *     name: 'custom-bucket-name',
+ *     driver: DefaultDrivers.INDEXED_DB,
+ *     version: 1.0
+ *   })
+ * ]}></Solidium>
  * ```
  * 
- * ```js
- class BizService {
-    @Signal()
-    @Storage() // use default storage
-    autoSaveToDefaultStorage: boolean;
-    @Signal()
-    @Storage({
-        bucket: 'custom-bucket-name'
-    }) // 
-    autoSaveToCustomStorage: boolean;
- }
+ * @example
+ * Use storage decorators in your services:
+ * ```typescript
+ * class BizService {
+ *   @Signal()
+ *   @Storage() // uses default bucket
+ *   autoSaveToDefaultStorage: boolean;
+ *   
+ *   @Signal()
+ *   @Storage({
+ *     bucket: 'custom-bucket-name'
+ *   })
+ *   autoSaveToCustomStorage: boolean;
+ * }
  * ```
+ * 
+ * @public
  */
 export class Persistence {
+    /**
+     * Creates a factory wrapper for the default storage bucket configuration.
+     * The default bucket is used when no bucket is specified in `@Storage()` decorators.
+     * 
+     * @param configuration - Configuration options for the default bucket (name is automatically set)
+     * @returns A factory wrapper that can be registered with Solidium
+     * 
+     * @example
+     * ```typescript
+     * Persistence.default({
+     *   driver: DefaultDrivers.LOCAL_STORAGE,
+     *   debug: true
+     * })
+     * ```
+     */
     static default(configuration?: Omit<BucketConfiguration, 'name'>) {
         return createFactoryWrapper(
             DEFAULT_BUCKET_CONFIGURATION,
@@ -43,6 +68,23 @@ export class Persistence {
             Persistence
         );
     }
+    /**
+     * Creates a factory wrapper for a custom named storage bucket.
+     * Named buckets can be referenced in `@Storage()` decorators by their name.
+     * 
+     * @param name - The name identifier for this bucket
+     * @param configuration - Configuration options for the bucket
+     * @returns A factory wrapper that can be registered with Solidium
+     * 
+     * @example
+     * ```typescript
+     * Persistence.bucket('user-preferences', {
+     *   name: 'user-preferences',
+     *   driver: DefaultDrivers.INDEXED_DB,
+     *   version: 1.0
+     * })
+     * ```
+     */
     static bucket(name: string, configuration: BucketConfiguration) {
         return createFactoryWrapper(name, configuration, Persistence);
     }
@@ -52,11 +94,19 @@ export class Persistence {
         version: 1.0
     };
 
+    /**
+     * Factory method that creates and returns the default bucket instance.
+     * @internal
+     */
     @Factory(DEFAULT_BUCKET)
     getDefaultBucket() {
         return new Bucket(this.configuration);
     }
 
+    /**
+     * Initialization hook called after dependency injection.
+     * @internal
+     */
     @PostInject()
     init() {
         //
