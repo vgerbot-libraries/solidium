@@ -10,5 +10,6 @@ export * from './core/serializer/DefaultSerializer';
 export * from './decorators/Storage';
 export * from './decorators/DefaultStorage';
 export * from './decorators/OnStorageLoad';
+export * from './decorators/OnStorageChange';
 export * from './drivers/DefaultDrivers';
 export * from './core/constants';

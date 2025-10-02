@@ -12,6 +12,7 @@ import { notifyStorageLoad } from './OnStorageLoad';
 import { ActionType } from '../types/ActionType';
 import { ChangeBy } from '../types/ChangeBy';
 import { getDefaultStorageOptions } from './DefaultStorage';
+import { notifyStorageChange } from './OnStorageChange';
 
 /**
  * Configuration options for the Storage decorator.
@@ -111,6 +112,12 @@ export const Storage = (options: StorageOptions = {}) => {
                         );
                     }
                     set(event.newValue);
+
+                    notifyStorageChange({
+                        instance,
+                        member: key,
+                        ...event
+                    })
                 });
             };
             if (bucket.debug) {
