@@ -1,20 +1,43 @@
 import { Events } from '../common/Events';
 import { SWRConfig, SWRRetryContext } from './SWRConfig';
 
+/**
+ * Represents the current state of an SWR cache instance.
+ *
+ * @template T - The type of cached data
+ */
 export interface SWRState<T> {
+    /** The cached data, undefined if not yet fetched or if an error occurred */
     data?: T;
+    /** The error that occurred during fetching, if any */
     error?: Error;
+    /** Whether the initial fetch is in progress */
     isLoading: boolean;
+    /** Whether a revalidation (background fetch) is in progress */
     isValidating: boolean;
+    /** The reason for the current revalidation (e.g., 'focus', 'reconnect') */
     validatingReason?: string;
 }
 
+/**
+ * Extended SWR state with mutation and revalidation methods.
+ *
+ * @template T - The type of cached data
+ */
 export interface SWRResponse<T> extends SWRState<T> {
+    /** Manually update the cached data and trigger revalidation */
     mutate: (data?: T) => void;
+    /** Manually trigger revalidation with an optional reason */
     revalidate: (reason?: string) => Promise<void>;
 }
 
+/**
+ * Options for creating an SWR instance.
+ *
+ * Extends {@link SWRConfig} with optional initial data.
+ */
 export interface SWROptions extends Partial<SWRConfig> {
+    /** Initial data to populate the cache before the first fetch */
     initialData?: unknown;
 }
 
@@ -53,6 +76,59 @@ const STATE_CHANGE_EVENT = 'stateChange';
 const ERROR_EVENT = 'error';
 const SUCCESS_EVENT = 'success';
 
+/**
+ * Manages the lifecycle and state of a single SWR (Stale-While-Revalidate) cache entry.
+ *
+ * An SWR instance represents a single cached API request with its associated configuration.
+ * It handles:
+ * - Initial data fetching and loading state
+ * - Automatic revalidation on focus, reconnect, or custom events
+ * - Background revalidation while serving stale data
+ * - Request deduplication to prevent redundant fetches
+ * - Error retry with exponential backoff
+ * - Automatic polling/refresh at intervals
+ * - Manual cache mutation and revalidation
+ *
+ * Instances are typically created and managed automatically by the {@link SWR} decorator
+ * through the {@link SWRService}, but can also be created manually for advanced use cases.
+ *
+ * @template T - The type of data managed by this SWR instance
+ *
+ * @example
+ * Automatic usage via decorator (recommended):
+ * ```typescript
+ * @Get('/users/{id}')
+ * @SWR({ revalidate: { focus: true } })
+ * getUser(@PathVariable('id') id: string) {
+ *   return restful<User>(id);
+ * }
+ *
+ * // SWRInstance is created and managed automatically
+ * const resource = api.getUser('123');
+ * ```
+ *
+ * @example
+ * Manual instance creation (advanced):
+ * ```typescript
+ * const swrInstance = new SWRInstance<User>(
+ *   'user-123',
+ *   async (key) => {
+ *     const response = await fetch(`/api/users/${key.split('-')[1]}`);
+ *     return response.json();
+ *   },
+ *   {
+ *     revalidate: { focus: true, reconnect: true },
+ *     staleTime: 60000
+ *   }
+ * );
+ *
+ * // Listen to state changes
+ * swrInstance.onStateChange((state) => {
+ *   console.log('Data:', state.data);
+ *   console.log('Loading:', state.isLoading);
+ * });
+ * ```
+ */
 export class SWRInstance<T> {
     private readonly config: SWROptions;
     private state: SWRState<T>;

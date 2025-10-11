@@ -1,9 +1,53 @@
+/**
+ * Represents a cookie item (currently not widely used in the library).
+ * @internal
+ */
 export interface CookieItem {
     name: string;
     value: string;
     expireAt?: number;
     path?: string;
 }
+
+/**
+ * Manages HTTP headers with support for multiple values per header name.
+ *
+ * This class provides a convenient API for working with HTTP headers, supporting:
+ * - Multiple values for the same header name
+ * - Conversion to/from native `Headers` object
+ * - Header merging and concatenation
+ * - JSON serialization
+ *
+ * Unlike the native `Headers` class, this implementation:
+ * - Stores values as arrays, allowing explicit multiple values
+ * - Provides a fluent, chainable API
+ * - Supports various initialization formats
+ *
+ * @example
+ * Creating headers:
+ * ```typescript
+ * const headers = new HttpHeaders();
+ * headers.set('Content-Type', 'application/json');
+ * headers.set('Accept', 'application/json', 'text/plain');
+ * ```
+ *
+ * @example
+ * From object:
+ * ```typescript
+ * const headers = new HttpHeaders({
+ *   'Content-Type': 'application/json',
+ *   'Accept': ['application/json', 'text/plain']
+ * });
+ * ```
+ *
+ * @example
+ * Merging headers:
+ * ```typescript
+ * const baseHeaders = new HttpHeaders({ 'Authorization': 'Bearer token' });
+ * const requestHeaders = new HttpHeaders({ 'Content-Type': 'application/json' });
+ * const combined = baseHeaders.concat(requestHeaders);
+ * ```
+ */
 export class HttpHeaders {
     private readonly headers = new Map<string, string[]>();
     constructor(

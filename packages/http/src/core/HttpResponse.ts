@@ -4,10 +4,60 @@ import { HttpSource } from '../http/HttpSource';
 import { ProgressHandler } from '../progress/ProgressHandler';
 import { RequestMethod } from './RequestMethod';
 
+/**
+ * Initialization options for creating an {@link HttpResponse}.
+ */
 export interface HttpResponseInit {
+    /** The request method that generated this response */
     method: RequestMethod;
 }
 
+/**
+ * Represents an HTTP response with utilities for parsing and streaming data.
+ *
+ * This class wraps the low-level {@link HttpSource} and provides convenient
+ * methods for accessing response data in various formats:
+ * - Plain text (`text()`)
+ * - JSON (`json()`)
+ * - Streaming text (`textStream()`)
+ * - Streaming JSON/SSE (`jsonStream()`)
+ * - Raw byte stream (`body()`)
+ *
+ * It also provides access to:
+ * - Response status code
+ * - Response headers
+ * - Upload/download progress tracking
+ *
+ * Instances are typically created automatically by the framework and accessed
+ * through the Resource abstraction or interceptors.
+ *
+ * @example
+ * Accessing response in an interceptor:
+ * ```typescript
+ * class LoggingInterceptor implements Interceptor {
+ *   async invoke(instance, method, params, next) {
+ *     const response = await next(instance, method, params);
+ *     const status = await response.status();
+ *     const headers = await response.headers();
+ *     console.log(`Response ${status}:`, headers.toJSON());
+ *     return response;
+ *   }
+ * }
+ * ```
+ *
+ * @example
+ * Creating a response manually (e.g., for testing):
+ * ```typescript
+ * const response = HttpResponse.of(
+ *   Promise.resolve(new BlobByteStream(new Blob(['{"data": "value"}']))),
+ *   new HttpHeaders({ 'Content-Type': 'application/json' }),
+ *   200,
+ *   method
+ * );
+ *
+ * const data = await response.json();
+ * ```
+ */
 export class HttpResponse implements HttpSource {
     static of(
         body: Promise<ByteStream>,

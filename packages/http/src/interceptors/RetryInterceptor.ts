@@ -5,12 +5,21 @@ import { HttpResponse } from '../core/HttpResponse';
 import { HttpError, HttpStatusError } from '../errors/HttpError';
 import { EndpointInstance } from '../core/EndpointInstance';
 
+/**
+ * Configuration options for the {@link RetryInterceptor}.
+ */
 export interface RetryConfig {
+    /** Maximum number of retry attempts before giving up */
     maxAttempts: number;
+    /** Multiplier for exponential backoff (e.g., 2 doubles the delay each retry) */
     backoffFactor: number;
+    /** Initial delay in milliseconds before the first retry */
     initialDelay: number;
+    /** Maximum delay in milliseconds between retries (caps exponential growth) */
     maxDelay: number;
+    /** HTTP status codes that should trigger a retry (e.g., [408, 500, 502, 503, 504]) */
     retryableStatuses: number[];
+    /** Custom function to determine if an error should trigger a retry */
     retryable: (error: unknown) => Promise<boolean>;
 }
 
@@ -28,6 +37,74 @@ const DEFAULT_CONFIG: RetryConfig = {
     }
 };
 
+/**
+ * Interceptor that automatically retries failed HTTP requests with exponential backoff.
+ *
+ * This interceptor implements intelligent retry logic for transient failures such as
+ * network timeouts, temporary server errors (5xx), or connection issues. It uses
+ * exponential backoff to gradually increase the delay between retries, reducing
+ * server load while maximizing the chance of eventual success.
+ *
+ * Default behavior:
+ * - Retries up to 3 times
+ * - Uses exponential backoff starting at 1 second, doubling each retry
+ * - Caps maximum delay at 10 seconds
+ * - Retries on HTTP status codes: 408 (Timeout), 500, 502, 503, 504 (Server Errors)
+ *
+ * @example
+ * Using default retry configuration:
+ * ```typescript
+ * @Endpoint({
+ *   baseURL: 'https://api.example.com',
+ *   interceptors: [RetryInterceptor]
+ * })
+ * class API {
+ *   @Get('/unstable-endpoint')
+ *   getData() {
+ *     return restful<Data>();
+ *   }
+ * }
+ * // Automatically retries up to 3 times on failure
+ * ```
+ *
+ * @example
+ * Custom retry configuration:
+ * ```typescript
+ * @Endpoint({
+ *   baseURL: 'https://api.example.com',
+ *   interceptors: [
+ *     new RetryInterceptor({
+ *       maxAttempts: 5,
+ *       initialDelay: 500,
+ *       maxDelay: 30000,
+ *       retryableStatuses: [408, 429, 500, 502, 503, 504],
+ *       async retryable(error) {
+ *         // Custom retry logic
+ *         if (error instanceof NetworkError) return true;
+ *         if (error instanceof TimeoutError) return true;
+ *         return false;
+ *       }
+ *     })
+ *   ]
+ * })
+ * class API { }
+ * ```
+ *
+ * @example
+ * Method-specific retry:
+ * ```typescript
+ * @Get('/data')
+ * @Request({
+ *   retry: {
+ *     maxAttempts: 5,
+ *     initialDelay: 2000
+ *   }
+ * })
+ * getData() {
+ *   return restful<Data>();
+ * }
+ * ```
+ */
 export class RetryInterceptor implements Interceptor {
     private readonly config: RetryConfig;
 

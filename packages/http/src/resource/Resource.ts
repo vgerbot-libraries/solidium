@@ -14,14 +14,122 @@ import { ResourceError } from './ResourceError';
 import { ResourceExecutionState } from './ResourceExecutionState';
 import { EndpointInstance } from '../core/EndpointInstance';
 
+/**
+ * @internal Symbol for executing the resource
+ */
 export const EXECUTE = Symbol('execute');
+/**
+ * @internal Symbol for setting data
+ */
 export const SET_DATA = Symbol('setData');
+/**
+ * @internal Symbol for setting error
+ */
 export const SET_ERROR = Symbol('setError');
+/**
+ * @internal Symbol for setup
+ */
 export const SETUP = Symbol('setup');
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
+/**
+ * Type alias for a Resource with any data type.
+ * @internal
+ */
 export type AnyResource = Resource<any, unknown>;
 
+/**
+ * Abstract base class for all HTTP request resources.
+ *
+ * A Resource represents an HTTP request with reactive state management, providing:
+ * - **Reactive state**: All state properties (data, loading, error, etc.) are reactive signals
+ * - **Observable pattern**: Subscribe to state changes via RxJS Observables
+ * - **Promise interface**: Wait for completion with `wait()` method
+ * - **Lifecycle management**: Automatic abort controller and cleanup
+ * - **Type safety**: Strong TypeScript typing for request/response data
+ *
+ * The Resource class is the foundation of the library's reactive HTTP layer, integrating
+ * seamlessly with Solid.js components through signal-based reactivity.
+ *
+ * Resource lifecycle states (exposed as reactive properties):
+ * - `idle`: Initial state before request starts
+ * - `loading`: Request is in progress
+ * - `opened`: Connection established (for streaming)
+ * - `success`: Request completed successfully
+ * - `failure`: Request failed with an error
+ * - `aborted`: Request was aborted
+ *
+ * Specialized resource types:
+ * - {@link RestfulResource}: Standard REST API calls with optional SWR
+ * - {@link DownloadResource}: File downloads with progress tracking
+ * - {@link UploadResource}: File uploads with progress tracking
+ * - {@link JSONSSEResource}: Server-Sent Events with JSON parsing
+ * - {@link TextSSEResource}: Server-Sent Events with text streaming
+ *
+ * @template T - The type of data returned by the request
+ * @template B - The type of error body (defaults to unknown)
+ *
+ * @example
+ * Using a resource in a Solid component:
+ * ```typescript
+ * function UserProfile(props: { userId: string }) {
+ *   const api = useService(UserAPI);
+ *   const userResource = api.getUser(props.userId);
+ *
+ *   return (
+ *     <Show
+ *       when={!userResource.loading}
+ *       fallback={<div>Loading...</div>}
+ *     >
+ *       <Show
+ *         when={userResource.success}
+ *         fallback={<div>Error: {userResource.error?.message}</div>}
+ *       >
+ *         <div>Name: {userResource.data?.name}</div>
+ *       </Show>
+ *     </Show>
+ *   );
+ * }
+ * ```
+ *
+ * @example
+ * Subscribing to state changes:
+ * ```typescript
+ * const resource = api.getData();
+ *
+ * resource.subscribe((state) => {
+ *   console.log('State changed:', {
+ *     loading: state.loading,
+ *     data: state.data,
+ *     error: state.reason
+ *   });
+ * });
+ * ```
+ *
+ * @example
+ * Waiting for completion:
+ * ```typescript
+ * const resource = api.createUser(userData);
+ *
+ * try {
+ *   const state = await resource.wait();
+ *   if (state.success) {
+ *     console.log('User created:', state.data);
+ *   }
+ * } catch (error) {
+ *   console.error('Failed to create user:', error);
+ * }
+ * ```
+ *
+ * @example
+ * Manual reload:
+ * ```typescript
+ * const resource = api.getData();
+ *
+ * // Later, reload the data
+ * resource.reload(true); // force=true bypasses cache
+ * ```
+ */
 export abstract class Resource<T, B = unknown> {
     private readonly $state = new ReplaySubject<ResourceExecutionState<T, B>>(
         1
