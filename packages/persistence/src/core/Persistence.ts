@@ -61,7 +61,7 @@ export class Persistence {
      * })
      * ```
      */
-    static default(configuration?: Omit<BucketConfiguration, 'name'>) {
+    static default(configuration?: Omit<BucketConfiguration, 'name'>): typeof Persistence {
         return createFactoryWrapper(
             DEFAULT_BUCKET_CONFIGURATION,
             configuration,
@@ -85,7 +85,7 @@ export class Persistence {
      * })
      * ```
      */
-    static bucket(name: string, configuration: BucketConfiguration) {
+    static bucket(name: string, configuration: BucketConfiguration): typeof Persistence {
         return createFactoryWrapper(name, configuration, Persistence);
     }
     @Inject(DEFAULT_BUCKET_CONFIGURATION)
