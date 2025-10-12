@@ -26,10 +26,8 @@ export function Counter() {
 
 export function CounterControl() {
     const service = useService(CounterService);
-    const control = new AbortController();
     const instance = new SWRInstance(
         '',
-        control.signal,
         async () => {
             const data = new Date().toISOString();
             console.log('revalidate', data);
@@ -37,9 +35,9 @@ export function CounterControl() {
         },
         {
             revalidate: {
-                on: {
-                    focus: true
-                }
+                focus: true,
+                reconnect: true,
+                events: []
             },
             refresh: {
                 interval: 0,

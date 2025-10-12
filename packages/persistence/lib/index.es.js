@@ -1,4 +1,4 @@
-import { ClassMetadata, Inject, Factory, PostInject } from '@vgerbot/ioc';
+import { ClassMetadata, Inject, Factory, PostInject, createFactoryWrapper } from '@vgerbot/ioc';
 import { defineClassDecoratorProcessor, defineMemberDecoratorProcessor, getSignal } from '@vgerbot/solidium';
 import { getOwner, runWithOwner, createEffect, on, onCleanup } from 'solid-js';
 import { encode, decode } from '@vgerbot/msgpack-ext';
@@ -47,7 +47,7 @@ function __values(o) {
     if (m) return m.call(o);
     if (o && typeof o.length === "number") return {
         next: function () {
-            if (o && i >= o.length) o = undefined;
+            if (o && i >= o.length) o = void 0;
             return { value: o && o[i++], done: !o };
         }
     };
@@ -84,38 +84,100 @@ typeof SuppressedError === "function" ? SuppressedError : function (error, suppr
     return e.name = "SuppressedError", e.error = error, e.suppressed = suppressed, e;
 };
 
+/**
+ * Symbol identifier for the default bucket configuration in the IoC container.
+ * Used internally to register and retrieve the default bucket configuration.
+ *
+ * @public
+ */
 const DEFAULT_BUCKET_CONFIGURATION = Symbol('solidium-default-bucket-configuration');
+/**
+ * Symbol identifier for the default bucket instance in the IoC container.
+ * Used internally to register and retrieve the default bucket.
+ *
+ * @public
+ */
 const DEFAULT_BUCKET = Symbol('solidium-default-bucket');
-
-function keep(...args) {
-  return args;
-}
 
 const STORAGE_LOAD_EVENTS = Symbol();
 function notifyStorageLoad(event) {
   var _a;
   const prototype = Object.getPrototypeOf(event.instance);
-  const events = (_a = Reflect.getMetadata(STORAGE_LOAD_EVENTS, prototype)) !== null && _a !== undefined ? _a : [];
+  const events = (_a = Reflect.getMetadata(STORAGE_LOAD_EVENTS, prototype)) !== null && _a !== void 0 ? _a : [];
   events.forEach(handle => {
     handle.call(event.instance, event);
   });
 }
+/**
+ * Method decorator that marks a method to be called when storage properties are loaded.
+ * The decorated method will receive a {@link StorageLoadEvent} with information about
+ * the loaded property.
+ *
+ * This is useful for performing actions after storage values are restored, such as
+ * validation, transformation, or triggering side effects.
+ *
+ * @param options - Optional configuration to filter which properties trigger the callback
+ * @returns A method decorator
+ *
+ * @example
+ * Called for any storage property load:
+ * ```typescript
+ * class UserSettings {
+ *   @Signal()
+ *   @Storage()
+ *   theme: string = 'light';
+ *
+ *   @Signal()
+ *   @Storage()
+ *   fontSize: number = 14;
+ *
+ *   @OnStorageLoad()
+ *   onAnyPropertyLoaded(event: StorageLoadEvent<UserSettings>) {
+ *     console.log(`Loaded ${String(event.member)}: ${event.value}`);
+ *   }
+ * }
+ * ```
+ *
+ * @example
+ * Called only for specific properties:
+ * ```typescript
+ * class UserSettings {
+ *   @Signal()
+ *   @Storage()
+ *   theme: string = 'light';
+ *
+ *   @Signal()
+ *   @Storage()
+ *   fontSize: number = 14;
+ *
+ *   @OnStorageLoad({ members: ['theme', 'fontSize'] })
+ *   onBothLoaded(event: StorageLoadEvent<UserSettings>) {
+ *     // Called after both theme and fontSize are loaded
+ *     if (event.loadedMembers.size === 2) {
+ *       console.log('All settings loaded!');
+ *     }
+ *   }
+ * }
+ * ```
+ *
+ * @public
+ */
 function OnStorageLoad(options) {
   return (target, propertyKey) => {
     var _a;
-    const events = (_a = Reflect.getMetadata(STORAGE_LOAD_EVENTS, target)) !== null && _a !== undefined ? _a : [];
+    const events = (_a = Reflect.getMetadata(STORAGE_LOAD_EVENTS, target)) !== null && _a !== void 0 ? _a : [];
     Reflect.defineMetadata(STORAGE_LOAD_EVENTS, events, target);
     const loadedMembers = new Set();
     events.push(function listener(event) {
       loadedMembers.add(event.member);
-      if ((options === null || options === undefined ? undefined : options.members) && !options.members.includes(event.member)) {
+      if ((options === null || options === void 0 ? void 0 : options.members) && !options.members.includes(event.member)) {
         return;
       }
       const method = Reflect.get(this, propertyKey);
       method.call(this, Object.assign(Object.assign({}, event), {
         loadedMembers: new Set(loadedMembers)
       }));
-      if (options === null || options === undefined ? undefined : options.members) {
+      if (options === null || options === void 0 ? void 0 : options.members) {
         const isAllHandled = loadedMembers.isSupersetOf(new Set(options.members));
         if (isAllHandled) {
           const index = events.indexOf(listener);
@@ -130,15 +192,38 @@ function OnStorageLoad(options) {
   };
 }
 
+/**
+ * Defines the type of action performed on storage.
+ *
+ * @public
+ */
 var ActionType;
 (function (ActionType) {
+  /**
+   * Represents an update or insert operation on a storage item.
+   */
   ActionType[ActionType["UPDATE"] = 0] = "UPDATE";
+  /**
+   * Represents a removal operation on a storage item.
+   */
   ActionType[ActionType["REMOVE"] = 1] = "REMOVE";
 })(ActionType || (ActionType = {}));
 
+/**
+ * Indicates the source of a storage change event.
+ *
+ * @public
+ */
 var ChangeBy;
 (function (ChangeBy) {
+  /**
+   * The change was triggered by the current application instance.
+   */
   ChangeBy[ChangeBy["SELF"] = 0] = "SELF";
+  /**
+   * The change was triggered by another application instance or external source.
+   * For example, changes from other browser tabs/windows.
+   */
   ChangeBy[ChangeBy["OTHER"] = 1] = "OTHER";
 })(ChangeBy || (ChangeBy = {}));
 
@@ -182,9 +267,185 @@ const DefaultStorage = (options = {}) => {
  */
 function getDefaultStorageOptions(metadata) {
   const ctorMarkInfo = metadata.getCtorMarkInfo();
-  return ctorMarkInfo === null || ctorMarkInfo === undefined ? undefined : ctorMarkInfo[DEFAULT_STORAGE_OPTIONS];
+  return ctorMarkInfo === null || ctorMarkInfo === void 0 ? void 0 : ctorMarkInfo[DEFAULT_STORAGE_OPTIONS];
 }
 
+const STORAGE_CHANGE_EVENTS = Symbol('storage-change-events');
+/**
+ * Internal function to notify all registered storage change listeners.
+ * @internal
+ */
+function notifyStorageChange(event) {
+  var _a;
+  const prototype = Object.getPrototypeOf(event.instance);
+  const events = (_a = Reflect.getMetadata(STORAGE_CHANGE_EVENTS, prototype)) !== null && _a !== void 0 ? _a : [];
+  events.forEach(handle => {
+    handle.call(event.instance, event);
+  });
+}
+/**
+ * Method decorator that marks a method to be called when storage properties change.
+ * Unlike {@link OnStorageLoad}, which is called only once when data is initially loaded,
+ * this decorator is called whenever the storage value changes (including updates and removals).
+ *
+ * The decorated method receives a {@link StorageChangeEvent} with information about the change,
+ * including what changed, who made the change, and the old/new values.
+ *
+ * @param options - Optional configuration to filter which changes trigger the callback
+ * @returns A method decorator
+ *
+ * @example
+ * Called for any storage property change:
+ * ```typescript
+ * class UserSettings {
+ *   @Signal()
+ *   @Storage()
+ *   theme: string = 'light';
+ *
+ *   @Signal()
+ *   @Storage()
+ *   fontSize: number = 14;
+ *
+ *   @OnStorageChange()
+ *   onAnyChange(event: StorageChangeEvent<UserSettings>) {
+ *     console.log(`${String(event.member)} changed to ${event.newValue}`);
+ *     console.log(`Changed by: ${event.changeBy === ChangeBy.SELF ? 'this instance' : 'another tab'}`);
+ *   }
+ * }
+ * ```
+ *
+ * @example
+ * Filter by specific properties:
+ * ```typescript
+ * class UserSettings {
+ *   @Signal()
+ *   @Storage()
+ *   theme: string = 'light';
+ *
+ *   @Signal()
+ *   @Storage()
+ *   fontSize: number = 14;
+ *
+ *   @OnStorageChange({ members: ['theme'] })
+ *   onThemeChange(event: StorageChangeEvent<UserSettings>) {
+ *     // Only called when theme changes
+ *     this.applyTheme(event.newValue as string);
+ *   }
+ * }
+ * ```
+ *
+ * @example
+ * Filter by change source (cross-tab synchronization):
+ * ```typescript
+ * class UserSettings {
+ *   @Signal()
+ *   @Storage()
+ *   theme: string = 'light';
+ *
+ *   @OnStorageChange({ changeBy: ChangeBy.OTHER })
+ *   onExternalChange(event: StorageChangeEvent<UserSettings>) {
+ *     // Only called when changes come from other tabs/windows
+ *     console.log(`Another tab changed ${String(event.member)}`);
+ *     this.showNotification(`Settings synced from another tab`);
+ *   }
+ * }
+ * ```
+ *
+ * @example
+ * Filter by action type:
+ * ```typescript
+ * class UserSettings {
+ *   @Signal()
+ *   @Storage()
+ *   theme: string = 'light';
+ *
+ *   @OnStorageChange({ action: ActionType.REMOVE })
+ *   onSettingRemoved(event: StorageChangeEvent<UserSettings>) {
+ *     // Only called when a setting is removed
+ *     console.log(`Setting ${String(event.member)} was removed`);
+ *     this.restoreDefault(event.member);
+ *   }
+ * }
+ * ```
+ *
+ * @example
+ * Combine multiple filters:
+ * ```typescript
+ * class UserSettings {
+ *   @Signal()
+ *   @Storage()
+ *   theme: string = 'light';
+ *
+ *   @OnStorageChange({
+ *     members: ['theme', 'fontSize'],
+ *     changeBy: ChangeBy.OTHER,
+ *     action: ActionType.UPDATE
+ *   })
+ *   onExternalUpdate(event: StorageChangeEvent<UserSettings>) {
+ *     // Called only when theme or fontSize is updated by another tab
+ *     console.log(`${String(event.member)} synced from another tab`);
+ *   }
+ * }
+ * ```
+ *
+ * @public
+ */
+function OnStorageChange(options) {
+  return (target, propertyKey) => {
+    var _a;
+    const events = (_a = Reflect.getMetadata(STORAGE_CHANGE_EVENTS, target)) !== null && _a !== void 0 ? _a : [];
+    Reflect.defineMetadata(STORAGE_CHANGE_EVENTS, events, target);
+    events.push(function listener(event) {
+      if ((options === null || options === void 0 ? void 0 : options.members) && !options.members.includes(event.member)) {
+        return;
+      }
+      if ((options === null || options === void 0 ? void 0 : options.changeBy) && event.changeBy !== options.changeBy) {
+        return;
+      }
+      if ((options === null || options === void 0 ? void 0 : options.action) && event.action !== options.action) {
+        return;
+      }
+      const method = Reflect.get(this, propertyKey);
+      method.call(this, event);
+    });
+  };
+}
+
+/**
+ * Property decorator that automatically persists a signal property to storage.
+ * The decorated property must be a signal created with `@Signal()`.
+ *
+ * When the property changes, the new value is automatically saved to storage.
+ * When the component initializes, the last saved value is automatically loaded.
+ *
+ * @param options - Configuration options for storage behavior
+ * @returns A property decorator
+ *
+ * @example
+ * Basic usage with default bucket:
+ * ```typescript
+ * class UserPreferences {
+ *   @Signal()
+ *   @Storage()
+ *   theme: 'light' | 'dark' = 'light';
+ * }
+ * ```
+ *
+ * @example
+ * Using a custom bucket and key:
+ * ```typescript
+ * class UserPreferences {
+ *   @Signal()
+ *   @Storage({
+ *     bucket: 'user-preferences',
+ *     key: 'app-theme'
+ *   })
+ *   theme: 'light' | 'dark' = 'light';
+ * }
+ * ```
+ *
+ * @public
+ */
 const Storage = (options = {}) => {
   return defineMemberDecoratorProcessor('storage', {
     afterInstantiation(instance, member, metadata, container) {
@@ -194,7 +455,7 @@ const Storage = (options = {}) => {
       // Merge options, with member-specific options taking precedence
       const mergedOptions = Object.assign(Object.assign({}, defaultOptions), options);
       const [, set] = getSignal(instance, member);
-      const key = (_a = mergedOptions.key) !== null && _a !== undefined ? _a : member.toString();
+      const key = (_a = mergedOptions.key) !== null && _a !== void 0 ? _a : member.toString();
       const bucketOrName = mergedOptions.bucket || DEFAULT_BUCKET;
       const bucket = typeof bucketOrName != 'object' ? container.getInstance(bucketOrName) : bucketOrName;
       const observe = () => {
@@ -210,6 +471,10 @@ const Storage = (options = {}) => {
             })}`);
           }
           set(event.newValue);
+          notifyStorageChange(Object.assign({
+            instance,
+            member: key
+          }, event));
         });
       };
       if (bucket.debug) {
@@ -250,10 +515,24 @@ const Storage = (options = {}) => {
   });
 };
 
+/**
+ * Enumeration of built-in storage drivers available in the persistence library.
+ *
+ * @public
+ */
 var DefaultDrivers;
 (function (DefaultDrivers) {
+  /**
+   * Uses browser's localStorage API for persistent storage across sessions.
+   */
   DefaultDrivers["LOCAL_STORAGE"] = "localStorage";
+  /**
+   * Uses browser's sessionStorage API for storage that persists only for the session.
+   */
   DefaultDrivers["SESSION_STORAGE"] = "sessionStorage";
+  /**
+   * Uses browser's IndexedDB API for more advanced persistent storage with larger capacity.
+   */
   DefaultDrivers["INDEXED_DB"] = "indexedDB";
 })(DefaultDrivers || (DefaultDrivers = {}));
 
@@ -266,7 +545,25 @@ function createPlainTextBlob(...parts) {
   });
 }
 
+/**
+ * Abstract base class for storage drivers that use browser Web Storage APIs
+ * (localStorage or sessionStorage).
+ *
+ * This class provides common functionality for:
+ * - Key normalization and namespacing
+ * - Serialization to/from Blob format
+ * - Change event observation
+ * - Cross-tab synchronization via storage events
+ *
+ * @public
+ */
 class BrowserStorageDriver {
+  /**
+   * Creates a new BrowserStorageDriver instance.
+   *
+   * @param options - Configuration options for the driver
+   * @param storage - The Web Storage API object (localStorage or sessionStorage)
+   */
   constructor(options, storage) {
     this.options = options;
     this.storage = storage;
@@ -278,6 +575,12 @@ class BrowserStorageDriver {
   normalizeKey(key) {
     return `${this.getKeyPrefix()}.${key.replace(/\./g, '_')}`;
   }
+  /**
+   * Prepares the driver for use by setting up storage event listeners.
+   * This enables cross-tab synchronization.
+   *
+   * @returns A promise that resolves when preparation is complete
+   */
   prepare() {
     const storageEventListener = event => {
       const {
@@ -295,9 +598,19 @@ class BrowserStorageDriver {
     window.addEventListener('storage', storageEventListener);
     return Promise.resolve();
   }
+  /**
+   * Checks if the storage API is supported in the current environment.
+   *
+   * @returns A promise that resolves to true if supported, false otherwise
+   */
   supports() {
     return Promise.resolve(typeof this.storage !== 'undefined');
   }
+  /**
+   * Iterates over all key-value pairs in this bucket.
+   *
+   * @yields Objects containing key and value (as Blob)
+   */
   iterate() {
     return __asyncGenerator(this, arguments, function* iterate_1() {
       const len = this.storage.length;
@@ -305,7 +618,7 @@ class BrowserStorageDriver {
       const regex = new RegExp('^' + prefix + '.');
       for (let i = 0; i < len; i++) {
         const key = this.storage.key(i);
-        if (!(key === null || key === undefined ? undefined : key.match(regex))) {
+        if (!(key === null || key === void 0 ? void 0 : key.match(regex))) {
           continue;
         }
         const value = this.storage.getItem(key);
@@ -319,6 +632,12 @@ class BrowserStorageDriver {
       }
     });
   }
+  /**
+   * Retrieves an item from storage by key.
+   *
+   * @param key - The key of the item to retrieve
+   * @returns A promise that resolves to the stored Blob, or undefined if not found
+   */
   getItem(key) {
     const normalizedKey = this.normalizeKey(key);
     return Promise.resolve(this.getItemByNormalizedKey(normalizedKey));
@@ -330,6 +649,12 @@ class BrowserStorageDriver {
     }
     return this.deserialize(value);
   }
+  /**
+   * Removes an item from storage by key.
+   *
+   * @param key - The key of the item to remove
+   * @returns A promise that resolves when the item is removed
+   */
   removeItem(key) {
     const normalizedKey = this.normalizeKey(key);
     let oldValue;
@@ -343,8 +668,15 @@ class BrowserStorageDriver {
     }
     return Promise.resolve();
   }
+  /**
+   * Stores an item in storage.
+   *
+   * @param key - The key to store the item under
+   * @param value - The Blob value to store
+   * @returns A promise that resolves when the item is stored
+   */
   setItem(key, value) {
-    return __awaiter(this, undefined, undefined, function* () {
+    return __awaiter(this, void 0, void 0, function* () {
       const normalizeKey = this.normalizeKey(key);
       const needDispatch = this.needDispatch(key);
       let oldValue;
@@ -358,8 +690,13 @@ class BrowserStorageDriver {
       }
     });
   }
+  /**
+   * Returns the number of items in this bucket.
+   *
+   * @returns A promise that resolves to the item count
+   */
   length() {
-    return __awaiter(this, undefined, undefined, function* () {
+    return __awaiter(this, void 0, void 0, function* () {
       var _a, e_1, _b, _c;
       let len = 0;
       try {
@@ -384,8 +721,14 @@ class BrowserStorageDriver {
       return len;
     });
   }
+  /**
+   * Returns the key at the specified index.
+   *
+   * @param index - The index of the key to retrieve
+   * @returns A promise that resolves to the key, or undefined if index is out of bounds
+   */
   keyAt(index) {
-    return __awaiter(this, undefined, undefined, function* () {
+    return __awaiter(this, void 0, void 0, function* () {
       var _a, e_2, _b, _c;
       let i = 0;
       try {
@@ -434,7 +777,7 @@ class BrowserStorageDriver {
     });
   }
   serialize(blob) {
-    return __awaiter(this, undefined, undefined, function* () {
+    return __awaiter(this, void 0, void 0, function* () {
       if (blob.type.indexOf('text/') > -1) {
         const text = yield blob.text();
         return JSON.stringify({
@@ -458,11 +801,11 @@ class BrowserStorageDriver {
   }
   needDispatch(key) {
     var _a;
-    return !!((_a = this.observers.get(key)) === null || _a === undefined ? undefined : _a.length);
+    return !!((_a = this.observers.get(key)) === null || _a === void 0 ? void 0 : _a.length);
   }
   dispatchChangeEvent(changeBy, actionType, key, newValue, oldValue) {
     const listeners = this.observers.get(key);
-    listeners === null || listeners === undefined ? undefined : listeners.forEach(listener => {
+    listeners === null || listeners === void 0 ? void 0 : listeners.forEach(listener => {
       listener({
         target: this,
         key,
@@ -473,20 +816,30 @@ class BrowserStorageDriver {
       });
     });
   }
+  /**
+   * Iterates over all keys in this bucket.
+   *
+   * @yields Storage keys belonging to this bucket
+   */
   keys() {
     return __asyncGenerator(this, arguments, function* keys_1() {
       const len = this.storage.length;
       const prefix = this.getKeyPrefix();
       for (let i = 0; i < len; i++) {
         const key = this.storage.key(i);
-        if ((key === null || key === undefined ? undefined : key.indexOf(prefix)) === 0) {
+        if ((key === null || key === void 0 ? void 0 : key.indexOf(prefix)) === 0) {
           yield yield __await(key);
         }
       }
     });
   }
+  /**
+   * Clears all items from this bucket.
+   *
+   * @returns A promise that resolves when all items are cleared
+   */
   clear() {
-    return __awaiter(this, undefined, undefined, function* () {
+    return __awaiter(this, void 0, void 0, function* () {
       var _a, e_3, _b, _c;
       try {
         for (var _d = true, _e = __asyncValues(this.keys()), _f; _f = yield _e.next(), _a = _f.done, !_a; _d = true) {
@@ -508,6 +861,13 @@ class BrowserStorageDriver {
       }
     });
   }
+  /**
+   * Observes changes to a specific storage key.
+   *
+   * @param key - The key to observe
+   * @param onChange - Callback function invoked when the key changes
+   * @returns A function that can be called to stop observing
+   */
   observe(key, onChange) {
     const changeListener = onChange.bind(this);
     const listeners = this.observers.get(key) || [];
@@ -523,39 +883,96 @@ class BrowserStorageDriver {
   }
 }
 
+/**
+ * Storage driver implementation that uses the browser's localStorage API.
+ * Data persists across browser sessions and tabs.
+ *
+ * @public
+ */
 class LocalStorageDriver extends BrowserStorageDriver {
+  /**
+   * Creates a new LocalStorageDriver instance with the specified bucket name.
+   *
+   * @param bucketName - The name of the storage bucket
+   * @returns A new LocalStorageDriver instance
+   */
   static createInstance(bucketName) {
     return new LocalStorageDriver({
       bucketName
     });
   }
+  /**
+   * Creates a new LocalStorageDriver instance.
+   *
+   * @param options - Configuration options for the driver
+   */
   constructor(options) {
     super(options, window.localStorage);
+    /**
+     * The name identifier for this driver.
+     */
     this.name = 'LocalStorageDriver';
   }
 }
 
+/**
+ * Default serializer implementation using MessagePack format.
+ * Provides efficient binary serialization for JavaScript values.
+ *
+ * @public
+ */
 class DefaultSerializer {
+  /**
+   * Serializes a value into a Blob using MessagePack encoding.
+   * @param value - The value to serialize
+   * @returns A promise that resolves to a Blob containing the MessagePack encoded data
+   */
   serialize(value) {
     const u8a = encode(value);
     return Promise.resolve(new Blob([u8a]));
   }
+  /**
+   * Deserializes a Blob back into its original value using MessagePack decoding.
+   * @param data - The Blob containing MessagePack encoded data
+   * @returns A promise that resolves to the deserialized value
+   * @typeParam T - The expected type of the deserialized value
+   */
   deserialize(data) {
-    return __awaiter(this, undefined, undefined, function* () {
+    return __awaiter(this, void 0, void 0, function* () {
       const buffer = yield data.arrayBuffer();
       return decode(buffer);
     });
   }
 }
 
+/**
+ * Storage driver implementation that uses the browser's sessionStorage API.
+ * Data persists only for the duration of the browser session and is not shared across tabs.
+ *
+ * @public
+ */
 class SessionStorageDriver extends BrowserStorageDriver {
+  /**
+   * Creates a new SessionStorageDriver instance with the specified bucket name.
+   *
+   * @param bucketName - The name of the storage bucket
+   * @returns A new SessionStorageDriver instance
+   */
   static createInstance(bucketName) {
     return new SessionStorageDriver({
       bucketName
     });
   }
+  /**
+   * Creates a new SessionStorageDriver instance.
+   *
+   * @param options - Configuration options for the driver
+   */
   constructor(options) {
-    super(options, window.localStorage);
+    super(options, window.sessionStorage);
+    /**
+     * The name identifier for this driver.
+     */
     this.name = 'SessionStorageDriver';
   }
 }
@@ -570,19 +987,39 @@ class Defer {
 }
 
 const STORE_NAME = 'keyval';
+/**
+ * Storage driver implementation that uses the browser's IndexedDB API.
+ * Provides larger storage capacity and more advanced features compared to Web Storage.
+ * Data persists across browser sessions and supports versioning for schema migrations.
+ *
+ * @public
+ */
 class IndexedDBStorageDriver {
   get idbPromise() {
     return this.idbDefer.promise;
   }
+  /**
+   * Creates a new IndexedDBStorageDriver instance.
+   *
+   * @param options - Configuration options including bucket name and version
+   */
   constructor(options) {
+    /**
+     * The name identifier for this driver.
+     */
     this.name = 'IndexedDBStorageDriver';
     this.observers = new Map();
     this.idbDefer = new Defer();
     this.bucketName = options.bucketName;
     this.version = options.version;
   }
+  /**
+   * Prepares the driver by opening the IndexedDB database and creating the object store.
+   *
+   * @returns A promise that resolves when the database is ready
+   */
   prepare() {
-    return __awaiter(this, undefined, undefined, function* () {
+    return __awaiter(this, void 0, void 0, function* () {
       const idb = yield openDB(this.bucketName, this.version, {
         upgrade(db) {
           db.createObjectStore(STORE_NAME);
@@ -591,8 +1028,13 @@ class IndexedDBStorageDriver {
       this.idbDefer.resolve(idb);
     });
   }
+  /**
+   * Checks if IndexedDB is supported in the current environment.
+   *
+   * @returns A promise that resolves to true if IndexedDB is supported, false otherwise
+   */
   supports() {
-    return __awaiter(this, undefined, undefined, function* () {
+    return __awaiter(this, void 0, void 0, function* () {
       try {
         const checkDBName = '_vgerbot_check_idb';
         yield openDB(checkDBName);
@@ -603,8 +1045,14 @@ class IndexedDBStorageDriver {
       }
     });
   }
+  /**
+   * Retrieves an item from IndexedDB by key.
+   *
+   * @param key - The key of the item to retrieve
+   * @returns A promise that resolves to the stored Blob, or undefined if not found
+   */
   getItem(key) {
-    return __awaiter(this, undefined, undefined, function* () {
+    return __awaiter(this, void 0, void 0, function* () {
       const db = yield this.idbPromise;
       const value = yield db.get(STORE_NAME, IDBKeyRange.only(key));
       if (!value) {
@@ -613,8 +1061,14 @@ class IndexedDBStorageDriver {
       return createBlob([value], {});
     });
   }
+  /**
+   * Removes an item from IndexedDB by key.
+   *
+   * @param key - The key of the item to remove
+   * @returns A promise that resolves when the item is removed
+   */
   removeItem(key) {
-    return __awaiter(this, undefined, undefined, function* () {
+    return __awaiter(this, void 0, void 0, function* () {
       const db = yield this.idbPromise;
       const needDispatch = this.needDispatch(key);
       const oldValue = needDispatch ? yield this.getItem(key) : undefined;
@@ -624,8 +1078,15 @@ class IndexedDBStorageDriver {
       }
     });
   }
+  /**
+   * Stores an item in IndexedDB.
+   *
+   * @param key - The key to store the item under
+   * @param value - The Blob value to store
+   * @returns A promise that resolves when the item is stored
+   */
   setItem(key, value) {
-    return __awaiter(this, undefined, undefined, function* () {
+    return __awaiter(this, void 0, void 0, function* () {
       const db = yield this.idbPromise;
       const buffer = yield value.arrayBuffer();
       const needDispatch = this.needDispatch(key);
@@ -636,12 +1097,25 @@ class IndexedDBStorageDriver {
       }
     });
   }
+  /**
+   * Clears all items from the IndexedDB object store.
+   *
+   * @returns A promise that resolves when all items are cleared
+   */
   clear() {
-    return __awaiter(this, undefined, undefined, function* () {
+    return __awaiter(this, void 0, void 0, function* () {
       const db = yield this.idbPromise;
       yield db.clear(STORE_NAME);
     });
   }
+  /**
+   * Observes changes to a specific storage key.
+   * Note: IndexedDB doesn't support cross-tab observation natively.
+   *
+   * @param key - The key to observe
+   * @param onChange - Callback function invoked when the key changes
+   * @returns A function that can be called to stop observing
+   */
   observe(key, onChange) {
     const changeListener = onChange.bind(this);
     const listeners = this.observers.get(key) || [];
@@ -673,7 +1147,7 @@ class IndexedDBStorageDriver {
   }
   needDispatch(key) {
     var _a;
-    return !!((_a = this.observers.get(key)) === null || _a === undefined ? undefined : _a.length);
+    return !!((_a = this.observers.get(key)) === null || _a === void 0 ? void 0 : _a.length);
   }
 }
 
@@ -686,7 +1160,7 @@ function Prepared() {
     }
     let prepare_promise;
     descriptor.value = function (...args) {
-      return __awaiter(this, undefined, undefined, function* () {
+      return __awaiter(this, void 0, void 0, function* () {
         if (!prepare_promise) {
           prepare_promise = this[PREPARE]().finally(() => {
             descriptor.value = origin;
@@ -700,12 +1174,23 @@ function Prepared() {
     Object.defineProperty(target, propertyKey, descriptor);
   };
 }
+/**
+ * Represents a storage bucket that provides a high-level API for persistent data storage.
+ * A bucket uses a storage driver for the underlying storage mechanism and a serializer
+ * for encoding/decoding data.
+ *
+ * @public
+ */
 class Bucket {
+  /**
+   * Creates a new Bucket instance.
+   * @param config - Configuration options for the bucket
+   */
   constructor(config) {
     var _a, _b;
-    this.name = (_a = config.name) !== null && _a !== undefined ? _a : '';
+    this.name = (_a = config.name) !== null && _a !== void 0 ? _a : '';
     this.serializer = config.serializer || new DefaultSerializer();
-    this.debug = (_b = config.debug) !== null && _b !== undefined ? _b : false;
+    this.debug = (_b = config.debug) !== null && _b !== void 0 ? _b : false;
     const driver = config.driver;
     if (driver === DefaultDrivers.LOCAL_STORAGE) {
       this.driver = LocalStorageDriver.createInstance(this.name);
@@ -721,7 +1206,7 @@ class Bucket {
     }
   }
   [PREPARE]() {
-    return __awaiter(this, undefined, undefined, function* () {
+    return __awaiter(this, void 0, void 0, function* () {
       const supports = yield this.driver.supports();
       if (!supports) {
         throw new Error(`Your current browser does not support this storage driver: ${this.driver.name}!`);
@@ -730,10 +1215,28 @@ class Bucket {
     });
   }
   prepared() {
-    return __awaiter(this, undefined, undefined, function* () {
-      return undefined;
+    return __awaiter(this, void 0, void 0, function* () {
+      return void 0;
     });
   }
+  /**
+   * Observes changes to a specific storage key within this bucket.
+   * The observer will be notified when the key is updated or removed.
+   *
+   * @param key - The key to observe
+   * @param onChange - Callback function invoked when the key changes
+   * @returns A function that can be called to stop observing
+   *
+   * @example
+   * ```typescript
+   * const unobserve = bucket.observe('myKey', (event) => {
+   *   console.log('Value changed:', event.newValue);
+   * });
+   *
+   * // Later, to stop observing:
+   * unobserve();
+   * ```
+   */
   observe(key, onChange) {
     const preparePromise = this.prepared();
     const unobserve = this.driver.observe(key, event => {
@@ -745,14 +1248,43 @@ class Bucket {
       preparePromise.then(unobserve);
     };
   }
+  /**
+   * Stores a value in the bucket under the specified key.
+   * The value will be serialized before storage.
+   *
+   * @param key - The key to store the value under
+   * @param value - The value to store
+   * @returns A promise that resolves when the value is stored
+   *
+   * @example
+   * ```typescript
+   * await bucket.setItem('user', { name: 'John', age: 30 });
+   * ```
+   */
   setItem(key, value) {
-    return __awaiter(this, undefined, undefined, function* () {
+    return __awaiter(this, void 0, void 0, function* () {
       const blob = yield this.serializer.serialize(value);
       return this.driver.setItem(key, blob);
     });
   }
+  /**
+   * Retrieves a value from the bucket by key.
+   * The value will be deserialized before being returned.
+   *
+   * @param key - The key of the value to retrieve
+   * @returns A promise that resolves to the stored value, or undefined if not found
+   * @typeParam T - The expected type of the stored value
+   *
+   * @example
+   * ```typescript
+   * const user = await bucket.getItem<User>('user');
+   * if (user) {
+   *   console.log(user.name);
+   * }
+   * ```
+   */
   getItem(key) {
-    return __awaiter(this, undefined, undefined, function* () {
+    return __awaiter(this, void 0, void 0, function* () {
       const blob = yield this.driver.getItem(key);
       if (!blob) {
         return;
@@ -760,12 +1292,39 @@ class Bucket {
       return this.serializer.deserialize(blob);
     });
   }
+  /**
+   * Clears all items from the bucket.
+   *
+   * @returns A promise that resolves when the bucket is cleared
+   */
   clear() {
     return this.driver.clear();
   }
+  /**
+   * Removes an item from the bucket by key.
+   *
+   * @param key - The key of the item to remove
+   * @returns A promise that resolves when the item is removed
+   */
   removeItem(key) {
     return this.driver.removeItem(key);
   }
+  /**
+   * Creates a property decorator that binds a signal property to this bucket.
+   * This is equivalent to using `@Storage({ bucket: this, key })`.
+   *
+   * @param key - The storage key to use for this property
+   * @returns A property decorator
+   *
+   * @example
+   * ```typescript
+   * class MyService {
+   *   @Signal()
+   *   @myBucket.value('username')
+   *   username: string;
+   * }
+   * ```
+   */
   value(key) {
     return Storage({
       bucket: this,
@@ -776,35 +1335,45 @@ class Bucket {
 __decorate([Prepared(), __metadata("design:type", Function), __metadata("design:paramtypes", []), __metadata("design:returntype", Promise)], Bucket.prototype, "prepared", null);
 __decorate([Prepared(), __metadata("design:type", Function), __metadata("design:paramtypes", [String, Object]), __metadata("design:returntype", Promise)], Bucket.prototype, "setItem", null);
 __decorate([Prepared(), __metadata("design:type", Function), __metadata("design:paramtypes", [String]), __metadata("design:returntype", Promise)], Bucket.prototype, "getItem", null);
-__decorate([Prepared(), __metadata("design:type", Function), __metadata("design:paramtypes", []), __metadata("design:returntype", undefined)], Bucket.prototype, "clear", null);
+__decorate([Prepared(), __metadata("design:type", Function), __metadata("design:paramtypes", []), __metadata("design:returntype", void 0)], Bucket.prototype, "clear", null);
 
 /**
- * ```jsx
+ * Main entry point for the persistence system.
+ * Provides factory methods for configuring storage buckets.
+ *
+ * @example
+ * Configure default and custom buckets in your Solidium application:
+ * ```tsx
  * <Solidium autoRegisterClasses={[
-    Persistence.default({
-        // default storage configuration
-    }),
-    Persistence.bucket(
-        'custom-bucket-name',
-        {
-            // custom storage configuration
-        }
-    )
- ]}></Solidium>
+ *   Persistence.default({
+ *     driver: DefaultDrivers.LOCAL_STORAGE,
+ *     debug: true
+ *   }),
+ *   Persistence.bucket('custom-bucket-name', {
+ *     name: 'custom-bucket-name',
+ *     driver: DefaultDrivers.INDEXED_DB,
+ *     version: 1.0
+ *   })
+ * ]}></Solidium>
  * ```
  *
- * ```js
- class BizService {
-    @Signal()
-    @Storage() // use default storage
-    autoSaveToDefaultStorage: boolean;
-    @Signal()
-    @Storage({
-        bucket: 'custom-bucket-name'
-    }) //
-    autoSaveToCustomStorage: boolean;
- }
+ * @example
+ * Use storage decorators in your services:
+ * ```typescript
+ * class BizService {
+ *   @Signal()
+ *   @Storage() // uses default bucket
+ *   autoSaveToDefaultStorage: boolean;
+ *
+ *   @Signal()
+ *   @Storage({
+ *     bucket: 'custom-bucket-name'
+ *   })
+ *   autoSaveToCustomStorage: boolean;
+ * }
  * ```
+ *
+ * @public
  */
 class Persistence {
   constructor() {
@@ -813,35 +1382,62 @@ class Persistence {
       version: 1.0
     };
   }
+  /**
+   * Creates a factory wrapper for the default storage bucket configuration.
+   * The default bucket is used when no bucket is specified in `@Storage()` decorators.
+   *
+   * @param configuration - Configuration options for the default bucket (name is automatically set)
+   * @returns A factory wrapper that can be registered with Solidium
+   *
+   * @example
+   * ```typescript
+   * Persistence.default({
+   *   driver: DefaultDrivers.LOCAL_STORAGE,
+   *   debug: true
+   * })
+   * ```
+   */
   static default(configuration) {
-    class StorageConfigurationFactory {
-      getConfiguration() {
-        return configuration;
-      }
-    }
-    __decorate([Factory(DEFAULT_BUCKET_CONFIGURATION), __metadata("design:type", Function), __metadata("design:paramtypes", []), __metadata("design:returntype", undefined)], StorageConfigurationFactory.prototype, "getConfiguration", null);
-    keep(StorageConfigurationFactory);
-    return Persistence;
+    return createFactoryWrapper(DEFAULT_BUCKET_CONFIGURATION, configuration, Persistence);
   }
+  /**
+   * Creates a factory wrapper for a custom named storage bucket.
+   * Named buckets can be referenced in `@Storage()` decorators by their name.
+   *
+   * @param name - The name identifier for this bucket
+   * @param configuration - Configuration options for the bucket
+   * @returns A factory wrapper that can be registered with Solidium
+   *
+   * @example
+   * ```typescript
+   * Persistence.bucket('user-preferences', {
+   *   name: 'user-preferences',
+   *   driver: DefaultDrivers.INDEXED_DB,
+   *   version: 1.0
+   * })
+   * ```
+   */
   static bucket(name, configuration) {
-    class StorageFactory {
-      createStorage() {
-        return new Bucket(configuration);
-      }
-    }
-    __decorate([Factory(name), __metadata("design:type", Function), __metadata("design:paramtypes", []), __metadata("design:returntype", undefined)], StorageFactory.prototype, "createStorage", null);
-    return StorageFactory;
+    return createFactoryWrapper(name, configuration, Persistence);
   }
+  /**
+   * Factory method that creates and returns the default bucket instance.
+   * @internal
+   */
   getDefaultBucket() {
     return new Bucket(this.configuration);
   }
+  /**
+   * Initialization hook called after dependency injection.
+   * @internal
+   */
   init() {
     //
   }
 }
-__decorate([Inject(DEFAULT_BUCKET_CONFIGURATION), __metadata("design:type", Object)], Persistence.prototype, "configuration", undefined);
-__decorate([Factory(DEFAULT_BUCKET), __metadata("design:type", Function), __metadata("design:paramtypes", []), __metadata("design:returntype", undefined)], Persistence.prototype, "getDefaultBucket", null);
-__decorate([PostInject(), __metadata("design:type", Function), __metadata("design:paramtypes", []), __metadata("design:returntype", undefined)], Persistence.prototype, "init", null);
+__decorate([Inject(DEFAULT_BUCKET_CONFIGURATION), __metadata("design:type", Object)], Persistence.prototype, "configuration", void 0);
+__decorate([Factory(DEFAULT_BUCKET), __metadata("design:type", Function), __metadata("design:paramtypes", []), __metadata("design:returntype", void 0)], Persistence.prototype, "getDefaultBucket", null);
+__decorate([PostInject(), __metadata("design:type", Function), __metadata("design:paramtypes", []), __metadata("design:returntype", void 0)], Persistence.prototype, "init", null);
 
-export { Bucket, DEFAULT_BUCKET, DEFAULT_BUCKET_CONFIGURATION, DEFAULT_STORAGE_OPTIONS, DefaultDrivers, DefaultSerializer, DefaultStorage, OnStorageLoad, Persistence, Storage, getDefaultStorageOptions, notifyStorageLoad };
+export { Bucket, DEFAULT_BUCKET, DEFAULT_BUCKET_CONFIGURATION, DEFAULT_STORAGE_OPTIONS, DefaultDrivers, DefaultSerializer, DefaultStorage, OnStorageChange, OnStorageLoad, Persistence, Storage, getDefaultStorageOptions, notifyStorageChange, notifyStorageLoad };
 //# sourceMappingURL=index.es.js.map

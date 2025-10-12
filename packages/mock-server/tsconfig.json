@@ -2,20 +2,23 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "target": "ES2020",
-    "module": "NodeNext",
     "outDir": "lib",
     "rootDir": "src",
     "baseUrl": ".",
-    "lib": ["esnext"],
-    "paths": {
-      "@/*": ["src/*"]
-    },
-    "types": ["node"],
-    "moduleResolution": "nodenext",
+    "lib": [
+      "ES2020"
+    ],
+    "types": [
+      "node"
+    ],
     "esModuleInterop": true,
-    "allowImportingTsExtensions": true,
-    "noEmit": true
+    "skipLibCheck": true
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "lib"]
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "lib"
+  ]
 }

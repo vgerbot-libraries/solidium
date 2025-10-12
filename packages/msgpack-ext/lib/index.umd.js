@@ -40,7 +40,7 @@
         if (m) return m.call(o);
         if (o && typeof o.length === "number") return {
             next: function () {
-                if (o && i >= o.length) o = undefined;
+                if (o && i >= o.length) o = void 0;
                 return { value: o && o[i++], done: !o };
             }
         };

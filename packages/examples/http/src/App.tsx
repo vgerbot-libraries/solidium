@@ -14,7 +14,7 @@ export function App() {
                 Persistence.default({
                     driver: DefaultDrivers.LOCAL_STORAGE,
                     debug: true
-                })
+                }) as typeof Persistence
             ]}
         >
             <Profile></Profile>

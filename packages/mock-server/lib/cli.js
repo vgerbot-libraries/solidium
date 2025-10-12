@@ -3,7 +3,6 @@ import { MockServer } from './index';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
-
 // ESM replacement for __dirname
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -12,21 +11,21 @@ const __dirname = dirname(__filename);
  */
 const DEFAULT_PORT = 3000;
 const DEFAULT_MOCK_DIR = path.join(__dirname, 'mocks');
-
 // Parse command line arguments
 const args = process.argv.slice(2);
 let port = process.env.PORT ? parseInt(process.env.PORT, 10) : DEFAULT_PORT;
 let mockDir = process.env.MOCK_DIR || DEFAULT_MOCK_DIR;
-
 // Simple argument parser
 for (let i = 0; i < args.length; i++) {
     if (args[i] === '--port' && i + 1 < args.length) {
         port = parseInt(args[i + 1], 10);
         i++;
-    } else if (args[i] === '--dir' && i + 1 < args.length) {
+    }
+    else if (args[i] === '--dir' && i + 1 < args.length) {
         mockDir = args[i + 1];
         i++;
-    } else if (args[i] === '--help' || args[i] === '-h') {
+    }
+    else if (args[i] === '--help' || args[i] === '-h') {
         console.log(`
 HTTP Mock Server
 
@@ -41,13 +40,11 @@ Options:
         process.exit(0);
     }
 }
-
 // Create and start server
 const server = new MockServer(port);
-
 console.log(`Starting mock server on port ${port}`);
 console.log(`Loading mocks from ${mockDir}`);
-
 server.loadMocks(mockDir).then(() => {
     server.start();
 });
+//# sourceMappingURL=cli.js.map

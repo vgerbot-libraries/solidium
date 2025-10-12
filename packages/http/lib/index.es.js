@@ -56,7 +56,7 @@ function __values(o) {
     if (m) return m.call(o);
     if (o && typeof o.length === "number") return {
         next: function () {
-            if (o && i >= o.length) o = undefined;
+            if (o && i >= o.length) o = void 0;
             return { value: o && o[i++], done: !o };
         }
     };
@@ -99,6 +99,52 @@ typeof SuppressedError === "function" ? SuppressedError : function (error, suppr
     return e.name = "SuppressedError", e.error = error, e.suppressed = suppressed, e;
 };
 
+/**
+ * Represents an HTTP response with utilities for parsing and streaming data.
+ *
+ * This class wraps the low-level {@link HttpSource} and provides convenient
+ * methods for accessing response data in various formats:
+ * - Plain text (`text()`)
+ * - JSON (`json()`)
+ * - Streaming text (`textStream()`)
+ * - Streaming JSON/SSE (`jsonStream()`)
+ * - Raw byte stream (`body()`)
+ *
+ * It also provides access to:
+ * - Response status code
+ * - Response headers
+ * - Upload/download progress tracking
+ *
+ * Instances are typically created automatically by the framework and accessed
+ * through the Resource abstraction or interceptors.
+ *
+ * @example
+ * Accessing response in an interceptor:
+ * ```typescript
+ * class LoggingInterceptor implements Interceptor {
+ *   async invoke(instance, method, params, next) {
+ *     const response = await next(instance, method, params);
+ *     const status = await response.status();
+ *     const headers = await response.headers();
+ *     console.log(`Response ${status}:`, headers.toJSON());
+ *     return response;
+ *   }
+ * }
+ * ```
+ *
+ * @example
+ * Creating a response manually (e.g., for testing):
+ * ```typescript
+ * const response = HttpResponse.of(
+ *   Promise.resolve(new BlobByteStream(new Blob(['{"data": "value"}']))),
+ *   new HttpHeaders({ 'Content-Type': 'application/json' }),
+ *   200,
+ *   method
+ * );
+ *
+ * const data = await response.json();
+ * ```
+ */
 class HttpResponse {
   static of(body, headers, status, method) {
     return new HttpResponse({
@@ -132,7 +178,7 @@ class HttpResponse {
     return this.source.body();
   }
   text(encoding) {
-    return __awaiter(this, undefined, undefined, function* () {
+    return __awaiter(this, void 0, void 0, function* () {
       const stream = yield this.body();
       const buffer = yield stream.readAsBuffer();
       const decoder = new TextDecoder(encoding);
@@ -140,7 +186,7 @@ class HttpResponse {
     });
   }
   json() {
-    return __awaiter(this, undefined, undefined, function* () {
+    return __awaiter(this, void 0, void 0, function* () {
       const text = yield this.text();
       return JSON.parse(text);
     });
@@ -247,7 +293,7 @@ class Defer {
   // }
   static serial(array) {
     const defer = new Defer();
-    Array.from(array).reduce((acc, item) => __awaiter(this, undefined, undefined, function* () {
+    Array.from(array).reduce((acc, item) => __awaiter(this, void 0, void 0, function* () {
       yield acc;
       if (defer.isCancelled) {
         return;
@@ -349,7 +395,7 @@ class Events {
     const wrappedListener = (...args) => {
       listener(...args);
     };
-    const listeners = (_a = this.listeners.get(event)) !== null && _a !== undefined ? _a : new Set();
+    const listeners = (_a = this.listeners.get(event)) !== null && _a !== void 0 ? _a : new Set();
     listeners.add(wrappedListener);
     if (!this.listeners.has(event)) {
       this.listeners.set(event, listeners);
@@ -363,12 +409,51 @@ class Events {
   }
   emit(event, ...args) {
     var _a;
-    (_a = this.listeners.get(event)) === null || _a === undefined ? undefined : _a.forEach(listener => {
+    (_a = this.listeners.get(event)) === null || _a === void 0 ? void 0 : _a.forEach(listener => {
       listener(...args);
     });
   }
 }
 
+/**
+ * Manages HTTP headers with support for multiple values per header name.
+ *
+ * This class provides a convenient API for working with HTTP headers, supporting:
+ * - Multiple values for the same header name
+ * - Conversion to/from native `Headers` object
+ * - Header merging and concatenation
+ * - JSON serialization
+ *
+ * Unlike the native `Headers` class, this implementation:
+ * - Stores values as arrays, allowing explicit multiple values
+ * - Provides a fluent, chainable API
+ * - Supports various initialization formats
+ *
+ * @example
+ * Creating headers:
+ * ```typescript
+ * const headers = new HttpHeaders();
+ * headers.set('Content-Type', 'application/json');
+ * headers.set('Accept', 'application/json', 'text/plain');
+ * ```
+ *
+ * @example
+ * From object:
+ * ```typescript
+ * const headers = new HttpHeaders({
+ *   'Content-Type': 'application/json',
+ *   'Accept': ['application/json', 'text/plain']
+ * });
+ * ```
+ *
+ * @example
+ * Merging headers:
+ * ```typescript
+ * const baseHeaders = new HttpHeaders({ 'Authorization': 'Bearer token' });
+ * const requestHeaders = new HttpHeaders({ 'Content-Type': 'application/json' });
+ * const combined = baseHeaders.concat(requestHeaders);
+ * ```
+ */
 class HttpHeaders {
   constructor(init) {
     this.headers = new Map();
@@ -405,7 +490,7 @@ class HttpHeaders {
   }
   append(name, ...values) {
     var _a;
-    const originValues = (_a = this.headers.get(name)) !== null && _a !== undefined ? _a : [];
+    const originValues = (_a = this.headers.get(name)) !== null && _a !== void 0 ? _a : [];
     const newValues = originValues.concat(values);
     this.headers.set(name, newValues);
   }
@@ -458,7 +543,7 @@ class HttpHeaders {
   }
   getContentLength() {
     var _a;
-    const [contentLengthStr] = (_a = this.get('content-length')) !== null && _a !== undefined ? _a : [];
+    const [contentLengthStr] = (_a = this.get('content-length')) !== null && _a !== void 0 ? _a : [];
     return parseInt(contentLengthStr) || 0;
   }
 }
@@ -483,11 +568,11 @@ function readStream(stream) {
   });
 }
 
-function createProgressiveReadableStream(stream, progress = () => undefined) {
+function createProgressiveReadableStream(stream, progress = () => void 0) {
   let loaded = 0;
   const abortController = new AbortController();
   return new ReadableStream({
-    start: controller => __awaiter(this, undefined, undefined, function* () {
+    start: controller => __awaiter(this, void 0, void 0, function* () {
       var _a, e_1, _b, _c;
       try {
         progress(loaded);
@@ -562,7 +647,7 @@ class BlobByteStream extends ProgressiveByteStream {
     });
   }
   readAsBlob(contentType) {
-    return __awaiter(this, undefined, undefined, function* () {
+    return __awaiter(this, void 0, void 0, function* () {
       if (contentType === this.blob.type) {
         return this.blob;
       }
@@ -582,7 +667,7 @@ class BlobByteStream extends ProgressiveByteStream {
 const IGNORE_DUPLICATE_OF = new Set(['age', 'authorization', 'content-length', 'content-type', 'etag', 'expires', 'from', 'host', 'if-modified-since', 'if-unmodified-since', 'last-modified', 'location', 'max-forwards', 'proxy-authorization', 'referer', 'retry-after', 'user-agent']);
 function parseHeaders(rawHeaders) {
   const result = new Map();
-  if (!(rawHeaders === null || rawHeaders === undefined ? undefined : rawHeaders.trim())) {
+  if (!(rawHeaders === null || rawHeaders === void 0 ? void 0 : rawHeaders.trim())) {
     return result;
   }
   rawHeaders.split(/[\r\n]+/).forEach(line => {
@@ -593,7 +678,7 @@ function parseHeaders(rawHeaders) {
     if (!key || result.has(key) && IGNORE_DUPLICATE_OF.has(key)) {
       return;
     }
-    const values = (_a = result.get(key)) !== null && _a !== undefined ? _a : [];
+    const values = (_a = result.get(key)) !== null && _a !== void 0 ? _a : [];
     values.push(value);
     result.set(key, values);
   });
@@ -625,8 +710,8 @@ class XMLHttpRequestAdapter {
       }
       this.events.emit('upload', new Progress(event.total, event.loaded));
     });
-    this.executeRequestIfNeed = () => __awaiter(this, undefined, undefined, function* () {
-      this.executeRequestIfNeed = () => undefined;
+    this.executeRequestIfNeed = () => __awaiter(this, void 0, void 0, function* () {
+      this.executeRequestIfNeed = () => void 0;
       if (this.isAborted) {
         return;
       }
@@ -662,7 +747,7 @@ class XMLHttpRequestAdapter {
         this.headersDefer.resolve(headers);
         this.statusDefer.resolve(xhr.status);
       } else if (xhr.readyState === XMLHttpRequest.DONE) {
-        this.bodyDefer.resolve(new BlobByteStream((_a = xhr.response) !== null && _a !== undefined ? _a : new Blob([])));
+        this.bodyDefer.resolve(new BlobByteStream((_a = xhr.response) !== null && _a !== void 0 ? _a : new Blob([])));
       }
     });
     this.xhr = xhr;
@@ -681,7 +766,7 @@ class XMLHttpRequestAdapter {
     this.xhr.abort();
   }
   execute() {
-    return __awaiter(this, undefined, undefined, function* () {
+    return __awaiter(this, void 0, void 0, function* () {
       this.executeRequestIfNeed();
       const {
         headersDefer,
@@ -738,7 +823,7 @@ function resolveURL(routeTemplate, pathVariables, queryParameters) {
   const pathParamReplacedURL = routeTemplate.replace(/(:([a-z]+))/gi, (fullMatch, placeholder, variableName) => {
     var _a, _b;
     if (variableName in pathVariables) {
-      return (_b = (_a = pathVariables[variableName]) === null || _a === undefined ? undefined : _a.toString()) !== null && _b !== undefined ? _b : fullMatch;
+      return (_b = (_a = pathVariables[variableName]) === null || _a === void 0 ? void 0 : _a.toString()) !== null && _b !== void 0 ? _b : fullMatch;
     }
     return fullMatch;
   });
@@ -757,9 +842,83 @@ function resolveURL(routeTemplate, pathVariables, queryParameters) {
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /**
- * Base class for all HTTP-related errors
+ * Base class for all HTTP-related errors in the library.
+ *
+ * This abstract class serves as the foundation for all HTTP error types, including:
+ * - Network errors (timeouts, connection failures, aborts)
+ * - HTTP status errors (4xx, 5xx)
+ * - Parse errors (invalid JSON, etc.)
+ * - Custom application errors
+ *
+ * All HTTP errors extend this base class, making it easy to catch and handle
+ * any HTTP-related error with a single catch block.
+ *
+ * The library provides specific error classes for:
+ * - **General Errors**: {@link TimeoutError}, {@link NetworkError}, {@link AbortError}, {@link ParseError}
+ * - **Status Errors**: {@link HttpStatusError} and its subclasses
+ * - **Client Errors (4xx)**: {@link BadRequestError}, {@link UnauthorizedError}, {@link NotFoundError}, etc.
+ * - **Server Errors (5xx)**: {@link InternalServerError}, {@link ServiceUnavailableError}, etc.
+ *
+ * @example
+ * Catching all HTTP errors:
+ * ```typescript
+ * try {
+ *   const resource = api.getData();
+ *   await resource.wait();
+ * } catch (error) {
+ *   if (error instanceof HttpError) {
+ *     console.error('HTTP error occurred:', error.message);
+ *     if (error.cause) {
+ *       console.error('Caused by:', error.cause);
+ *     }
+ *   }
+ * }
+ * ```
+ *
+ * @example
+ * Handling specific error types:
+ * ```typescript
+ * try {
+ *   await api.getData().wait();
+ * } catch (error) {
+ *   if (error instanceof TimeoutError) {
+ *     console.error('Request timed out');
+ *   } else if (error instanceof UnauthorizedError) {
+ *     // Redirect to login
+ *   } else if (error instanceof NotFoundError) {
+ *     // Show 404 page
+ *   } else if (error instanceof HttpStatusError) {
+ *     // Handle other HTTP status errors
+ *     console.error(`HTTP ${error.status}: ${error.message}`);
+ *   }
+ * }
+ * ```
+ *
+ * @example
+ * Custom error handling in interceptor:
+ * ```typescript
+ * class ErrorHandlerInterceptor implements Interceptor {
+ *   async invoke(instance, method, params, next) {
+ *     try {
+ *       return await next(instance, method, params);
+ *     } catch (error) {
+ *       if (error instanceof HttpError) {
+ *         // Log to error tracking service
+ *         errorTracker.captureException(error);
+ *       }
+ *       throw error;
+ *     }
+ *   }
+ * }
+ * ```
  */
 class HttpError extends Error {
+  /**
+   * Creates a new HTTP error.
+   *
+   * @param message - Human-readable error message
+   * @param cause - Optional underlying error that caused this error
+   */
   constructor(message, cause) {
     super(message);
     this.cause = cause;
@@ -1165,7 +1324,7 @@ class NetworkAuthenticationRequiredError extends ServerError {
 
 class ErrorContextInterceptor {
   invoke(instance, method, params, next) {
-    return __awaiter(this, undefined, undefined, function* () {
+    return __awaiter(this, void 0, void 0, function* () {
       try {
         return yield next(instance, method, params);
       } catch (error) {
@@ -1194,7 +1353,7 @@ const DEFAULT_CONFIG$2 = {
   maxDelay: 10000,
   retryableStatuses: [408, 500, 502, 503, 504],
   retryable(error) {
-    return __awaiter(this, undefined, undefined, function* () {
+    return __awaiter(this, void 0, void 0, function* () {
       if (error instanceof HttpStatusError) {
         return this.retryableStatuses.includes(error.status);
       }
@@ -1202,6 +1361,74 @@ const DEFAULT_CONFIG$2 = {
     });
   }
 };
+/**
+ * Interceptor that automatically retries failed HTTP requests with exponential backoff.
+ *
+ * This interceptor implements intelligent retry logic for transient failures such as
+ * network timeouts, temporary server errors (5xx), or connection issues. It uses
+ * exponential backoff to gradually increase the delay between retries, reducing
+ * server load while maximizing the chance of eventual success.
+ *
+ * Default behavior:
+ * - Retries up to 3 times
+ * - Uses exponential backoff starting at 1 second, doubling each retry
+ * - Caps maximum delay at 10 seconds
+ * - Retries on HTTP status codes: 408 (Timeout), 500, 502, 503, 504 (Server Errors)
+ *
+ * @example
+ * Using default retry configuration:
+ * ```typescript
+ * @Endpoint({
+ *   baseURL: 'https://api.example.com',
+ *   interceptors: [RetryInterceptor]
+ * })
+ * class API {
+ *   @Get('/unstable-endpoint')
+ *   getData() {
+ *     return restful<Data>();
+ *   }
+ * }
+ * // Automatically retries up to 3 times on failure
+ * ```
+ *
+ * @example
+ * Custom retry configuration:
+ * ```typescript
+ * @Endpoint({
+ *   baseURL: 'https://api.example.com',
+ *   interceptors: [
+ *     new RetryInterceptor({
+ *       maxAttempts: 5,
+ *       initialDelay: 500,
+ *       maxDelay: 30000,
+ *       retryableStatuses: [408, 429, 500, 502, 503, 504],
+ *       async retryable(error) {
+ *         // Custom retry logic
+ *         if (error instanceof NetworkError) return true;
+ *         if (error instanceof TimeoutError) return true;
+ *         return false;
+ *       }
+ *     })
+ *   ]
+ * })
+ * class API { }
+ * ```
+ *
+ * @example
+ * Method-specific retry:
+ * ```typescript
+ * @Get('/data')
+ * @Request({
+ *   retry: {
+ *     maxAttempts: 5,
+ *     initialDelay: 2000
+ *   }
+ * })
+ * getData() {
+ *   return restful<Data>();
+ * }
+ * ```
+ */
 class RetryInterceptor {
   constructor(config = {}) {
     this.config = Object.assign(Object.assign({}, DEFAULT_CONFIG$2), config);
@@ -1210,7 +1437,7 @@ class RetryInterceptor {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
   invoke(instance, method, params, next) {
-    return __awaiter(this, undefined, undefined, function* () {
+    return __awaiter(this, void 0, void 0, function* () {
       let attempt = 0;
       let delay = this.config.initialDelay;
       while (attempt < this.config.maxAttempts) {
@@ -1263,12 +1490,86 @@ function mergeAbortSignal(...signals) {
 const DEFAULT_CONFIG$1 = {
   timeout: 30000 // 30 seconds
 };
+/**
+ * Interceptor that enforces a timeout on HTTP requests.
+ *
+ * This interceptor automatically aborts requests that take longer than the specified
+ * timeout duration, preventing requests from hanging indefinitely. It's essential for
+ * maintaining application responsiveness and resource management.
+ *
+ * The timeout is implemented using AbortController, which properly cancels the underlying
+ * network request rather than just ignoring the response.
+ *
+ * Default behavior:
+ * - Timeout after 30 seconds
+ * - Throws {@link TimeoutError} when timeout is reached
+ * - Properly aborts the underlying request
+ *
+ * @example
+ * Global timeout for all endpoints:
+ * ```typescript
+ * @Endpoint({
+ *   baseURL: 'https://api.example.com',
+ *   timeout: 10000  // 10 seconds
+ * })
+ * class API {
+ *   @Get('/data')
+ *   getData() {
+ *     return restful<Data>();
+ *   }
+ * }
+ * ```
+ *
+ * @example
+ * Method-specific timeout:
+ * ```typescript
+ * @Endpoint({ baseURL: 'https://api.example.com' })
+ * class API {
+ *   @Get('/fast-endpoint')
+ *   @Request({ timeout: 5000 })  // 5 seconds
+ *   getFastData() {
+ *     return restful<Data>();
+ *   }
+ *
+ *   @Get('/slow-endpoint')
+ *   @Request({ timeout: 60000 })  // 60 seconds
+ *   getSlowData() {
+ *     return restful<Data>();
+ *   }
+ * }
+ * ```
+ *
+ * @example
+ * Handling timeout errors:
+ * ```typescript
+ * const resource = api.getData();
+ *
+ * try {
+ *   await resource.wait();
+ * } catch (error) {
+ *   if (error instanceof TimeoutError) {
+ *     console.error('Request timed out after', error.context.timeout, 'ms');
+ *     // Show timeout message to user
+ *   }
+ * }
+ * ```
+ *
+ * @example
+ * Disable timeout for specific request:
+ * ```typescript
+ * @Get('/long-running-task')
+ * @Request({ timeout: 0 })  // No timeout
+ * startLongTask() {
+ *   return restful<Task>();
+ * }
+ * ```
+ */
 class TimeoutInterceptor {
   constructor(config = {}) {
     this.config = Object.assign(Object.assign({}, DEFAULT_CONFIG$1), config);
   }
   invoke(instance, method, params, next) {
-    return __awaiter(this, undefined, undefined, function* () {
+    return __awaiter(this, void 0, void 0, function* () {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), this.config.timeout);
       try {
@@ -1380,7 +1681,7 @@ class ResourceError {
 
 class ErrorWrappingInterceptor {
   invoke(instance, method, params, next) {
-    return __awaiter(this, undefined, undefined, function* () {
+    return __awaiter(this, void 0, void 0, function* () {
       try {
         const response = yield next(instance, method, params);
         return response;
@@ -1413,7 +1714,7 @@ class ErrorWrappingInterceptor {
 class RequestMethod {
   static get(instance, name) {
     var _a;
-    return (_a = instance[METHODS]) === null || _a === undefined ? undefined : _a.get(name);
+    return (_a = instance[METHODS]) === null || _a === void 0 ? void 0 : _a.get(name);
   }
   constructor(name, endpointMetadata, metadata) {
     this.name = name;
@@ -1450,7 +1751,7 @@ class RequestMethod {
     return allInterceptors;
   }
   invoke(instance, params) {
-    return __awaiter(this, undefined, undefined, function* () {
+    return __awaiter(this, void 0, void 0, function* () {
       const adapter = this.createAdapter(instance, params);
       const source = yield adapter.execute();
       return new HttpResponse(source, {
@@ -1460,7 +1761,7 @@ class RequestMethod {
   }
   resolveURL(params) {
     var _a;
-    return resolveURL(this.url, (_a = params.pathVariables) !== null && _a !== undefined ? _a : {}, params.queryParams);
+    return resolveURL(this.url, (_a = params.pathVariables) !== null && _a !== void 0 ? _a : {}, params.queryParams);
   }
   createAdapter(instance, params) {
     var _a, _b, _c;
@@ -1476,7 +1777,7 @@ class RequestMethod {
       signal,
       invokeMethod: this
     };
-    const adapter = new ((_c = (_b = (_a = params.adapter) !== null && _a !== undefined ? _a : this.metadata.getAdapter()) !== null && _b !== undefined ? _b : instance[ADAPTER]) !== null && _c !== undefined ? _c : XMLHttpRequestAdapter)(options);
+    const adapter = new ((_c = (_b = (_a = params.adapter) !== null && _a !== void 0 ? _a : this.metadata.getAdapter()) !== null && _b !== void 0 ? _b : instance[ADAPTER]) !== null && _c !== void 0 ? _c : XMLHttpRequestAdapter)(options);
     return adapter;
   }
 }
@@ -1485,6 +1786,76 @@ const DEFAULT_CONFIG = {
   threshold: 5,
   resetTimeout: 60000 // 1 minute
 };
+/**
+ * Interceptor implementing the Circuit Breaker pattern to prevent cascading failures.
+ *
+ * The Circuit Breaker pattern protects your application from repeatedly trying to execute
+ * an operation that's likely to fail. When failures reach a threshold, the circuit "opens"
+ * and subsequent requests fail immediately without attempting the actual call. After a
+ * timeout period, the circuit enters a "half-open" state to test if the service has recovered.
+ *
+ * Circuit States:
+ * - **CLOSED**: Normal operation. Requests pass through. Failures are counted.
+ * - **OPEN**: Too many failures occurred. Requests fail immediately with {@link CircuitBreakerError}.
+ * - **HALF_OPEN**: Testing recovery. One request is allowed through. Success closes the circuit,
+ *   failure reopens it.
+ *
+ * Default behavior:
+ * - Opens circuit after 5 consecutive failures
+ * - Attempts to reset after 60 seconds
+ *
+ * This pattern is essential for:
+ * - Preventing resource exhaustion from repeated failed requests
+ * - Allowing failing services time to recover
+ * - Failing fast instead of blocking threads/resources
+ * - Improving overall system resilience
+ *
+ * @example
+ * Basic usage with default configuration:
+ * ```typescript
+ * @Endpoint({
+ *   baseURL: 'https://api.example.com',
+ *   interceptors: [CircuitBreakerInterceptor]
+ * })
+ * class API {
+ *   @Get('/flaky-service')
+ *   getData() {
+ *     return restful<Data>();
+ *   }
+ * }
+ *
+ * // After 5 failures, subsequent calls fail immediately for 60 seconds
+ * ```
+ *
+ * @example
+ * Custom configuration:
+ * ```typescript
+ * const customCircuitBreaker = CircuitBreakerInterceptor.of({
+ *   threshold: 3,        // Open after 3 failures
+ *   resetTimeout: 30000  // Try again after 30 seconds
+ * });
+ *
+ * @Endpoint({
+ *   baseURL: 'https://api.example.com',
+ *   interceptors: [customCircuitBreaker]
+ * })
+ * class API { }
+ * ```
+ *
+ * @example
+ * Handling circuit breaker errors:
+ * ```typescript
+ * try {
+ *   const resource = api.getData();
+ *   await resource.wait();
+ * } catch (error) {
+ *   if (error instanceof CircuitBreakerError) {
+ *     console.log('Service temporarily unavailable');
+ *     // Show cached data or fallback UI
+ *   }
+ * }
+ * ```
+ */
 class CircuitBreakerInterceptor {
   static of(config = DEFAULT_CONFIG) {
     class SubCircuitBreakerInterceptor extends CircuitBreakerInterceptor {
@@ -1504,7 +1875,7 @@ class CircuitBreakerInterceptor {
     return this.state === 'OPEN' && Date.now() - this.lastFailureTime >= this.config.resetTimeout;
   }
   invoke(instance, method, params, next) {
-    return __awaiter(this, undefined, undefined, function* () {
+    return __awaiter(this, void 0, void 0, function* () {
       if (this.state === 'OPEN') {
         if (this.shouldReset()) {
           this.state = 'HALF_OPEN';
@@ -1547,7 +1918,7 @@ class NativeReadableStream extends ProgressiveByteStream {
     return Promise.resolve(this.contentLength);
   }
   readAsStoredBlob() {
-    return __awaiter(this, undefined, undefined, function* () {
+    return __awaiter(this, void 0, void 0, function* () {
       if (this.blobPromise !== null) {
         return this.blobPromise;
       }
@@ -1556,7 +1927,7 @@ class NativeReadableStream extends ProgressiveByteStream {
       this.blobPromise = new Promise((resolve, reject) => {
         const chunks = [];
         this.updateProgress(new Progress(total, 0));
-        (() => __awaiter(this, undefined, undefined, function* () {
+        (() => __awaiter(this, void 0, void 0, function* () {
           var _a, e_1, _b, _c;
           try {
             for (var _d = true, _e = __asyncValues(readStream(this.stream)), _f; _f = yield _e.next(), _a = _f.done, !_a; _d = true) {
@@ -1586,14 +1957,14 @@ class NativeReadableStream extends ProgressiveByteStream {
     });
   }
   readAsBuffer() {
-    return __awaiter(this, undefined, undefined, function* () {
+    return __awaiter(this, void 0, void 0, function* () {
       const blob = yield this.readAsStoredBlob();
       return yield blob.arrayBuffer();
     });
   }
   readAsStream() {
     return new ReadableStream({
-      start: controller => __awaiter(this, undefined, undefined, function* () {
+      start: controller => __awaiter(this, void 0, void 0, function* () {
         var _a, e_2, _b, _c;
         try {
           const blob = yield this.readAsStoredBlob();
@@ -1625,7 +1996,7 @@ class NativeReadableStream extends ProgressiveByteStream {
     });
   }
   readAsBlob() {
-    return __awaiter(this, arguments, undefined, function* (contentType = 'application/octet-stream') {
+    return __awaiter(this, arguments, void 0, function* (contentType = 'application/octet-stream') {
       const blob = yield this.readAsStoredBlob();
       // If the requested content type is different from the stored blob's type,
       // create a new blob with the requested type
@@ -1647,7 +2018,7 @@ class FetchRequestAdapter {
     this.statusDefer = new Defer();
     this.abortController = new AbortController();
     this.executeRequestIfNeed = () => {
-      this.executeRequestIfNeed = () => undefined;
+      this.executeRequestIfNeed = () => void 0;
       options.signal.addEventListener('abort', () => {
         this.abortController.abort();
       });
@@ -1685,7 +2056,7 @@ class FetchRequestAdapter {
     this.abortController.abort();
   }
   execute() {
-    return __awaiter(this, undefined, undefined, function* () {
+    return __awaiter(this, void 0, void 0, function* () {
       this.executeRequestIfNeed();
       const {
         headersDefer,
@@ -1708,7 +2079,7 @@ class FetchRequestAdapter {
         },
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         onUpload(_listener) {
-          return () => undefined;
+          return () => void 0;
         },
         onBodyComplete(listener) {
           let isListenerCancelled = false;
@@ -1732,8 +2103,8 @@ const DEFAULT_HTTP_CONFIGURATION = Symbol('solidium-default-http-configuration')
 function buildEndpointClass(endpointClass, metadata) {
   Reflect.set(endpointClass.prototype, GET_INTERCEPTORS, function (exclude) {
     var _a, _b;
-    const globalInterceptors = (_b = (_a = this[HTTP_CONFIGURATION]) === null || _a === undefined ? undefined : _a.interceptors) !== null && _b !== undefined ? _b : [];
-    return [...globalInterceptors, ...metadata.getInterceptors()].filter(it => !(exclude === null || exclude === undefined ? undefined : exclude.includes(it))).map(identifier => {
+    const globalInterceptors = (_b = (_a = this[HTTP_CONFIGURATION]) === null || _a === void 0 ? void 0 : _a.interceptors) !== null && _b !== void 0 ? _b : [];
+    return [...globalInterceptors, ...metadata.getInterceptors()].filter(it => !(exclude === null || exclude === void 0 ? void 0 : exclude.includes(it))).map(identifier => {
       if (isInterceptor(identifier)) {
         return identifier;
       }
@@ -1801,27 +2172,27 @@ class RequestMethodMetadata {
   getHeaders() {
     var _a;
     const headers = new HttpHeaders();
-    headers.setAll((_a = this.options.headers) !== null && _a !== undefined ? _a : {});
+    headers.setAll((_a = this.options.headers) !== null && _a !== void 0 ? _a : {});
     return headers;
   }
   getTimeout() {
     var _a;
-    return (_a = this.options.timeout) !== null && _a !== undefined ? _a : 0;
+    return (_a = this.options.timeout) !== null && _a !== void 0 ? _a : 0;
   }
   getInterceptors() {
     var _a;
-    return ((_a = this.options.interceptors) !== null && _a !== undefined ? _a : []).concat(this.externalInterceptors);
+    return ((_a = this.options.interceptors) !== null && _a !== void 0 ? _a : []).concat(this.externalInterceptors);
   }
   getExcludeInterceptors() {
     var _a;
-    return (_a = this.options.excludeInterceptors) !== null && _a !== undefined ? _a : [];
+    return (_a = this.options.excludeInterceptors) !== null && _a !== void 0 ? _a : [];
   }
   getAdapter() {
     return this.options.adapter;
   }
   isReactive() {
     var _a;
-    return (_a = this.options.reactive) !== null && _a !== undefined ? _a : true;
+    return (_a = this.options.reactive) !== null && _a !== void 0 ? _a : true;
   }
   appendInterceptor(interceptor) {
     this.externalInterceptors.push(interceptor);
@@ -1857,7 +2228,7 @@ class EndpointMetadata {
     var _a, _b;
     if ('extends' in endpointOptions) {
       const parent = EndpointMetadata.from(endpointOptions.extends);
-      this.baseURL = (_a = endpointOptions.baseURL) !== null && _a !== undefined ? _a : parent.baseURL;
+      this.baseURL = (_a = endpointOptions.baseURL) !== null && _a !== void 0 ? _a : parent.baseURL;
       this.timeout = parent.timeout;
       this.headers = this.headers.concat(parent.headers);
       this.interceptors = parent.interceptors;
@@ -1872,7 +2243,7 @@ class EndpointMetadata {
         throw new Error('baseURL is not set');
       }
     }
-    this.baseURL = joinPath(this.baseURL, (_b = endpointOptions.path) !== null && _b !== undefined ? _b : '');
+    this.baseURL = joinPath(this.baseURL, (_b = endpointOptions.path) !== null && _b !== void 0 ? _b : '');
     if (endpointOptions.timeout) {
       this.timeout = endpointOptions.timeout;
     }
@@ -1906,7 +2277,7 @@ class EndpointMetadata {
   }
   getInterceptors() {
     var _a;
-    return (_a = this.interceptors) !== null && _a !== undefined ? _a : [];
+    return (_a = this.interceptors) !== null && _a !== void 0 ? _a : [];
   }
   getAdaptor() {
     return this.adapter;
@@ -1922,6 +2293,58 @@ class EndpointMetadata {
   }
 }
 
+/**
+ * Decorator that marks a class as an HTTP endpoint and configures its base settings.
+ *
+ * Use this decorator to define a class that represents a collection of related HTTP API endpoints.
+ * It configures the base URL, common headers, interceptors, and other settings that apply to all
+ * methods within the class.
+ *
+ * @param options - Configuration options for the endpoint
+ * @param options.baseURL - The base URL for all HTTP requests in this endpoint
+ * @param options.path - Optional path segment to append to the base URL
+ * @param options.timeout - Optional default timeout in milliseconds for all requests
+ * @param options.headers - Optional default headers to include in all requests
+ * @param options.adapter - Optional custom adapter for making HTTP requests
+ * @param options.interceptors - Optional array of interceptors to apply to all requests
+ * @param options.extends - Optional parent endpoint class to inherit configuration from
+ *
+ * @example
+ * ```typescript
+ * @Endpoint({
+ *   baseURL: 'https://api.example.com',
+ *   path: '/v1/users',
+ *   headers: {
+ *     'Authorization': 'Bearer token'
+ *   }
+ * })
+ * class UserAPI {
+ *   @Get('/{id}')
+ *   getUser(@PathVariable('id') id: string) {
+ *     return restful<User>(id);
+ *   }
+ * }
+ * ```
+ *
+ * @example
+ * Extending another endpoint:
+ * ```typescript
+ * @Endpoint({
+ *   baseURL: 'https://api.example.com'
+ * })
+ * class BaseAPI {}
+ *
+ * @Endpoint({
+ *   extends: BaseAPI,
+ *   path: '/users'
+ * })
+ * class UserAPI extends BaseAPI {
+ *   // Methods here...
+ * }
+ * ```
+ *
+ * @returns A class decorator
+ */
 function Endpoint(options) {
   return target => {
     EndpointMetadata.from(target).setOptions(options);
@@ -2004,32 +2427,226 @@ function createRequestDecorator(options, method) {
   }
 }
 
+/**
+ * Decorator that marks a method as an HTTP GET request handler.
+ *
+ * Use this decorator to define a method that performs an HTTP GET request.
+ * GET requests are typically used to retrieve data from the server.
+ *
+ * @param options - Either a string path or a configuration object
+ * @param options.path - The URL path for the request (can include path variables like `{id}`)
+ * @param options.headers - Optional headers to include in the request
+ * @param options.interceptors - Optional interceptors to apply to this specific request
+ * @param options.excludeInterceptors - Optional interceptors to exclude from this request
+ * @param options.timeout - Optional timeout in milliseconds for this request
+ * @param options.retry - Optional retry configuration for failed requests
+ * @param options.adapter - Optional custom adapter for this request
+ *
+ * @example
+ * Simple usage with path string:
+ * ```typescript
+ * @Endpoint({ baseURL: 'https://api.example.com' })
+ * class UserAPI {
+ *   @Get('/users/{id}')
+ *   getUser(@PathVariable('id') id: string) {
+ *     return restful<User>(id);
+ *   }
+ * }
+ * ```
+ *
+ * @example
+ * Advanced usage with options:
+ * ```typescript
+ * @Get({
+ *   path: '/users/{id}',
+ *   timeout: 5000,
+ *   headers: { 'Accept': 'application/json' },
+ *   retry: { maxAttempts: 3 }
+ * })
+ * getUser(@PathVariable('id') id: string) {
+ *   return restful<User>(id);
+ * }
+ * ```
+ *
+ * @returns A method decorator
+ */
 function Get(options) {
   return createRequestDecorator(options, 'GET');
 }
 
+/**
+ * Decorator that marks a method as an HTTP POST request handler.
+ *
+ * Use this decorator to define a method that performs an HTTP POST request.
+ * POST requests are typically used to create new resources or submit data to the server.
+ *
+ * @param options - Either a string path or a configuration object
+ * @param options.path - The URL path for the request
+ * @param options.headers - Optional headers to include in the request
+ * @param options.interceptors - Optional interceptors to apply to this specific request
+ * @param options.timeout - Optional timeout in milliseconds for this request
+ * @param options.retry - Optional retry configuration for failed requests
+ *
+ * @example
+ * Creating a new user:
+ * ```typescript
+ * @Endpoint({ baseURL: 'https://api.example.com' })
+ * class UserAPI {
+ *   @Post('/users')
+ *   createUser(@Payload() user: CreateUserDto) {
+ *     return restful<User>(user);
+ *   }
+ * }
+ * ```
+ *
+ * @example
+ * With custom headers:
+ * ```typescript
+ * @Post({
+ *   path: '/users',
+ *   headers: { 'Content-Type': 'application/json' }
+ * })
+ * createUser(@Payload() user: CreateUserDto) {
+ *   return restful<User>(user);
+ * }
+ * ```
+ *
+ * @returns A method decorator
+ */
 function Post(options) {
   return createRequestDecorator(options, 'POST');
 }
 
+/**
+ * Decorator that marks a method as an HTTP PUT request handler.
+ *
+ * Use this decorator to define a method that performs an HTTP PUT request.
+ * PUT requests are typically used to update existing resources on the server.
+ *
+ * @param options - Either a string path or a configuration object
+ * @param options.path - The URL path for the request (can include path variables)
+ * @param options.headers - Optional headers to include in the request
+ * @param options.interceptors - Optional interceptors to apply to this specific request
+ * @param options.timeout - Optional timeout in milliseconds for this request
+ *
+ * @example
+ * Updating a user:
+ * ```typescript
+ * @Endpoint({ baseURL: 'https://api.example.com' })
+ * class UserAPI {
+ *   @Put('/users/{id}')
+ *   updateUser(
+ *     @PathVariable('id') id: string,
+ *     @Payload() user: UpdateUserDto
+ *   ) {
+ *     return restful<User>(id, user);
+ *   }
+ * }
+ * ```
+ *
+ * @returns A method decorator
+ */
 function Put(options) {
   return createRequestDecorator(options, 'PUT');
 }
 
+/**
+ * Decorator that marks a method as an HTTP DELETE request handler.
+ *
+ * Use this decorator to define a method that performs an HTTP DELETE request.
+ * DELETE requests are typically used to remove resources from the server.
+ *
+ * @param options - Either a string path or a configuration object
+ * @param options.path - The URL path for the request (can include path variables)
+ * @param options.headers - Optional headers to include in the request
+ * @param options.interceptors - Optional interceptors to apply to this specific request
+ * @param options.timeout - Optional timeout in milliseconds for this request
+ *
+ * @example
+ * Deleting a user:
+ * ```typescript
+ * @Endpoint({ baseURL: 'https://api.example.com' })
+ * class UserAPI {
+ *   @Delete('/users/{id}')
+ *   deleteUser(@PathVariable('id') id: string) {
+ *     return restful<void>(id);
+ *   }
+ * }
+ * ```
+ *
+ * @returns A method decorator
+ */
 function Delete(options) {
   return createRequestDecorator(options, 'DELETE');
 }
 
 function appendExecHandler(target, methodName, handler) {
   const metadata = EndpointMetadata.from(target).getMethodMetadata(methodName);
-  metadata === null || metadata === undefined ? undefined : metadata.appendExecutionHandler(handler);
+  metadata === null || metadata === void 0 ? void 0 : metadata.appendExecutionHandler(handler);
 }
 
+/**
+ * Parameter decorator that binds a method parameter to an HTTP request header.
+ *
+ * Use this decorator to dynamically set HTTP headers based on method parameters.
+ * This is useful for headers that vary per request, such as authorization tokens,
+ * custom API keys, or content negotiation headers.
+ *
+ * @param name - The name of the HTTP header (e.g., 'Authorization', 'X-API-Key')
+ * @param defaultValue - Optional default value(s) to use if the parameter is undefined
+ *
+ * @example
+ * Dynamic authorization header:
+ * ```typescript
+ * @Endpoint({ baseURL: 'https://api.example.com' })
+ * class UserAPI {
+ *   @Get('/users/{id}')
+ *   getUser(
+ *     @PathVariable('id') id: string,
+ *     @Header('Authorization') token: string
+ *   ) {
+ *     return restful<User>(id, token);
+ *   }
+ * }
+ *
+ * // Usage:
+ * api.getUser('123', 'Bearer abc123');
+ * // GET /users/123
+ * // Authorization: Bearer abc123
+ * ```
+ *
+ * @example
+ * With default value:
+ * ```typescript
+ * @Get('/data')
+ * getData(
+ *   @Header('Accept', 'application/json') accept?: string
+ * ) {
+ *   return restful<Data>(accept);
+ * }
+ * ```
+ *
+ * @example
+ * Multiple header values:
+ * ```typescript
+ * @Get('/data')
+ * getData(
+ *   @Header('Accept') acceptTypes: string[]
+ * ) {
+ *   return restful<Data>(acceptTypes);
+ * }
+ *
+ * // Usage:
+ * api.getData(['application/json', 'application/xml']);
+ * ```
+ *
+ * @returns A parameter decorator
+ */
 function Header(name, defaultValue) {
   return function (target, methodName, parameterIndex) {
     appendExecHandler(target.constructor, methodName, (instance, metadata, params, args) => {
       var _a;
-      const value = (_a = args[parameterIndex]) !== null && _a !== undefined ? _a : defaultValue;
+      const value = (_a = args[parameterIndex]) !== null && _a !== void 0 ? _a : defaultValue;
       if (value) {
         params.headers.append(name, ...(Array.isArray(value) ? value : [value]));
       }
@@ -2037,20 +2654,102 @@ function Header(name, defaultValue) {
   };
 }
 
+/**
+ * Parameter decorator that binds a method parameter to a path variable in the URL.
+ *
+ * Use this decorator to extract values from URL path segments (e.g., `/users/{id}`).
+ * The decorated parameter value will replace the corresponding placeholder in the path.
+ *
+ * @param name - The name of the path variable in the URL template (e.g., 'id' for '/users/{id}')
+ * @param defaultValue - Optional default value to use if the parameter is undefined
+ *
+ * @example
+ * Basic usage:
+ * ```typescript
+ * @Endpoint({ baseURL: 'https://api.example.com' })
+ * class UserAPI {
+ *   @Get('/users/{id}')
+ *   getUser(@PathVariable('id') id: string) {
+ *     return restful<User>(id);
+ *   }
+ * }
+ *
+ * // Usage:
+ * const api = container.getInstance(UserAPI);
+ * api.getUser('123'); // GET https://api.example.com/users/123
+ * ```
+ *
+ * @example
+ * With default value:
+ * ```typescript
+ * @Get('/users/{id}/posts/{postId}')
+ * getUserPost(
+ *   @PathVariable('id') userId: string,
+ *   @PathVariable('postId', 'latest') postId?: string
+ * ) {
+ *   return restful<Post>(userId, postId);
+ * }
+ * ```
+ *
+ * @returns A parameter decorator
+ */
 function PathVariable(name, defaultValue) {
   return function (target, methodName, parameterIndex) {
     appendExecHandler(target.constructor, methodName, (instance, metadata, params, args) => {
       const value = args[parameterIndex];
-      params.pathVariables[name] = (value !== null && value !== undefined ? value : defaultValue) + '';
+      params.pathVariables[name] = (value !== null && value !== void 0 ? value : defaultValue) + '';
     });
   };
 }
 
+/**
+ * Parameter decorator that binds a method parameter to a URL query parameter.
+ *
+ * Use this decorator to add query parameters to the request URL (e.g., `?page=1&limit=10`).
+ * The decorated parameter value will be serialized and appended to the query string.
+ * Supports both single values and arrays for multiple values with the same parameter name.
+ *
+ * @param name - The name of the query parameter
+ * @param defaultValue - Optional default value to use if the parameter is undefined
+ *
+ * @example
+ * Single query parameter:
+ * ```typescript
+ * @Endpoint({ baseURL: 'https://api.example.com' })
+ * class UserAPI {
+ *   @Get('/users')
+ *   getUsers(
+ *     @Query('page') page: number,
+ *     @Query('limit', 10) limit?: number
+ *   ) {
+ *     return restful<User[]>(page, limit);
+ *   }
+ * }
+ *
+ * // Usage:
+ * api.getUsers(1, 20); // GET /users?page=1&limit=20
+ * api.getUsers(2);     // GET /users?page=2&limit=10
+ * ```
+ *
+ * @example
+ * Array query parameter:
+ * ```typescript
+ * @Get('/users')
+ * getUsers(@Query('ids') ids: string[]) {
+ *   return restful<User[]>(ids);
+ * }
+ *
+ * // Usage:
+ * api.getUsers(['1', '2', '3']); // GET /users?ids=1&ids=2&ids=3
+ * ```
+ *
+ * @returns A parameter decorator
+ */
 function Query(name, defaultValue) {
   return function (target, methodName, parameterIndex) {
     appendExecHandler(target.constructor, methodName, (instance, metadata, params, args) => {
       var _a;
-      const value = (_a = args[parameterIndex]) !== null && _a !== undefined ? _a : defaultValue;
+      const value = (_a = args[parameterIndex]) !== null && _a !== void 0 ? _a : defaultValue;
       if (Array.isArray(value)) {
         value.forEach(value => {
           params.queryParams.append(name, value);
@@ -2066,6 +2765,56 @@ function isBodyInit(value) {
   return value instanceof Blob || value instanceof ArrayBuffer || ArrayBuffer.isView(value) || value instanceof FormData || value instanceof URLSearchParams || value instanceof ReadableStream || typeof value === 'string';
 }
 
+/**
+ * Parameter decorator that binds a method parameter to the HTTP request body.
+ *
+ * Use this decorator to specify which parameter should be sent as the request body payload.
+ * The decorator automatically handles JSON serialization for plain objects and supports
+ * standard body types like Blob, FormData, and ArrayBuffer.
+ *
+ * For plain objects, the decorator will:
+ * - Automatically set `Content-Type: application/json` header
+ * - JSON-stringify the object
+ *
+ * For BodyInit types (Blob, FormData, ArrayBuffer, etc.), the value is sent as-is.
+ *
+ * @example
+ * Creating a resource with JSON payload:
+ * ```typescript
+ * @Endpoint({ baseURL: 'https://api.example.com' })
+ * class UserAPI {
+ *   @Post('/users')
+ *   createUser(@Payload() user: CreateUserDto) {
+ *     return restful<User>(user);
+ *   }
+ * }
+ *
+ * // Usage:
+ * api.createUser({ name: 'John', email: 'john@example.com' });
+ * // POST /users
+ * // Content-Type: application/json
+ * // Body: {"name":"John","email":"john@example.com"}
+ * ```
+ *
+ * @example
+ * Uploading a file with FormData:
+ * ```typescript
+ * @Post('/users/{id}/avatar')
+ * uploadAvatar(
+ *   @PathVariable('id') id: string,
+ *   @Payload() formData: FormData
+ * ) {
+ *   return upload<{ url: string }>(id, formData);
+ * }
+ *
+ * // Usage:
+ * const formData = new FormData();
+ * formData.append('file', fileBlob);
+ * api.uploadAvatar('123', formData);
+ * ```
+ *
+ * @returns A parameter decorator
+ */
 function Payload() {
   return function (target, methodName, parameterIndex) {
     appendExecHandler(target.constructor, methodName, (instance, metadata, params, args) => {
@@ -2111,6 +2860,59 @@ const defaultConfig = {
 const STATE_CHANGE_EVENT = 'stateChange';
 const ERROR_EVENT = 'error';
 const SUCCESS_EVENT = 'success';
+/**
+ * Manages the lifecycle and state of a single SWR (Stale-While-Revalidate) cache entry.
+ *
+ * An SWR instance represents a single cached API request with its associated configuration.
+ * It handles:
+ * - Initial data fetching and loading state
+ * - Automatic revalidation on focus, reconnect, or custom events
+ * - Background revalidation while serving stale data
+ * - Request deduplication to prevent redundant fetches
+ * - Error retry with exponential backoff
+ * - Automatic polling/refresh at intervals
+ * - Manual cache mutation and revalidation
+ *
+ * Instances are typically created and managed automatically by the {@link SWR} decorator
+ * through the {@link SWRService}, but can also be created manually for advanced use cases.
+ *
+ * @template T - The type of data managed by this SWR instance
+ *
+ * @example
+ * Automatic usage via decorator (recommended):
+ * ```typescript
+ * @Get('/users/{id}')
+ * @SWR({ revalidate: { focus: true } })
+ * getUser(@PathVariable('id') id: string) {
+ *   return restful<User>(id);
+ * }
+ *
+ * // SWRInstance is created and managed automatically
+ * const resource = api.getUser('123');
+ * ```
+ *
+ * @example
+ * Manual instance creation (advanced):
+ * ```typescript
+ * const swrInstance = new SWRInstance<User>(
+ *   'user-123',
+ *   async (key) => {
+ *     const response = await fetch(`/api/users/${key.split('-')[1]}`);
+ *     return response.json();
+ *   },
+ *   {
+ *     revalidate: { focus: true, reconnect: true },
+ *     staleTime: 60000
+ *   }
+ * );
+ *
+ * // Listen to state changes
+ * swrInstance.onStateChange((state) => {
+ *   console.log('Data:', state.data);
+ *   console.log('Loading:', state.isLoading);
+ * });
+ * ```
+ */
 class SWRInstance {
   get signal() {
     return this.abortController.signal;
@@ -2141,11 +2943,11 @@ class SWRInstance {
     this.events.emit(STATE_CHANGE_EVENT, this.state);
   }
   revalidate(reason) {
-    return __awaiter(this, undefined, undefined, function* () {
+    return __awaiter(this, void 0, void 0, function* () {
       var _a, _b, _c, _d, _e, _f;
       const now = Date.now();
       // Deduping
-      const dedupingInterval = (_a = this.config.dedupingInterval) !== null && _a !== undefined ? _a : 2000;
+      const dedupingInterval = (_a = this.config.dedupingInterval) !== null && _a !== void 0 ? _a : 2000;
       if (now - this.lastFetchTime < dedupingInterval) {
         return;
       }
@@ -2179,9 +2981,9 @@ class SWRInstance {
             attempt: this.currentRetryAttempt + 1,
             timestamp: Date.now()
           };
-          if (((_c = (_b = this.config.retry).shouldRetryOnError) === null || _c === undefined ? undefined : _c.call(_b, retryContext)) !== false) {
+          if (((_c = (_b = this.config.retry).shouldRetryOnError) === null || _c === void 0 ? void 0 : _c.call(_b, retryContext)) !== false) {
             this.currentRetryAttempt++;
-            const delay = (_f = (_e = (_d = this.config.retry).calculateDelay) === null || _e === undefined ? undefined : _e.call(_d, this.currentRetryAttempt, error)) !== null && _f !== undefined ? _f : this.config.retry.interval * Math.pow(2, this.currentRetryAttempt - 1);
+            const delay = (_f = (_e = (_d = this.config.retry).calculateDelay) === null || _e === void 0 ? void 0 : _e.call(_d, this.currentRetryAttempt, error)) !== null && _f !== void 0 ? _f : this.config.retry.interval * Math.pow(2, this.currentRetryAttempt - 1);
             setTimeout(() => this.revalidate(), delay);
           }
         }
@@ -2194,7 +2996,7 @@ class SWRInstance {
       focus,
       reconnect,
       events
-    } = (_a = this.config.revalidate) !== null && _a !== undefined ? _a : {};
+    } = (_a = this.config.revalidate) !== null && _a !== void 0 ? _a : {};
     if (typeof window === 'undefined') {
       return;
     }
@@ -2224,10 +3026,10 @@ class SWRInstance {
   }
   setupRefreshInterval() {
     var _a;
-    if (((_a = this.config.refresh) === null || _a === undefined ? undefined : _a.interval) && this.config.refresh.interval > 0) {
+    if (((_a = this.config.refresh) === null || _a === void 0 ? void 0 : _a.interval) && this.config.refresh.interval > 0) {
       this.refreshInterval = setInterval(() => {
         var _a, _b;
-        if (document.hidden && !((_a = this.config.refresh) === null || _a === undefined ? undefined : _a.whenHidden) || !navigator.onLine && !((_b = this.config.refresh) === null || _b === undefined ? undefined : _b.whenOffline)) {
+        if (document.hidden && !((_a = this.config.refresh) === null || _a === void 0 ? void 0 : _a.whenHidden) || !navigator.onLine && !((_b = this.config.refresh) === null || _b === void 0 ? void 0 : _b.whenOffline)) {
           return;
         }
         this.revalidate();
@@ -2265,6 +3067,103 @@ const EXTRA_METADATA_SWR_CONFIG = Symbol('swr-config');
 const EXTRA_METADATA_MUTATE = Symbol('swr-mutate');
 const EXTRA_METADATA_SWR_KEYGEN = Symbol('swr-key-gen');
 
+/**
+ * Decorator that enables SWR (Stale-While-Revalidate) pattern for an endpoint method.
+ *
+ * The SWR pattern provides:
+ * - **Automatic caching**: Responses are cached and reused for subsequent requests
+ * - **Background revalidation**: Cached data is served immediately while fresh data is fetched in the background
+ * - **Focus revalidation**: Automatically refetches when the window regains focus
+ * - **Network recovery**: Automatically refetches when network connection is restored
+ * - **Polling**: Optional automatic refresh at specified intervals
+ * - **Deduplication**: Multiple requests with the same key are deduplicated
+ *
+ * This significantly improves user experience by showing cached data instantly while ensuring
+ * data freshness through background updates.
+ *
+ * @param config - SWR configuration options
+ * @param config.key - Optional custom cache key (string or function)
+ * @param config.revalidate - Revalidation triggers configuration
+ * @param config.revalidate.focus - Auto revalidate on window focus (default: true)
+ * @param config.revalidate.reconnect - Auto revalidate on network recovery (default: true)
+ * @param config.revalidate.events - Custom events that trigger revalidation
+ * @param config.refresh - Automatic refresh configuration
+ * @param config.refresh.interval - Polling interval in milliseconds (0 to disable)
+ * @param config.refresh.whenHidden - Continue polling when window is invisible
+ * @param config.refresh.whenOffline - Continue polling when offline
+ * @param config.retry - Error retry configuration
+ * @param config.staleTime - Time in milliseconds before data becomes stale
+ * @param config.dedupingInterval - Deduplication interval in milliseconds
+ *
+ * @example
+ * Basic usage with default config:
+ * ```typescript
+ * @Endpoint({ baseURL: 'https://api.example.com' })
+ * class UserAPI {
+ *   @Get('/users/{id}')
+ *   @SWR()
+ *   getUser(@PathVariable('id') id: string) {
+ *     return restful<User>(id);
+ *   }
+ * }
+ *
+ * // First call: fetches from server
+ * const resource1 = api.getUser('123');
+ *
+ * // Second call: returns cached data immediately, revalidates in background
+ * const resource2 = api.getUser('123');
+ * ```
+ *
+ * @example
+ * With custom revalidation settings:
+ * ```typescript
+ * @Get('/notifications')
+ * @SWR({
+ *   revalidate: {
+ *     focus: true,        // Revalidate on window focus
+ *     reconnect: true,    // Revalidate on network recovery
+ *     events: ['user-action'] // Revalidate on custom events
+ *   }
+ * })
+ * getNotifications() {
+ *   return restful<Notification[]>();
+ * }
+ * ```
+ *
+ * @example
+ * With polling:
+ * ```typescript
+ * @Get('/status')
+ * @SWR({
+ *   refresh: {
+ *     interval: 5000,      // Poll every 5 seconds
+ *     whenHidden: false,   // Pause when tab is hidden
+ *     whenOffline: false   // Pause when offline
+ *   }
+ * })
+ * getSystemStatus() {
+ *   return restful<SystemStatus>();
+ * }
+ * ```
+ *
+ * @example
+ * With custom cache key:
+ * ```typescript
+ * @Get('/users/{id}')
+ * @SWR({
+ *   key: (id: string) => `user-profile-${id}`,
+ *   staleTime: 60000  // Consider data stale after 1 minute
+ * })
+ * getUser(@PathVariable('id') id: string) {
+ *   return restful<User>(id);
+ * }
+ * ```
+ *
+ * @returns A method decorator
+ *
+ * @see {@link SWRConfig} for detailed configuration options
+ * @see {@link SWRMutation} for invalidating SWR cache after mutations
+ */
 function SWR(config = {}) {
   return decorateEndpointMethod((clazz, methodName, methodMetadata) => {
     methodMetadata.setExtra(EXTRA_METADATA_SWR_KEYGEN, config.key);
@@ -2291,12 +3190,109 @@ class SWRService {
   }
 }
 
+/**
+ * Decorator that marks a mutation method and automatically invalidates related SWR cache.
+ *
+ * Use this decorator on mutation methods (POST, PUT, DELETE) that modify server data.
+ * After the mutation completes successfully, it automatically triggers revalidation
+ * of the specified SWR cache key, ensuring that all components using that cached data
+ * receive fresh updates.
+ *
+ * This is essential for maintaining data consistency between read and write operations
+ * in applications using the SWR pattern.
+ *
+ * @param _keygen - Cache key identifier for the SWR instance to invalidate
+ *                  - Can be a static string matching an {@link SWR} decorator's key
+ *                  - Can be a function that generates the key based on method arguments
+ *
+ * @example
+ * Basic usage with static key:
+ * ```typescript
+ * @Endpoint({ baseURL: 'https://api.example.com' })
+ * class UserAPI {
+ *   // Read operation with SWR caching
+ *   @Get('/users/{id}')
+ *   @SWR({ key: 'user-profile' })
+ *   getUser(@PathVariable('id') id: string) {
+ *     return restful<User>(id);
+ *   }
+ *
+ *   // Write operation that invalidates the cache
+ *   @Put('/users/{id}')
+ *   @SWRMutation('user-profile')
+ *   updateUser(
+ *     @PathVariable('id') id: string,
+ *     @Payload() data: UpdateUserDto
+ *   ) {
+ *     return restful<User>(id, data);
+ *   }
+ * }
+ *
+ * // Usage:
+ * // 1. Initial fetch - data is cached
+ * const userResource = api.getUser('123');
+ *
+ * // 2. Update user - cache is automatically invalidated and refetched
+ * await api.updateUser('123', { name: 'Jane' }).wait();
+ *
+ * // 3. userResource automatically receives updated data
+ * ```
+ *
+ * @example
+ * With dynamic key generator:
+ * ```typescript
+ * @Endpoint({ baseURL: 'https://api.example.com' })
+ * class PostAPI {
+ *   @Get('/users/{userId}/posts')
+ *   @SWR({ key: (userId: string) => `user-${userId}-posts` })
+ *   getUserPosts(@PathVariable('userId') userId: string) {
+ *     return restful<Post[]>(userId);
+ *   }
+ *
+ *   @Post('/users/{userId}/posts')
+ *   @SWRMutation((userId: string) => `user-${userId}-posts`)
+ *   createPost(
+ *     @PathVariable('userId') userId: string,
+ *     @Payload() post: CreatePostDto
+ *   ) {
+ *     return restful<Post>(userId, post);
+ *   }
+ *
+ *   @Delete('/posts/{postId}')
+ *   @SWRMutation((postId: string, userId: string) => `user-${userId}-posts`)
+ *   deletePost(
+ *     @PathVariable('postId') postId: string,
+ *     @Query('userId') userId: string
+ *   ) {
+ *     return restful(postId, userId);
+ *   }
+ * }
+ *
+ * // When a post is created or deleted, the post list is automatically refreshed
+ * ```
+ *
+ * @example
+ * Multiple related caches:
+ * ```typescript
+ * // If you need to invalidate multiple caches, you can compose multiple decorators
+ * // or handle it manually in the method
+ * @Post('/comments')
+ * @SWRMutation('comments-list')
+ * createComment(@Payload() comment: CreateCommentDto) {
+ *   return restful<Comment>(comment);
+ * }
+ * ```
+ *
+ * @returns A method decorator that adds cache invalidation behavior
+ *
+ * @see {@link SWR} for the corresponding read operation decorator
+ */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function SWRMutation(_keygen) {
   return decorateEndpointMethod((clazz, methodName, methodMetadata) => {
     methodMetadata.setExtra(EXTRA_METADATA_MUTATE, true);
     methodMetadata.appendInterceptor({
-      invoke: (instance, method, params, next) => __awaiter(this, undefined, undefined, function* () {
+      invoke: (instance, method, params, next) => __awaiter(this, void 0, void 0, function* () {
         const result = yield next(instance, method, params);
         const swrService = instance[APPLICATION_CONTEXT].getInstance(SWRService);
         const args = params.args;
@@ -2310,7 +3306,7 @@ function SWRMutation(_keygen) {
           return method.resolveURL(params);
         })();
         const swrInstance = swrService.obtainInstance(key);
-        swrInstance === null || swrInstance === undefined ? undefined : swrInstance.mutate();
+        swrInstance === null || swrInstance === void 0 ? void 0 : swrInstance.mutate();
         return result;
       })
     });
@@ -2433,17 +3429,121 @@ let ResourceExecutionState = class ResourceExecutionState extends ReplaySubject 
     this.messages = [];
   }
 };
-__decorate([Signal(), __metadata("design:type", Array)], ResourceExecutionState.prototype, "messages", undefined);
-__decorate([Signal(), __metadata("design:type", Object)], ResourceExecutionState.prototype, "data", undefined);
-__decorate([Signal(), __metadata("design:type", Object)], ResourceExecutionState.prototype, "reason", undefined);
-__decorate([Signal(), __metadata("design:type", Number)], ResourceExecutionState.prototype, "status", undefined);
-__decorate([PostInject(), __metadata("design:type", Function), __metadata("design:paramtypes", []), __metadata("design:returntype", undefined)], ResourceExecutionState.prototype, "init", null);
+__decorate([Signal(), __metadata("design:type", Array)], ResourceExecutionState.prototype, "messages", void 0);
+__decorate([Signal(), __metadata("design:type", Object)], ResourceExecutionState.prototype, "data", void 0);
+__decorate([Signal(), __metadata("design:type", Object)], ResourceExecutionState.prototype, "reason", void 0);
+__decorate([Signal(), __metadata("design:type", Number)], ResourceExecutionState.prototype, "status", void 0);
+__decorate([PostInject(), __metadata("design:type", Function), __metadata("design:paramtypes", []), __metadata("design:returntype", void 0)], ResourceExecutionState.prototype, "init", null);
 ResourceExecutionState = __decorate([Scope(InstanceScope.TRANSIENT), __metadata("design:paramtypes", [])], ResourceExecutionState);
 
+/**
+ * @internal Symbol for executing the resource
+ */
 const EXECUTE = Symbol('execute');
+/**
+ * @internal Symbol for setting data
+ */
 const SET_DATA = Symbol('setData');
+/**
+ * @internal Symbol for setting error
+ */
 const SET_ERROR = Symbol('setError');
+/**
+ * @internal Symbol for setup
+ */
 const SETUP = Symbol('setup');
+/**
+ * Abstract base class for all HTTP request resources.
+ *
+ * A Resource represents an HTTP request with reactive state management, providing:
+ * - **Reactive state**: All state properties (data, loading, error, etc.) are reactive signals
+ * - **Observable pattern**: Subscribe to state changes via RxJS Observables
+ * - **Promise interface**: Wait for completion with `wait()` method
+ * - **Lifecycle management**: Automatic abort controller and cleanup
+ * - **Type safety**: Strong TypeScript typing for request/response data
+ *
+ * The Resource class is the foundation of the library's reactive HTTP layer, integrating
+ * seamlessly with Solid.js components through signal-based reactivity.
+ *
+ * Resource lifecycle states (exposed as reactive properties):
+ * - `idle`: Initial state before request starts
+ * - `loading`: Request is in progress
+ * - `opened`: Connection established (for streaming)
+ * - `success`: Request completed successfully
+ * - `failure`: Request failed with an error
+ * - `aborted`: Request was aborted
+ *
+ * Specialized resource types:
+ * - {@link RestfulResource}: Standard REST API calls with optional SWR
+ * - {@link DownloadResource}: File downloads with progress tracking
+ * - {@link UploadResource}: File uploads with progress tracking
+ * - {@link JSONSSEResource}: Server-Sent Events with JSON parsing
+ * - {@link TextSSEResource}: Server-Sent Events with text streaming
+ *
+ * @template T - The type of data returned by the request
+ * @template B - The type of error body (defaults to unknown)
+ *
+ * @example
+ * Using a resource in a Solid component:
+ * ```typescript
+ * function UserProfile(props: { userId: string }) {
+ *   const api = useService(UserAPI);
+ *   const userResource = api.getUser(props.userId);
+ *
+ *   return (
+ *     <Show
+ *       when={!userResource.loading}
+ *       fallback={<div>Loading...</div>}
+ *     >
+ *       <Show
+ *         when={userResource.success}
+ *         fallback={<div>Error: {userResource.error?.message}</div>}
+ *       >
+ *         <div>Name: {userResource.data?.name}</div>
+ *       </Show>
+ *     </Show>
+ *   );
+ * }
+ * ```
+ *
+ * @example
+ * Subscribing to state changes:
+ * ```typescript
+ * const resource = api.getData();
+ *
+ * resource.subscribe((state) => {
+ *   console.log('State changed:', {
+ *     loading: state.loading,
+ *     data: state.data,
+ *     error: state.reason
+ *   });
+ * });
+ * ```
+ *
+ * @example
+ * Waiting for completion:
+ * ```typescript
+ * const resource = api.createUser(userData);
+ *
+ * try {
+ *   const state = await resource.wait();
+ *   if (state.success) {
+ *     console.log('User created:', state.data);
+ *   }
+ * } catch (error) {
+ *   console.error('Failed to create user:', error);
+ * }
+ * ```
+ *
+ * @example
+ * Manual reload:
+ * ```typescript
+ * const resource = api.getData();
+ *
+ * // Later, reload the data
+ * resource.reload(true); // force=true bypasses cache
+ * ```
+ */
 class Resource {
   constructor() {
     this.$state = new ReplaySubject(1);
@@ -2451,15 +3551,15 @@ class Resource {
   }
   get data() {
     var _a;
-    return (_a = this.state) === null || _a === undefined ? undefined : _a.data;
+    return (_a = this.state) === null || _a === void 0 ? void 0 : _a.data;
   }
   get error() {
     var _a;
-    return (_a = this.state) === null || _a === undefined ? undefined : _a.reason;
+    return (_a = this.state) === null || _a === void 0 ? void 0 : _a.reason;
   }
   get messages() {
     var _a, _b;
-    return (_b = (_a = this.state) === null || _a === undefined ? undefined : _a.messages) !== null && _b !== undefined ? _b : [];
+    return (_b = (_a = this.state) === null || _a === void 0 ? void 0 : _a.messages) !== null && _b !== void 0 ? _b : [];
   }
   get idle() {
     return this.state ? this.state.idle : true;
@@ -2499,7 +3599,7 @@ class Resource {
     return this.$state.subscribe(observerOrNext);
   }
   reload() {
-    return __awaiter(this, arguments, undefined, function* (force = false) {
+    return __awaiter(this, arguments, void 0, function* (force = false) {
       if (this.context) {
         return this[EXECUTE](force);
       }
@@ -2511,8 +3611,8 @@ class Resource {
     if (!context) {
       throw new Error('Execution context is not setup!');
     }
-    const lastExecutionAbortController = (_a = this.state) === null || _a === undefined ? undefined : _a.abortController;
-    lastExecutionAbortController === null || lastExecutionAbortController === undefined ? undefined : lastExecutionAbortController.abort();
+    const lastExecutionAbortController = (_a = this.state) === null || _a === void 0 ? void 0 : _a.abortController;
+    lastExecutionAbortController === null || lastExecutionAbortController === void 0 ? void 0 : lastExecutionAbortController.abort();
     this.$state.next(state);
     const {
       instance,
@@ -2533,7 +3633,7 @@ class Resource {
     const allInterceptors = method.getAllInterceptors(instance);
     const sendRequest = allInterceptors.reduceRight((next, interceptor) => (instance, method, params) => {
       return interceptor.invoke(instance, method, params, next);
-    }, (instance, method, params) => __awaiter(this, undefined, undefined, function* () {
+    }, (instance, method, params) => __awaiter(this, void 0, void 0, function* () {
       state.status = RequestStatus.OPENED;
       const response = yield method.invoke(instance, Object.assign(Object.assign({}, params), {
         signal
@@ -2551,7 +3651,7 @@ class Resource {
     return __asyncGenerator(this, arguments, function* resolveResponseBody_1() {
       var _a;
       const headers = yield __await(response.headers());
-      const contentType = (_a = headers.get('content-type')) === null || _a === undefined ? undefined : _a.join(', ');
+      const contentType = (_a = headers.get('content-type')) === null || _a === void 0 ? void 0 : _a.join(', ');
       if (isJSON(contentType)) {
         try {
           yield yield __await(yield __await(response.json()));
@@ -2574,7 +3674,7 @@ class Resource {
     });
   }
   handleResponse(response, state) {
-    return __awaiter(this, undefined, undefined, function* () {
+    return __awaiter(this, void 0, void 0, function* () {
       var _a, e_1, _b, _c;
       const httpStatus = yield response.status();
       state.headerReceived(yield response.headers(), httpStatus);
@@ -2605,12 +3705,12 @@ class Resource {
     });
   }
   handleHttpErrorResponse(response) {
-    return __awaiter(this, undefined, undefined, function* () {
+    return __awaiter(this, void 0, void 0, function* () {
       var _a, e_2, _b, _c;
       var _d;
       const httpStatus = yield response.status();
       const headers = yield response.headers();
-      const contentType = (_d = headers.get('content-type')) === null || _d === undefined ? undefined : _d.join(', ');
+      const contentType = (_d = headers.get('content-type')) === null || _d === void 0 ? void 0 : _d.join(', ');
       const datas = [];
       try {
         for (var _e = true, _f = __asyncValues(this.resolveResponseBody(response)), _g; _g = yield _f.next(), _a = _g.done, !_a; _e = true) {
@@ -2637,9 +3737,9 @@ class Resource {
     });
   }
 }
-__decorate([Signal(), __metadata("design:type", ResourceExecutionState)], Resource.prototype, "state", undefined);
-__decorate([Inject(), __metadata("design:type", ApplicationContext)], Resource.prototype, "ioc", undefined);
-__decorate([PostInject(), __metadata("design:type", Function), __metadata("design:paramtypes", []), __metadata("design:returntype", undefined)], Resource.prototype, "init", null);
+__decorate([Signal(), __metadata("design:type", ResourceExecutionState)], Resource.prototype, "state", void 0);
+__decorate([Inject(), __metadata("design:type", ApplicationContext)], Resource.prototype, "ioc", void 0);
+__decorate([PostInject(), __metadata("design:type", Function), __metadata("design:paramtypes", []), __metadata("design:returntype", void 0)], Resource.prototype, "init", null);
 
 class ArgumentsTracker {
   track(args, callback) {
@@ -2708,6 +3808,98 @@ function execute(args, ResourceType) {
   return resource;
 }
 
+/**
+ * Resource implementation for standard RESTful HTTP requests.
+ *
+ * This is the primary resource type used by the {@link restful} execution function
+ * for standard REST API calls (GET, POST, PUT, DELETE, etc.). It extends the base
+ * {@link Resource} class with:
+ * - SWR (Stale-While-Revalidate) integration
+ * - Automatic cache management
+ * - Background revalidation
+ * - Cache mutation support
+ *
+ * When decorated with {@link SWR}, RestfulResource automatically:
+ * - Caches responses based on a unique key
+ * - Serves cached data immediately while revalidating in the background
+ * - Revalidates on focus, reconnect, or custom events
+ * - Deduplicates concurrent requests with the same key
+ * - Provides automatic polling/refresh capabilities
+ *
+ * The resource integrates with the {@link SWRService} to manage cache instances
+ * and coordinate updates across multiple components using the same data.
+ *
+ * @template T - The type of response data
+ * @template E - The type of error body (defaults to unknown)
+ *
+ * @example
+ * Basic RESTful request (no SWR):
+ * ```typescript
+ * @Endpoint({ baseURL: 'https://api.example.com' })
+ * class UserAPI {
+ *   @Get('/users/{id}')
+ *   getUser(@PathVariable('id') id: string) {
+ *     return restful<User>(id);
+ *   }
+ * }
+ *
+ * // Usage
+ * const resource = api.getUser('123');
+ * // Fetches fresh data every time
+ * ```
+ *
+ * @example
+ * With SWR caching and revalidation:
+ * ```typescript
+ * @Endpoint({ baseURL: 'https://api.example.com' })
+ * class UserAPI {
+ *   @Get('/users/{id}')
+ *   @SWR({
+ *     key: (id) => `user-${id}`,
+ *     revalidate: { focus: true, reconnect: true },
+ *     staleTime: 60000  // Consider stale after 1 minute
+ *   })
+ *   getUser(@PathVariable('id') id: string) {
+ *     return restful<User>(id);
+ *   }
+ * }
+ *
+ * // First call: fetches from server
+ * const resource1 = api.getUser('123');
+ *
+ * // Second call: returns cached data, revalidates in background
+ * const resource2 = api.getUser('123');
+ * ```
+ *
+ * @example
+ * Mutation with automatic cache invalidation:
+ * ```typescript
+ * @Endpoint({ baseURL: 'https://api.example.com' })
+ * class UserAPI {
+ *   @Get('/users/{id}')
+ *   @SWR({ key: (id) => `user-${id}` })
+ *   getUser(@PathVariable('id') id: string) {
+ *     return restful<User>(id);
+ *   }
+ *
+ *   @Put('/users/{id}')
+ *   @SWRMutation((id: string) => `user-${id}`)
+ *   updateUser(
+ *     @PathVariable('id') id: string,
+ *     @Payload() data: UpdateUserDto
+ *   ) {
+ *     return restful<User>(id, data);
+ *   }
+ * }
+ *
+ * // When updateUser completes, the getUser cache is automatically invalidated
+ * ```
+ *
+ * @see {@link Resource} for the base class documentation
+ * @see {@link SWR} for caching configuration
+ * @see {@link SWRMutation} for cache invalidation
+ * @see {@link restful} for the execution function
+ */
 let RestfulResource = class RestfulResource extends Resource {
   [EXECUTE](force = false) {
     var _a;
@@ -2718,7 +3910,7 @@ let RestfulResource = class RestfulResource extends Resource {
     const args = context.params.args;
     const methodMetadata = context.method.metadata;
     const _keygen = methodMetadata.getExtra(EXTRA_METADATA_SWR_KEYGEN);
-    const mutate = (_a = methodMetadata.getExtra(EXTRA_METADATA_MUTATE)) !== null && _a !== undefined ? _a : false;
+    const mutate = (_a = methodMetadata.getExtra(EXTRA_METADATA_MUTATE)) !== null && _a !== void 0 ? _a : false;
     const swrConfig = methodMetadata.getExtra(EXTRA_METADATA_SWR_CONFIG);
     if (mutate && swrConfig) {
       throw new Error('@SWR and @SWRMutation cannot be used together');
@@ -2741,14 +3933,83 @@ let RestfulResource = class RestfulResource extends Resource {
       super[EXECUTE](force, state);
       return lastValueFrom(state).then(() => state);
     }, swrConfig);
-    instance === null || instance === undefined ? undefined : instance.onStateChange(state => {
+    instance === null || instance === void 0 ? void 0 : instance.onStateChange(state => {
       this.state = state.data;
     });
   }
 };
-__decorate([Inject(), __metadata("design:type", SWRService)], RestfulResource.prototype, "swrService", undefined);
+__decorate([Inject(), __metadata("design:type", SWRService)], RestfulResource.prototype, "swrService", void 0);
 RestfulResource = __decorate([Scope(InstanceScope.TRANSIENT)], RestfulResource);
 
+/**
+ * Executes a RESTful HTTP request and returns a reactive resource.
+ *
+ * This is the primary execution function for standard REST API calls (GET, POST, PUT, DELETE).
+ * It returns a {@link RestfulResource} that provides reactive state management and integrates
+ * with SWR (stale-while-revalidate) pattern when configured.
+ *
+ * The returned resource exposes:
+ * - `data`: The response data (reactive)
+ * - `error`: Any error that occurred (reactive)
+ * - `loading`: Loading state indicator (reactive)
+ * - `success`: Success state indicator (reactive)
+ * - `failure`: Failure state indicator (reactive)
+ * - `reload()`: Method to manually reload the request
+ * - `wait()`: Promise that resolves when the request completes
+ *
+ * @template T - The expected response data type
+ * @template A - The arguments tuple type (automatically inferred)
+ * @param args - Arguments to pass through to the execution context (typically unused in the function body)
+ *
+ * @returns A reactive {@link RestfulResource} containing request state and data
+ *
+ * @example
+ * Basic usage with GET request:
+ * ```typescript
+ * @Endpoint({ baseURL: 'https://api.example.com' })
+ * class UserAPI {
+ *   @Get('/users/{id}')
+ *   getUser(@PathVariable('id') id: string) {
+ *     return restful<User>(id);
+ *   }
+ * }
+ *
+ * // In component:
+ * const api = useService(UserAPI);
+ * const resource = api.getUser('123');
+ *
+ * // Access reactive state:
+ * createEffect(() => {
+ *   if (resource.loading) console.log('Loading...');
+ *   if (resource.success) console.log('User:', resource.data);
+ *   if (resource.failure) console.log('Error:', resource.error);
+ * });
+ * ```
+ *
+ * @example
+ * With POST request:
+ * ```typescript
+ * @Post('/users')
+ * createUser(@Payload() user: CreateUserDto) {
+ *   return restful<User>(user);
+ * }
+ *
+ * // Usage:
+ * const resource = api.createUser({ name: 'John', email: 'john@example.com' });
+ * await resource.wait(); // Wait for completion
+ * ```
+ *
+ * @example
+ * With SWR pattern:
+ * ```typescript
+ * @Get('/users/{id}')
+ * @SWR({ revalidate: { focus: true } })
+ * getUser(@PathVariable('id') id: string) {
+ *   return restful<User>(id);
+ * }
+ * // Automatically revalidates when window regains focus
+ * ```
+ */
 function restful(...args) {
   return execute(args, RestfulResource);
 }
@@ -2763,7 +4024,7 @@ let JSONSSEResource = class JSONSSEResource extends Resource {
     return __asyncGenerator(this, arguments, function* resolveResponseBody_1() {
       var _a;
       const headers = yield __await(response.headers());
-      const contentType = (_a = headers.get('content-type')) === null || _a === undefined ? undefined : _a.join(', ');
+      const contentType = (_a = headers.get('content-type')) === null || _a === void 0 ? void 0 : _a.join(', ');
       if (isTextEventStream(contentType)) {
         yield __await(yield* __asyncDelegator(__asyncValues(response.jsonStream())));
       } else {
@@ -2774,6 +4035,90 @@ let JSONSSEResource = class JSONSSEResource extends Resource {
 };
 JSONSSEResource = __decorate([Scope(InstanceScope.TRANSIENT)], JSONSSEResource);
 
+/**
+ * Executes a Server-Sent Events (SSE) request that streams JSON objects.
+ *
+ * Use this function for real-time streaming endpoints that send JSON data over SSE.
+ * Each server-sent event will be automatically parsed as JSON and made available through
+ * the {@link JSONSSEResource}. The resource accumulates all received messages in the
+ * `messages` array while also providing the latest message in `data`.
+ *
+ * This function automatically uses the {@link FetchRequestAdapter} which is required
+ * for streaming responses.
+ *
+ * The returned resource exposes:
+ * - `data`: The most recent JSON message received
+ * - `messages`: Array of all JSON messages received so far
+ * - `loading`, `success`, `failure`: State indicators
+ * - `opened`: Indicates if the SSE connection is established
+ *
+ * @template T - The type of JSON objects in the SSE stream
+ * @param args - Arguments to pass through to the execution context
+ *
+ * @returns A {@link JSONSSEResource} for handling the SSE stream
+ *
+ * @throws {Error} If called outside of an endpoint method context
+ *
+ * @example
+ * Live updates stream:
+ * ```typescript
+ * @Endpoint({ baseURL: 'https://api.example.com' })
+ * class EventAPI {
+ *   @Get('/events/stream')
+ *   streamEvents(@Query('topic') topic: string) {
+ *     return jsonsse<EventData>(topic);
+ *   }
+ * }
+ *
+ * interface EventData {
+ *   id: string;
+ *   type: string;
+ *   payload: unknown;
+ * }
+ *
+ * // Usage:
+ * const resource = api.streamEvents('notifications');
+ *
+ * // Access latest message:
+ * createEffect(() => {
+ *   const latestEvent = resource.data;
+ *   if (latestEvent) {
+ *     console.log('New event:', latestEvent);
+ *   }
+ * });
+ *
+ * // Access all messages:
+ * createEffect(() => {
+ *   console.log('All events:', resource.messages);
+ * });
+ * ```
+ *
+ * @example
+ * Real-time chat:
+ * ```typescript
+ * @Get('/chat/{roomId}/messages')
+ * streamMessages(@PathVariable('roomId') roomId: string) {
+ *   return jsonsse<ChatMessage>(roomId);
+ * }
+ *
+ * interface ChatMessage {
+ *   id: string;
+ *   author: string;
+ *   text: string;
+ *   timestamp: number;
+ * }
+ *
+ * // Usage:
+ * const resource = api.streamMessages('room-123');
+ *
+ * // Render all messages:
+ * <For each={resource.messages}>
+ *   {(message) => <div>{message.author}: {message.text}</div>}
+ * </For>
+ * ```
+ *
+ * @see {@link JSONSSEResource} for more details on the resource type
+ */
 function jsonsse(...args) {
   const context = getExecutionContext();
   if (!context) {
@@ -2792,7 +4137,7 @@ class ProgressiveResource extends Resource {
     this.progress = progress;
   }
 }
-__decorate([Signal(), __metadata("design:type", Progress)], ProgressiveResource.prototype, "progress", undefined);
+__decorate([Signal(), __metadata("design:type", Progress)], ProgressiveResource.prototype, "progress", void 0);
 
 let DownloadResource = class DownloadResource extends ProgressiveResource {
   handleResponse(response, state) {
@@ -2801,7 +4146,7 @@ let DownloadResource = class DownloadResource extends ProgressiveResource {
         get: () => super.handleResponse
       }
     });
-    return __awaiter(this, undefined, undefined, function* () {
+    return __awaiter(this, void 0, void 0, function* () {
       // Set up progress tracking
       response.onDownload(progress => {
         this.updateProgress(progress);
@@ -2818,9 +4163,68 @@ let DownloadResource = class DownloadResource extends ProgressiveResource {
     });
   }
 };
-__decorate([Signal(), __metadata("design:type", Progress)], DownloadResource.prototype, "progress", undefined);
+__decorate([Signal(), __metadata("design:type", Progress)], DownloadResource.prototype, "progress", void 0);
 DownloadResource = __decorate([Scope(InstanceScope.TRANSIENT)], DownloadResource);
 
+/**
+ * Executes a file download request with progress tracking.
+ *
+ * Use this function for downloading files from the server. It returns a {@link DownloadResource}
+ * that provides download progress tracking in addition to standard resource state management.
+ *
+ * The returned resource exposes:
+ * - `data`: The downloaded file as a {@link ByteStream}
+ * - `progress`: Download progress information (bytes downloaded, total size, percentage)
+ * - `loading`, `success`, `failure`: State indicators
+ * - Standard resource methods and properties
+ *
+ * @param args - Arguments to pass through to the execution context
+ *
+ * @returns A {@link DownloadResource} with progress tracking capabilities
+ *
+ * @example
+ * Downloading a file:
+ * ```typescript
+ * @Endpoint({ baseURL: 'https://api.example.com' })
+ * class FileAPI {
+ *   @Get('/files/{id}/download')
+ *   downloadFile(@PathVariable('id') fileId: string) {
+ *     return download(fileId);
+ *   }
+ * }
+ *
+ * // Usage:
+ * const resource = api.downloadFile('abc123');
+ *
+ * // Track progress:
+ * createEffect(() => {
+ *   const progress = resource.progress;
+ *   if (progress) {
+ *     console.log(`Downloaded: ${progress.percentage}%`);
+ *   }
+ * });
+ *
+ * // Get the file when complete:
+ * resource.wait().then(state => {
+ *   const blob = state.data?.readAsBlob();
+ *   // Create download link, etc.
+ * });
+ * ```
+ *
+ * @example
+ * Save downloaded file:
+ * ```typescript
+ * const resource = api.downloadFile('report.pdf');
+ * await resource.wait();
+ *
+ * const blob = await resource.data?.readAsBlob();
+ * const url = URL.createObjectURL(blob);
+ * const link = document.createElement('a');
+ * link.href = url;
+ * link.download = 'report.pdf';
+ * link.click();
+ * ```
+ */
 function download(...args) {
   return execute(args, DownloadResource);
 }
@@ -2839,7 +4243,7 @@ class UploadResource extends ProgressiveResource {
         get: () => super.handleResponse
       }
     });
-    return __awaiter(this, undefined, undefined, function* () {
+    return __awaiter(this, void 0, void 0, function* () {
       response.onUpload(progress => {
         this.updateProgress(progress);
       });
@@ -2847,18 +4251,102 @@ class UploadResource extends ProgressiveResource {
     });
   }
 }
-__decorate([Signal(), __metadata("design:type", Progress)], UploadResource.prototype, "progress", undefined);
+__decorate([Signal(), __metadata("design:type", Progress)], UploadResource.prototype, "progress", void 0);
 
+/**
+ * Executes a file upload request with progress tracking.
+ *
+ * Use this function for uploading files to the server. It returns an {@link UploadResource}
+ * that provides upload progress tracking in addition to standard resource state management.
+ *
+ * The returned resource exposes:
+ * - `data`: The response from the server after upload completes
+ * - `progress`: Upload progress information (bytes uploaded, total size, percentage)
+ * - `loading`, `success`, `failure`: State indicators
+ * - Standard resource methods and properties
+ *
+ * @param args - Arguments to pass through to the execution context
+ *
+ * @returns An {@link UploadResource} with progress tracking capabilities
+ *
+ * @example
+ * Uploading a file with FormData:
+ * ```typescript
+ * @Endpoint({ baseURL: 'https://api.example.com' })
+ * class FileAPI {
+ *   @Post('/files/upload')
+ *   uploadFile(@Payload() formData: FormData) {
+ *     return upload<{ fileId: string; url: string }>(formData);
+ *   }
+ * }
+ *
+ * // Usage:
+ * const formData = new FormData();
+ * formData.append('file', fileBlob, 'document.pdf');
+ * formData.append('category', 'reports');
+ *
+ * const resource = api.uploadFile(formData);
+ *
+ * // Track upload progress:
+ * createEffect(() => {
+ *   const progress = resource.progress;
+ *   if (progress) {
+ *     console.log(`Uploaded: ${progress.percentage}%`);
+ *     console.log(`${progress.loaded} / ${progress.total} bytes`);
+ *   }
+ * });
+ *
+ * // Handle completion:
+ * resource.wait().then(state => {
+ *   if (state.success) {
+ *     console.log('File uploaded:', state.data);
+ *   }
+ * });
+ * ```
+ *
+ * @example
+ * With avatar upload:
+ * ```typescript
+ * @Post('/users/{id}/avatar')
+ * uploadAvatar(
+ *   @PathVariable('id') userId: string,
+ *   @Payload() formData: FormData
+ * ) {
+ *   return upload<{ avatarUrl: string }>(userId, formData);
+ * }
+ *
+ * // Usage:
+ * const formData = new FormData();
+ * formData.append('avatar', avatarBlob);
+ * const resource = api.uploadAvatar('user123', formData);
+ * ```
+ */
 function upload(...args) {
   return execute(args, UploadResource);
 }
 
 /**
- * Creates a time-based caching policy with a fixed TTL
+ * Creates a time-based caching policy with a fixed TTL (Time-To-Live).
  *
- * @param ttl The time-to-live in milliseconds
- * @param name The name of the policy
- * @returns A new cache policy
+ * This factory function creates a simple caching policy where cached entries
+ * expire after a fixed duration. It's the most common caching strategy for
+ * data that changes predictably over time.
+ *
+ * @param ttl - The time-to-live in milliseconds (how long cached data remains valid)
+ * @param name - Optional name for the policy (defaults to 'TimeBasedPolicy(${ttl}ms)')
+ * @returns A new {@link CachePolicy} instance
+ *
+ * @example
+ * ```typescript
+ * const fiveMinutePolicy = CachePolicies.createTimeBasedPolicy(5 * 60 * 1000);
+ * const oneHourPolicy = CachePolicies.createTimeBasedPolicy(60 * 60 * 1000);
+ *
+ * @Get('/data')
+ * @Cache({ policy: fiveMinutePolicy })
+ * getData() {
+ *   return restful<Data>();
+ * }
+ * ```
  */
 function createTimeBasedPolicy(ttl, name = `TimeBasedPolicy(${ttl}ms)`) {
   return {
@@ -2868,11 +4356,72 @@ function createTimeBasedPolicy(ttl, name = `TimeBasedPolicy(${ttl}ms)`) {
     isValid: entry => entry.expiresAt > Date.now()
   };
 }
+/**
+ * Collection of predefined caching policies for common use cases.
+ *
+ * This object provides convenient, ready-to-use caching policies that cover
+ * the most common caching scenarios. You can use these directly or create
+ * custom policies using {@link createTimeBasedPolicy} or by implementing
+ * the {@link CachePolicy} interface.
+ *
+ * @example
+ * Using predefined policies:
+ * ```typescript
+ * // No caching
+ * @Get('/live-data')
+ * @Cache({ policy: CachePolicies.NoCache })
+ * getLiveData() {
+ *   return restful<Data>();
+ * }
+ *
+ * // Default 5-minute cache
+ * @Get('/user-profile')
+ * @Cache({ policy: CachePolicies.Default })
+ * getUserProfile() {
+ *   return restful<User>();
+ * }
+ * ```
+ *
+ * @example
+ * Creating custom time-based policies:
+ * ```typescript
+ * const oneHourCache = CachePolicies.createTimeBasedPolicy(60 * 60 * 1000);
+ * const oneDay Cache = CachePolicies.createTimeBasedPolicy(24 * 60 * 60 * 1000);
+ *
+ * @Get('/daily-stats')
+ * @Cache({ policy: oneDayCache })
+ * getDailyStats() {
+ *   return restful<Stats>();
+ * }
+ * ```
+ */
 const CachePolicies = {
   /**
-   * Default caching policy - caches for 5 minutes
+   * No caching policy - all requests bypass the cache.
+   *
+   * Use this when you need to ensure data is always fresh,
+   * or to disable caching for specific endpoints.
    */
-  Default: createTimeBasedPolicy(5 * 60 * 1000, 'Default')};
+  NoCache: {
+    name: 'NoCache',
+    shouldCache: () => false,
+    getTTL: () => 0,
+    isValid: () => false
+  },
+  /**
+   * Default caching policy - caches responses for 5 minutes.
+   *
+   * A reasonable default for most API endpoints that don't require
+   * real-time data but benefit from reduced server load.
+   */
+  Default: createTimeBasedPolicy(5 * 60 * 1000, 'Default'),
+  /**
+   * Factory function to create custom time-based caching policies.
+   *
+   * @see {@link createTimeBasedPolicy} for documentation and examples
+   */
+  createTimeBasedPolicy
+};
 
 const DEFAULT_CACHE_CONFIG = {
   policy: CachePolicies.Default,
@@ -2911,18 +4460,18 @@ class CacheInterceptor {
   }
   get policy() {
     var _a;
-    return (_a = this.config.policy) !== null && _a !== undefined ? _a : CachePolicies.Default;
+    return (_a = this.config.policy) !== null && _a !== void 0 ? _a : CachePolicies.Default;
   }
   constructor(config = {}) {
     this.config = Object.assign(Object.assign({}, DEFAULT_CACHE_CONFIG), config);
   }
   getBucket() {
-    return __awaiter(this, undefined, undefined, function* () {
+    return __awaiter(this, void 0, void 0, function* () {
       var _a, _b;
       if (this.bucket) {
         return this.bucket;
       }
-      const bucketName = (_a = this.config.bucketName) !== null && _a !== undefined ? _a : (_b = this.httpConfig) === null || _b === undefined ? undefined : _b.cacheBucket;
+      const bucketName = (_a = this.config.bucketName) !== null && _a !== void 0 ? _a : (_b = this.httpConfig) === null || _b === void 0 ? void 0 : _b.cacheBucket;
       if (bucketName) {
         try {
           this.bucket = this.appCtx.getInstance(bucketName);
@@ -2977,7 +4526,7 @@ class CacheInterceptor {
     return null;
   }
   invoke(instance, method, params, next) {
-    return __awaiter(this, undefined, undefined, function* () {
+    return __awaiter(this, void 0, void 0, function* () {
       // Skip caching for non-cacheable methods or when force=true
       if (!this.shouldCache(method, params)) {
         return next(instance, method, params);
@@ -3001,14 +4550,14 @@ class CacheInterceptor {
       // Only cache successful responses
       const status = yield response.status();
       if (status >= 200 && status < 300) {
-        response.onBodyComplete(body => __awaiter(this, undefined, undefined, function* () {
+        response.onBodyComplete(body => __awaiter(this, void 0, void 0, function* () {
           var _a, _b, _c;
           const headers = yield response.headers();
           const bodyArrayBuffer = yield body.readAsBuffer();
           // Determine expiration time
           const headerExpiration = this.getExpirationFromHeaders(headers);
           const ttl = this.policy.getTTL(method, params);
-          const expiresAt = headerExpiration !== null && headerExpiration !== undefined ? headerExpiration : ttl === 0 ? 0 : Date.now() + ttl;
+          const expiresAt = headerExpiration !== null && headerExpiration !== void 0 ? headerExpiration : ttl === 0 ? 0 : Date.now() + ttl;
           // Don't cache if expiration is 0 (no-cache)
           if (expiresAt > 0) {
             const cacheEntry = {
@@ -3022,7 +4571,7 @@ class CacheInterceptor {
               metadata: {}
             };
             // use policy to override cache metadata
-            const overrideEntry = (_c = (_b = (_a = this.policy).overrideCacheEntry) === null || _b === undefined ? undefined : _b.call(_a, cacheEntry, method, params)) !== null && _c !== undefined ? _c : cacheEntry;
+            const overrideEntry = (_c = (_b = (_a = this.policy).overrideCacheEntry) === null || _b === void 0 ? void 0 : _b.call(_a, cacheEntry, method, params)) !== null && _c !== void 0 ? _c : cacheEntry;
             // Store in cache
             yield bucket.setItem(cacheKey, overrideEntry);
           }
@@ -3032,8 +4581,8 @@ class CacheInterceptor {
     });
   }
 }
-__decorate([Inject(), __metadata("design:type", ApplicationContext)], CacheInterceptor.prototype, "appCtx", undefined);
-__decorate([Inject(DEFAULT_HTTP_CONFIGURATION), __metadata("design:type", Object)], CacheInterceptor.prototype, "httpConfig", undefined);
+__decorate([Inject(), __metadata("design:type", ApplicationContext)], CacheInterceptor.prototype, "appCtx", void 0);
+__decorate([Inject(DEFAULT_HTTP_CONFIGURATION), __metadata("design:type", Object)], CacheInterceptor.prototype, "httpConfig", void 0);
 
 /**
  * Decorator that applies the CacheInterceptor to an endpoint method.
