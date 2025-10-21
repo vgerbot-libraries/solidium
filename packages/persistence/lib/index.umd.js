@@ -508,14 +508,18 @@
       }
       return solidium.defineMemberDecoratorProcessor('storage', {
         afterInstantiation: function (instance, member, metadata, container) {
-          var _a;
+          var _a, _b;
           // Get default options from class decorator if they exist
           var defaultOptions = getDefaultStorageOptions(metadata);
           // Merge options, with member-specific options taking precedence
-          var mergedOptions = __assign(__assign({}, defaultOptions), options);
-          var _b = solidium.getSignal(instance, member),
-            set = _b[1];
-          var key = (_a = mergedOptions.key) !== null && _a !== void 0 ? _a : member.toString();
+          var mergedOptions = __assign(__assign({}, defaultOptions), typeof options === 'string' ? {
+            key: options
+          } : options);
+          var descriptor = Object.getOwnPropertyDescriptor(instance, member);
+          var writable = (_a = descriptor === null || descriptor === void 0 ? void 0 : descriptor.writable) !== null && _a !== void 0 ? _a : true;
+          var _c = solidium.getSignal(instance, member, descriptor === null || descriptor === void 0 ? void 0 : descriptor.value),
+            set = _c[1];
+          var key = (_b = mergedOptions.key) !== null && _b !== void 0 ? _b : member.toString();
           var bucketOrName = mergedOptions.bucket || DEFAULT_BUCKET;
           var bucket = typeof bucketOrName != 'object' ? container.getInstance(bucketOrName) : bucketOrName;
           var observe = function () {
@@ -545,26 +549,31 @@
             if (bucket.debug) {
               console.debug("[Storage] ".concat(key, " is loaded, value: ").concat(value));
             }
-            set(value);
-            notifyStorageLoad({
-              instance: instance,
-              member: member,
-              value: value,
-              timestamp: Date.now()
-            });
+            if (value !== null && value !== undefined) {
+              set(value);
+              notifyStorageLoad({
+                instance: instance,
+                member: member,
+                value: value,
+                timestamp: Date.now()
+              });
+            }
+          }).then(function () {
             solidJs.runWithOwner(owner, function () {
               var unobserve = observe();
-              solidJs.createEffect(solidJs.on(function () {
-                return instance[member];
-              }, function (newValue) {
-                unobserve();
-                if (bucket.debug) {
-                  console.debug("[Storage] ".concat(instance.constructor.name, ".").concat(member.toString(), "\n                                        changed to ").concat(newValue).replace(/\s+/g, ' '));
-                }
-                bucket.setItem(key, newValue).finally(function () {
-                  unobserve = observe();
-                });
-              }));
+              if (writable) {
+                solidJs.createEffect(solidJs.on(function () {
+                  return instance[member];
+                }, function (newValue) {
+                  unobserve();
+                  if (bucket.debug) {
+                    console.debug("[Storage] ".concat(instance.constructor.name, ".").concat(member.toString(), "\n                                            changed to ").concat(newValue).replace(/\s+/g, ' '));
+                  }
+                  bucket.setItem(key, newValue).finally(function () {
+                    unobserve = observe();
+                  });
+                }));
+              }
               solidJs.onCleanup(function () {
                 unobserve();
               });
@@ -1267,6 +1276,9 @@
             switch (_b.label) {
               case 0:
                 _b.trys.push([0, 4,, 5]);
+                if (typeof indexedDB === 'undefined') {
+                  return [2 /*return*/, false];
+                }
                 checkDBName = '_vgerbot_check_idb';
                 return [4 /*yield*/, idb.openDB(checkDBName)];
               case 1:
@@ -1684,6 +1696,29 @@
       return Bucket;
     }();
 
+    var NOT_INITIALIZED_VALUE = Symbol('NOT_INITIALIZED_VALUE');
+    function lazy() {
+      return function (prototype, propertyKey) {
+        var desc = Object.getOwnPropertyDescriptor(prototype, propertyKey);
+        if (!desc || !desc.configurable) {
+          throw new Error("Cannot override property: ".concat(String(propertyKey), ", descriptor: ").concat(JSON.stringify(desc)));
+        }
+        var getter = desc.get;
+        if (typeof getter !== 'function') {
+          throw new Error("Property ".concat(String(propertyKey), " is not a getter"));
+        }
+        var value = NOT_INITIALIZED_VALUE;
+        Object.defineProperty(prototype, propertyKey, Object.assign({}, desc, {
+          get: function () {
+            if (value === NOT_INITIALIZED_VALUE) {
+              value = getter.call(this);
+            }
+            return value;
+          }
+        }));
+      };
+    }
+
     /**
      * Main entry point for the persistence system.
      * Provides factory methods for configuring storage buckets.
@@ -1767,12 +1802,19 @@
       Persistence.bucket = function (name, configuration) {
         return ioc.createFactoryWrapper(name, configuration, Persistence);
       };
+      Object.defineProperty(Persistence.prototype, "defaultBucket", {
+        get: function () {
+          return new Bucket(this.configuration);
+        },
+        enumerable: false,
+        configurable: true
+      });
       /**
        * Factory method that creates and returns the default bucket instance.
        * @internal
        */
       Persistence.prototype.getDefaultBucket = function () {
-        return new Bucket(this.configuration);
+        return this.defaultBucket;
       };
       /**
        * Initialization hook called after dependency injection.
@@ -1782,6 +1824,7 @@
         //
       };
       __decorate([ioc.Inject(DEFAULT_BUCKET_CONFIGURATION), __metadata("design:type", Object)], Persistence.prototype, "configuration", void 0);
+      __decorate([lazy(), __metadata("design:type", Object), __metadata("design:paramtypes", [])], Persistence.prototype, "defaultBucket", null);
       __decorate([ioc.Factory(DEFAULT_BUCKET), __metadata("design:type", Function), __metadata("design:paramtypes", []), __metadata("design:returntype", void 0)], Persistence.prototype, "getDefaultBucket", null);
       __decorate([ioc.PostInject(), __metadata("design:type", Function), __metadata("design:paramtypes", []), __metadata("design:returntype", void 0)], Persistence.prototype, "init", null);
       return Persistence;
