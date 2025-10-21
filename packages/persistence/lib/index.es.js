@@ -1350,29 +1350,6 @@ __decorate([Prepared(), __metadata("design:type", Function), __metadata("design:
 __decorate([Prepared(), __metadata("design:type", Function), __metadata("design:paramtypes", [String]), __metadata("design:returntype", Promise)], Bucket.prototype, "getItem", null);
 __decorate([Prepared(), __metadata("design:type", Function), __metadata("design:paramtypes", []), __metadata("design:returntype", void 0)], Bucket.prototype, "clear", null);
 
-const NOT_INITIALIZED_VALUE = Symbol('NOT_INITIALIZED_VALUE');
-function lazy() {
-  return (prototype, propertyKey) => {
-    const desc = Object.getOwnPropertyDescriptor(prototype, propertyKey);
-    if (!desc || !desc.configurable) {
-      throw new Error(`Cannot override property: ${String(propertyKey)}, descriptor: ${JSON.stringify(desc)}`);
-    }
-    const getter = desc.get;
-    if (typeof getter !== 'function') {
-      throw new Error(`Property ${String(propertyKey)} is not a getter`);
-    }
-    let value = NOT_INITIALIZED_VALUE;
-    Object.defineProperty(prototype, propertyKey, Object.assign({}, desc, {
-      get() {
-        if (value === NOT_INITIALIZED_VALUE) {
-          value = getter.call(this);
-        }
-        return value;
-      }
-    }));
-  };
-}
-
 /**
  * Main entry point for the persistence system.
  * Provides factory methods for configuring storage buckets.
@@ -1456,26 +1433,22 @@ class Persistence {
   static bucket(name, configuration) {
     return createFactoryWrapper(name, configuration, Persistence);
   }
-  get defaultBucket() {
-    return new Bucket(this.configuration);
-  }
   /**
    * Factory method that creates and returns the default bucket instance.
    * @internal
    */
   getDefaultBucket() {
-    return this.defaultBucket;
+    return new Bucket(this.configuration);
   }
   /**
    * Initialization hook called after dependency injection.
    * @internal
    */
   init() {
-    //
+    console.log('Persistence initialized', this);
   }
 }
 __decorate([Inject(DEFAULT_BUCKET_CONFIGURATION), __metadata("design:type", Object)], Persistence.prototype, "configuration", void 0);
-__decorate([lazy(), __metadata("design:type", Object), __metadata("design:paramtypes", [])], Persistence.prototype, "defaultBucket", null);
 __decorate([Factory(DEFAULT_BUCKET), __metadata("design:type", Function), __metadata("design:paramtypes", []), __metadata("design:returntype", void 0)], Persistence.prototype, "getDefaultBucket", null);
 __decorate([PostInject(), __metadata("design:type", Function), __metadata("design:paramtypes", []), __metadata("design:returntype", void 0)], Persistence.prototype, "init", null);
 

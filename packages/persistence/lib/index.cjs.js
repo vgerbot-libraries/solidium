@@ -1698,29 +1698,6 @@ var Bucket = /** @class */function () {
   return Bucket;
 }();
 
-var NOT_INITIALIZED_VALUE = Symbol('NOT_INITIALIZED_VALUE');
-function lazy() {
-  return function (prototype, propertyKey) {
-    var desc = Object.getOwnPropertyDescriptor(prototype, propertyKey);
-    if (!desc || !desc.configurable) {
-      throw new Error("Cannot override property: ".concat(String(propertyKey), ", descriptor: ").concat(JSON.stringify(desc)));
-    }
-    var getter = desc.get;
-    if (typeof getter !== 'function') {
-      throw new Error("Property ".concat(String(propertyKey), " is not a getter"));
-    }
-    var value = NOT_INITIALIZED_VALUE;
-    Object.defineProperty(prototype, propertyKey, Object.assign({}, desc, {
-      get: function () {
-        if (value === NOT_INITIALIZED_VALUE) {
-          value = getter.call(this);
-        }
-        return value;
-      }
-    }));
-  };
-}
-
 /**
  * Main entry point for the persistence system.
  * Provides factory methods for configuring storage buckets.
@@ -1804,29 +1781,21 @@ var Persistence = /** @class */function () {
   Persistence.bucket = function (name, configuration) {
     return ioc.createFactoryWrapper(name, configuration, Persistence);
   };
-  Object.defineProperty(Persistence.prototype, "defaultBucket", {
-    get: function () {
-      return new Bucket(this.configuration);
-    },
-    enumerable: false,
-    configurable: true
-  });
   /**
    * Factory method that creates and returns the default bucket instance.
    * @internal
    */
   Persistence.prototype.getDefaultBucket = function () {
-    return this.defaultBucket;
+    return new Bucket(this.configuration);
   };
   /**
    * Initialization hook called after dependency injection.
    * @internal
    */
   Persistence.prototype.init = function () {
-    //
+    console.log('Persistence initialized', this);
   };
   __decorate([ioc.Inject(DEFAULT_BUCKET_CONFIGURATION), __metadata("design:type", Object)], Persistence.prototype, "configuration", void 0);
-  __decorate([lazy(), __metadata("design:type", Object), __metadata("design:paramtypes", [])], Persistence.prototype, "defaultBucket", null);
   __decorate([ioc.Factory(DEFAULT_BUCKET), __metadata("design:type", Function), __metadata("design:paramtypes", []), __metadata("design:returntype", void 0)], Persistence.prototype, "getDefaultBucket", null);
   __decorate([ioc.PostInject(), __metadata("design:type", Function), __metadata("design:paramtypes", []), __metadata("design:returntype", void 0)], Persistence.prototype, "init", null);
   return Persistence;

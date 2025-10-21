@@ -7,7 +7,6 @@ import {
 import { BucketConfiguration } from './bucket/BucketConfiguration';
 import { DEFAULT_BUCKET, DEFAULT_BUCKET_CONFIGURATION } from './constants';
 import { Bucket } from './bucket/Bucket';
-import { lazy } from '../common/lazy.decorator';
 /**
  * Main entry point for the persistence system.
  * Provides factory methods for configuring storage buckets.
@@ -100,18 +99,13 @@ export class Persistence {
         version: 1.0
     };
 
-    @lazy()
-    get defaultBucket() {
-        return new Bucket(this.configuration);
-    }
-
     /**
      * Factory method that creates and returns the default bucket instance.
      * @internal
      */
     @Factory(DEFAULT_BUCKET)
     getDefaultBucket() {
-        return this.defaultBucket;
+        return new Bucket(this.configuration);
     }
 
     /**
