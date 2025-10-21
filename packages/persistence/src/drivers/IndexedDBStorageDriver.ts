@@ -15,7 +15,7 @@ const STORE_NAME = 'keyval';
  * Storage driver implementation that uses the browser's IndexedDB API.
  * Provides larger storage capacity and more advanced features compared to Web Storage.
  * Data persists across browser sessions and supports versioning for schema migrations.
- * 
+ *
  * @public
  */
 export class IndexedDBStorageDriver implements StorageDriver {
@@ -35,7 +35,7 @@ export class IndexedDBStorageDriver implements StorageDriver {
     }
     /**
      * Creates a new IndexedDBStorageDriver instance.
-     * 
+     *
      * @param options - Configuration options including bucket name and version
      */
     constructor(options: StorageDriverOptions) {
@@ -44,7 +44,7 @@ export class IndexedDBStorageDriver implements StorageDriver {
     }
     /**
      * Prepares the driver by opening the IndexedDB database and creating the object store.
-     * 
+     *
      * @returns A promise that resolves when the database is ready
      */
     async prepare(): Promise<void> {
@@ -57,13 +57,17 @@ export class IndexedDBStorageDriver implements StorageDriver {
     }
     /**
      * Checks if IndexedDB is supported in the current environment.
-     * 
+     *
      * @returns A promise that resolves to true if IndexedDB is supported, false otherwise
      */
     async supports(): Promise<boolean> {
         try {
+            if (typeof indexedDB === 'undefined') {
+                return false;
+            }
             const checkDBName = '_vgerbot_check_idb';
-            await openDB(checkDBName);
+            const db = await openDB(checkDBName);
+            await db.close();
             await deleteDB(checkDBName);
             return true;
         } catch {
@@ -72,7 +76,7 @@ export class IndexedDBStorageDriver implements StorageDriver {
     }
     /**
      * Retrieves an item from IndexedDB by key.
-     * 
+     *
      * @param key - The key of the item to retrieve
      * @returns A promise that resolves to the stored Blob, or undefined if not found
      */
@@ -89,7 +93,7 @@ export class IndexedDBStorageDriver implements StorageDriver {
     }
     /**
      * Removes an item from IndexedDB by key.
-     * 
+     *
      * @param key - The key of the item to remove
      * @returns A promise that resolves when the item is removed
      */
@@ -109,7 +113,7 @@ export class IndexedDBStorageDriver implements StorageDriver {
     }
     /**
      * Stores an item in IndexedDB.
-     * 
+     *
      * @param key - The key to store the item under
      * @param value - The Blob value to store
      * @returns A promise that resolves when the item is stored
@@ -119,14 +123,15 @@ export class IndexedDBStorageDriver implements StorageDriver {
         const buffer = await value.arrayBuffer();
         const needDispatch = this.needDispatch(key);
         const oldValue = needDispatch ? await this.getItem(key) : undefined;
-        await db.put(STORE_NAME, buffer, IDBKeyRange.only(key));
+
+        await db.put(STORE_NAME, buffer, key);
         if (needDispatch) {
             this.dispatchChangeEvent(key, ActionType.UPDATE, value, oldValue);
         }
     }
     /**
      * Clears all items from the IndexedDB object store.
-     * 
+     *
      * @returns A promise that resolves when all items are cleared
      */
     async clear(): Promise<void> {
@@ -136,7 +141,7 @@ export class IndexedDBStorageDriver implements StorageDriver {
     /**
      * Observes changes to a specific storage key.
      * Note: IndexedDB doesn't support cross-tab observation natively.
-     * 
+     *
      * @param key - The key to observe
      * @param onChange - Callback function invoked when the key changes
      * @returns A function that can be called to stop observing

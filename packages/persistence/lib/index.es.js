@@ -449,17 +449,13 @@ function OnStorageChange(options) {
 const Storage = (options = {}) => {
   return defineMemberDecoratorProcessor('storage', {
     afterInstantiation(instance, member, metadata, container) {
-      var _a, _b;
+      var _a;
       // Get default options from class decorator if they exist
       const defaultOptions = getDefaultStorageOptions(metadata);
       // Merge options, with member-specific options taking precedence
-      const mergedOptions = Object.assign(Object.assign({}, defaultOptions), typeof options === 'string' ? {
-        key: options
-      } : options);
-      const descriptor = Object.getOwnPropertyDescriptor(instance, member);
-      const writable = (_a = descriptor === null || descriptor === void 0 ? void 0 : descriptor.writable) !== null && _a !== void 0 ? _a : true;
-      const [, set] = getSignal(instance, member, descriptor === null || descriptor === void 0 ? void 0 : descriptor.value);
-      const key = (_b = mergedOptions.key) !== null && _b !== void 0 ? _b : member.toString();
+      const mergedOptions = Object.assign(Object.assign({}, defaultOptions), options);
+      const [, set] = getSignal(instance, member);
+      const key = (_a = mergedOptions.key) !== null && _a !== void 0 ? _a : member.toString();
       const bucketOrName = mergedOptions.bucket || DEFAULT_BUCKET;
       const bucket = typeof bucketOrName != 'object' ? container.getInstance(bucketOrName) : bucketOrName;
       const observe = () => {
@@ -489,32 +485,27 @@ const Storage = (options = {}) => {
         if (bucket.debug) {
           console.debug(`[Storage] ${key} is loaded, value: ${value}`);
         }
-        if (value !== null && value !== undefined) {
-          set(value);
-          notifyStorageLoad({
-            instance,
-            member,
-            value,
-            timestamp: Date.now()
-          });
-        }
-      }).then(() => {
+        set(value);
+        notifyStorageLoad({
+          instance,
+          member,
+          value,
+          timestamp: Date.now()
+        });
         runWithOwner(owner, () => {
           let unobserve = observe();
-          if (writable) {
-            createEffect(on(() => {
-              return instance[member];
-            }, newValue => {
-              unobserve();
-              if (bucket.debug) {
-                console.debug(`[Storage] ${instance.constructor.name}.${member.toString()}
-                                            changed to ${newValue}`.replace(/\s+/g, ' '));
-              }
-              bucket.setItem(key, newValue).finally(() => {
-                unobserve = observe();
-              });
-            }));
-          }
+          createEffect(on(() => {
+            return instance[member];
+          }, newValue => {
+            unobserve();
+            if (bucket.debug) {
+              console.debug(`[Storage] ${instance.constructor.name}.${member.toString()}
+                                        changed to ${newValue}`.replace(/\s+/g, ' '));
+            }
+            bucket.setItem(key, newValue).finally(() => {
+              unobserve = observe();
+            });
+          }));
           onCleanup(() => {
             unobserve();
           });
@@ -1046,7 +1037,8 @@ class IndexedDBStorageDriver {
     return __awaiter(this, void 0, void 0, function* () {
       try {
         const checkDBName = '_vgerbot_check_idb';
-        yield openDB(checkDBName);
+        const db = yield openDB(checkDBName);
+        yield db.close();
         yield deleteDB(checkDBName);
         return true;
       } catch (_a) {
@@ -1100,7 +1092,7 @@ class IndexedDBStorageDriver {
       const buffer = yield value.arrayBuffer();
       const needDispatch = this.needDispatch(key);
       const oldValue = needDispatch ? yield this.getItem(key) : undefined;
-      yield db.put(STORE_NAME, buffer, IDBKeyRange.only(key));
+      yield db.put(STORE_NAME, buffer, key);
       if (needDispatch) {
         this.dispatchChangeEvent(key, ActionType.UPDATE, value, oldValue);
       }

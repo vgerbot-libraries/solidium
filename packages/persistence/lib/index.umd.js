@@ -508,18 +508,14 @@
       }
       return solidium.defineMemberDecoratorProcessor('storage', {
         afterInstantiation: function (instance, member, metadata, container) {
-          var _a, _b;
+          var _a;
           // Get default options from class decorator if they exist
           var defaultOptions = getDefaultStorageOptions(metadata);
           // Merge options, with member-specific options taking precedence
-          var mergedOptions = __assign(__assign({}, defaultOptions), typeof options === 'string' ? {
-            key: options
-          } : options);
-          var descriptor = Object.getOwnPropertyDescriptor(instance, member);
-          var writable = (_a = descriptor === null || descriptor === void 0 ? void 0 : descriptor.writable) !== null && _a !== void 0 ? _a : true;
-          var _c = solidium.getSignal(instance, member, descriptor === null || descriptor === void 0 ? void 0 : descriptor.value),
-            set = _c[1];
-          var key = (_b = mergedOptions.key) !== null && _b !== void 0 ? _b : member.toString();
+          var mergedOptions = __assign(__assign({}, defaultOptions), options);
+          var _b = solidium.getSignal(instance, member),
+            set = _b[1];
+          var key = (_a = mergedOptions.key) !== null && _a !== void 0 ? _a : member.toString();
           var bucketOrName = mergedOptions.bucket || DEFAULT_BUCKET;
           var bucket = typeof bucketOrName != 'object' ? container.getInstance(bucketOrName) : bucketOrName;
           var observe = function () {
@@ -549,31 +545,26 @@
             if (bucket.debug) {
               console.debug("[Storage] ".concat(key, " is loaded, value: ").concat(value));
             }
-            if (value !== null && value !== undefined) {
-              set(value);
-              notifyStorageLoad({
-                instance: instance,
-                member: member,
-                value: value,
-                timestamp: Date.now()
-              });
-            }
-          }).then(function () {
+            set(value);
+            notifyStorageLoad({
+              instance: instance,
+              member: member,
+              value: value,
+              timestamp: Date.now()
+            });
             solidJs.runWithOwner(owner, function () {
               var unobserve = observe();
-              if (writable) {
-                solidJs.createEffect(solidJs.on(function () {
-                  return instance[member];
-                }, function (newValue) {
-                  unobserve();
-                  if (bucket.debug) {
-                    console.debug("[Storage] ".concat(instance.constructor.name, ".").concat(member.toString(), "\n                                            changed to ").concat(newValue).replace(/\s+/g, ' '));
-                  }
-                  bucket.setItem(key, newValue).finally(function () {
-                    unobserve = observe();
-                  });
-                }));
-              }
+              solidJs.createEffect(solidJs.on(function () {
+                return instance[member];
+              }, function (newValue) {
+                unobserve();
+                if (bucket.debug) {
+                  console.debug("[Storage] ".concat(instance.constructor.name, ".").concat(member.toString(), "\n                                        changed to ").concat(newValue).replace(/\s+/g, ' '));
+                }
+                bucket.setItem(key, newValue).finally(function () {
+                  unobserve = observe();
+                });
+              }));
               solidJs.onCleanup(function () {
                 unobserve();
               });
@@ -1271,23 +1262,26 @@
        */
       IndexedDBStorageDriver.prototype.supports = function () {
         return __awaiter(this, void 0, void 0, function () {
-          var checkDBName;
+          var checkDBName, db;
           return __generator(this, function (_b) {
             switch (_b.label) {
               case 0:
-                _b.trys.push([0, 3,, 4]);
+                _b.trys.push([0, 4,, 5]);
                 checkDBName = '_vgerbot_check_idb';
                 return [4 /*yield*/, idb.openDB(checkDBName)];
               case 1:
-                _b.sent();
-                return [4 /*yield*/, idb.deleteDB(checkDBName)];
+                db = _b.sent();
+                return [4 /*yield*/, db.close()];
               case 2:
                 _b.sent();
-                return [2 /*return*/, true];
+                return [4 /*yield*/, idb.deleteDB(checkDBName)];
               case 3:
                 _b.sent();
-                return [2 /*return*/, false];
+                return [2 /*return*/, true];
               case 4:
+                _b.sent();
+                return [2 /*return*/, false];
+              case 5:
                 return [2 /*return*/];
             }
           });
@@ -1386,7 +1380,7 @@
                 _b.label = 5;
               case 5:
                 oldValue = _a;
-                return [4 /*yield*/, db.put(STORE_NAME, buffer, IDBKeyRange.only(key))];
+                return [4 /*yield*/, db.put(STORE_NAME, buffer, key)];
               case 6:
                 _b.sent();
                 if (needDispatch) {
