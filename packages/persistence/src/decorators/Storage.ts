@@ -16,7 +16,7 @@ import { notifyStorageChange } from './OnStorageChange';
 
 /**
  * Configuration options for the Storage decorator.
- * 
+ *
  * @public
  */
 export interface StorageOptions {
@@ -25,7 +25,7 @@ export interface StorageOptions {
      * - A string name referencing a registered bucket
      * - A symbol identifier for a bucket
      * - A Bucket instance directly
-     * 
+     *
      * @defaultValue DEFAULT_BUCKET (the default bucket)
      */
     bucket?: string | symbol | Bucket;
@@ -38,13 +38,13 @@ export interface StorageOptions {
 /**
  * Property decorator that automatically persists a signal property to storage.
  * The decorated property must be a signal created with `@Signal()`.
- * 
+ *
  * When the property changes, the new value is automatically saved to storage.
  * When the component initializes, the last saved value is automatically loaded.
- * 
+ *
  * @param options - Configuration options for storage behavior
  * @returns A property decorator
- * 
+ *
  * @example
  * Basic usage with default bucket:
  * ```typescript
@@ -54,7 +54,7 @@ export interface StorageOptions {
  *   theme: 'light' | 'dark' = 'light';
  * }
  * ```
- * 
+ *
  * @example
  * Using a custom bucket and key:
  * ```typescript
@@ -67,10 +67,10 @@ export interface StorageOptions {
  *   theme: 'light' | 'dark' = 'light';
  * }
  * ```
- * 
+ *
  * @public
  */
-export const Storage = (options: StorageOptions = {}) => {
+export const Storage = (options: string | StorageOptions = {}) => {
     return defineMemberDecoratorProcessor('storage', {
         afterInstantiation<T extends Record<MemberKey, unknown>>(
             instance: T,
@@ -84,10 +84,16 @@ export const Storage = (options: StorageOptions = {}) => {
             // Merge options, with member-specific options taking precedence
             const mergedOptions: StorageOptions = {
                 ...defaultOptions,
-                ...options
+                ...(typeof options === 'string' ? { key: options } : options)
             };
 
-            const [, set] = getSignal(instance, member);
+            const descriptor = Object.getOwnPropertyDescriptor(
+                instance,
+                member
+            );
+            const writable = descriptor?.writable ?? true;
+
+            const [, set] = getSignal(instance, member, descriptor?.value);
             const key = mergedOptions.key ?? member.toString();
             const bucketOrName = mergedOptions.bucket || DEFAULT_BUCKET;
 
@@ -117,58 +123,66 @@ export const Storage = (options: StorageOptions = {}) => {
                         instance,
                         member: key,
                         ...event
-                    })
+                    });
                 });
             };
             if (bucket.debug) {
                 console.debug(`[Storage] ${key} is loaded from ${bucket.name}`);
             }
             const owner = getOwner();
-            bucket.getItem(key).then(value => {
-                if (bucket.debug) {
-                    console.debug(
-                        `[Storage] ${key} is loaded, value: ${value}`
-                    );
-                }
-                set(value);
-                notifyStorageLoad({
-                    instance,
-                    member,
-                    value,
-                    timestamp: Date.now()
-                });
-                runWithOwner(owner, () => {
-                    let unobserve = observe();
-                    createEffect(
-                        on(
-                            () => {
-                                return instance[member];
-                            },
-                            newValue => {
-                                unobserve();
-                                if (bucket.debug) {
-                                    console.debug(
-                                        `[Storage] ${instance.constructor.name}.${member.toString()}
-                                        changed to ${newValue}`.replace(
-                                            /\s+/g,
-                                            ' '
-                                        )
-                                    );
-                                }
-                                bucket
-                                    .setItem(key, newValue as Data)
-                                    .finally(() => {
-                                        unobserve = observe();
-                                    });
-                            }
-                        )
-                    );
+            bucket
+                .getItem(key)
+                .then(value => {
+                    if (bucket.debug) {
+                        console.debug(
+                            `[Storage] ${key} is loaded, value: ${value}`
+                        );
+                    }
+                    if (value !== null && value !== undefined) {
+                        set(value);
+                        notifyStorageLoad({
+                            instance,
+                            member,
+                            value,
+                            timestamp: Date.now()
+                        });
+                    }
+                })
+                .then(() => {
+                    runWithOwner(owner, () => {
+                        let unobserve = observe();
+                        if (writable) {
+                            createEffect(
+                                on(
+                                    () => {
+                                        return instance[member];
+                                    },
+                                    newValue => {
+                                        unobserve();
+                                        if (bucket.debug) {
+                                            console.debug(
+                                                `[Storage] ${instance.constructor.name}.${member.toString()}
+                                            changed to ${newValue}`.replace(
+                                                    /\s+/g,
+                                                    ' '
+                                                )
+                                            );
+                                        }
+                                        bucket
+                                            .setItem(key, newValue as Data)
+                                            .finally(() => {
+                                                unobserve = observe();
+                                            });
+                                    }
+                                )
+                            );
+                        }
 
-                    onCleanup(() => {
-                        unobserve();
+                        onCleanup(() => {
+                            unobserve();
+                        });
                     });
                 });
-            });
         }
     });
 };

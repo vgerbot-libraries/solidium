@@ -78,6 +78,10 @@ export function isSignalMember<T>(target: T, member: MemberKey) {
     return !!extraDataOfMember?.get(IS_SIGNAL_MEMBER_METADATA_KEY);
 }
 
-export function getSignal<T>(instance: T, member: MemberKey) {
-    return signalMap.get(instance as object, member);
+export function getSignal<T>(
+    instance: T,
+    member: MemberKey,
+    initializeValue?: unknown
+) {
+    return signalMap.get(instance as object, member, initializeValue);
 }
