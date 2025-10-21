@@ -450,8 +450,8 @@ function isSignalMember(target, member) {
   var extraDataOfMember = extraDataOf(target, member);
   return !!(extraDataOfMember === null || extraDataOfMember === void 0 ? void 0 : extraDataOfMember.get(IS_SIGNAL_MEMBER_METADATA_KEY));
 }
-function getSignal(instance, member) {
-  return signalMap.get(instance, member);
+function getSignal(instance, member, initializeValue) {
+  return signalMap.get(instance, member, initializeValue);
 }
 
 function defineMemberDecoratorProcessor(key, processor) {
