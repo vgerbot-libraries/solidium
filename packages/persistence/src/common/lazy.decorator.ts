@@ -12,17 +12,15 @@ export function lazy(): PropertyDecorator {
             throw new Error(`Property ${String(propertyKey)} is not a getter`);
         }
         let value = NOT_INITIALIZED_VALUE;
-        Object.defineProperty(
-            prototype,
-            propertyKey,
-            Object.assign({}, desc, {
-                get() {
-                    if (value === NOT_INITIALIZED_VALUE) {
-                        value = getter.call(this);
-                    }
-                    return value;
+        const descriptor = Object.assign({}, desc, {
+            get() {
+                if (value === NOT_INITIALIZED_VALUE) {
+                    value = getter.call(this);
                 }
-            })
-        );
+                return value;
+            }
+        });
+        Object.defineProperty(prototype, propertyKey, descriptor);
+        return descriptor;
     };
 }
