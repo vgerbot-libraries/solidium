@@ -3,7 +3,7 @@ import {
     Storage,
     type StorageLoadEvent,
     OnStorageLoad
-} from '@vgerbot/solidium-persistence';
+} from '@vgerbot/persistence';
 import { Inject } from '@vgerbot/ioc';
 
 export interface AuthData {

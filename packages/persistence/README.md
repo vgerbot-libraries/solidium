@@ -1,8 +1,8 @@
-# `@vgerbot/solidium-persistence`
+# `@vgerbot/persistence`
 
 ```ts
 import { Observe } from '@vgerbot/solidium';
-import { createInstance, drivers } from '@vgerbot/solidium-persistence'
+import { createInstance, drivers } from '@vgerbot/persistence'
 
 const idb = createInstance({
     driver: drivers.IDB,

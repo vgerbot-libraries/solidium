@@ -177,7 +177,7 @@ importers:
       '@vgerbot/solidium':
         specifier: workspace:*
         version: link:../../solidium
-      '@vgerbot/solidium-persistence':
+      '@vgerbot/persistence':
         specifier: workspace:*
         version: link:../../persistence
       msw:
@@ -295,7 +295,7 @@ importers:
       '@vgerbot/solidium':
         specifier: workspace:*
         version: link:../solidium
-      '@vgerbot/solidium-persistence':
+      '@vgerbot/persistence':
         specifier: workspace:*
         version: link:../persistence
       rxjs:

@@ -165,7 +165,7 @@ const mainConfig: RollupOptions[] = outputConfig.map(output => {
                             )
                         },
                         {
-                            find: '@vgerbot/solidium-persistence',
+                            find: '@vgerbot/persistence',
                             replacement: path.resolve(
                                 process.cwd(),
                                 '../../persistence/src/index.ts'
