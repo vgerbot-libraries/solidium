@@ -5,7 +5,6 @@ import {
     ClassMetadataReader,
     MemberKey
 } from '@vgerbot/ioc';
-import { Data } from '../types/Data';
 import { Bucket } from '../core/bucket/Bucket';
 import { DEFAULT_BUCKET } from '../core/constants';
 import { notifyStorageLoad } from './OnStorageLoad';
@@ -33,7 +32,90 @@ export interface StorageOptions {
      * The storage key to use. If not specified, the property name will be used.
      */
     key?: string;
+    /**
+     * Data version identifier for migration control.
+     *
+     * When the stored data version differs from this version, the library will trigger
+     * a migration process using the specified `migrationStrategy`. This enables safe
+     * data schema evolution and backward compatibility during application updates.
+     *
+     * **Behavior:**
+     * - If versions match: Load stored data directly
+     * - If versions differ: Apply migration strategy to determine final value
+     * - If no version specified: Always load stored data (no migration)
+     *
+     * **Use cases:**
+     * - Schema changes requiring data transformation
+     * - Breaking changes in data structure
+     * - Feature flags or configuration updates
+     *
+     * @example
+     * ```typescript
+     * @Storage({ version: '2.0' })
+     * userPreferences: UserPreferences = defaultPreferences;
+     * ```
+     */
+    version?: string;
+
+    /**
+     * Migration strategy when data version changes.
+     *
+     * Defines how to handle data when the stored version differs from the current
+     * `version`. This allows for flexible data migration strategies during application
+     * updates while maintaining data integrity.
+     *
+     * **Built-in strategies:**
+     * - `'overwrite'`: Replace stored data with the property's initial value (default)
+     * - `'keep'`: Preserve the existing stored data, ignoring initial value
+     *
+     * **Custom strategy function:**
+     * Receives `(newValue, cachedValue)` and returns the final value to use.
+     * - `newValue`: The property's current initial value
+     * - `cachedValue`: The value stored in persistence
+     *
+     * **Use cases:**
+     * - `'overwrite'`: When breaking changes require fresh data
+     * - `'keep'`: When preserving user data is important
+     * - Custom function: For complex data transformations or merging logic
+     *
+     * @defaultValue 'overwrite'
+     *
+     * @example
+     * ```typescript
+     * // Keep existing data during migration
+     * @Storage({
+     *   version: '2.0',
+     *   migrationStrategy: 'keep'
+     * })
+     * userSettings: UserSettings = defaultSettings;
+     *
+     * // Custom migration logic
+     * @Storage({
+     *   version: '2.0',
+     *   migrationStrategy: (newValue, cachedValue) => {
+     *     // Merge old and new data
+     *     return { ...newValue, ...cachedValue };
+     *   }
+     * })
+     * userPreferences: UserPreferences = defaultPreferences;
+     * ```
+     */
+    migrationStrategy?:
+        | 'overwrite'
+        | 'keep'
+        | (<T>(newValue?: T, cachedValue?: T) => T | undefined);
 }
+
+interface StorageValue {
+    $d: unknown;
+    $v: string;
+}
+
+const BUILT_IN_MIGRATION_STRATEGIES = {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    overwrite: (newValue: unknown, cachedValue: unknown) => newValue,
+    keep: (newValue: unknown, cachedValue: unknown) => cachedValue
+};
 
 /**
  * Property decorator that automatically persists a signal property to storage.
@@ -86,6 +168,7 @@ export const Storage = (options: string | StorageOptions = {}) => {
                 ...defaultOptions,
                 ...(typeof options === 'string' ? { key: options } : options)
             };
+            const version = mergedOptions.version ?? '';
 
             const descriptor = Object.getOwnPropertyDescriptor(
                 instance,
@@ -131,22 +214,44 @@ export const Storage = (options: string | StorageOptions = {}) => {
             }
             const owner = getOwner();
             bucket
-                .getItem(key)
-                .then(value => {
+                .getItem<StorageValue>(key)
+                .then(storageValue => {
                     if (bucket.debug) {
                         console.debug(
-                            `[Storage] ${key} is loaded, value: ${value}`
+                            `[Storage] ${key} is loaded, value: ${storageValue?.$d}`
                         );
                     }
-                    if (value !== null && value !== undefined) {
-                        set(value);
-                        notifyStorageLoad({
-                            instance,
-                            member,
-                            value,
-                            timestamp: Date.now()
-                        });
+                    if (!isValidStorageValue(storageValue)) {
+                        return;
                     }
+                    const dataVersion = storageValue.$v;
+                    if (dataVersion !== version) {
+                        const mergeStrategy = mergedOptions.migrationStrategy;
+                        if (
+                            typeof mergeStrategy === 'string' &&
+                            BUILT_IN_MIGRATION_STRATEGIES[mergeStrategy]
+                        ) {
+                            set(
+                                BUILT_IN_MIGRATION_STRATEGIES[mergeStrategy](
+                                    storageValue.$d,
+                                    storageValue.$d
+                                )
+                            );
+                        } else if (typeof mergeStrategy === 'function') {
+                            set(
+                                mergeStrategy(storageValue.$d, storageValue.$d)
+                            );
+                        }
+                    } else {
+                        set(storageValue.$d);
+                    }
+
+                    notifyStorageLoad({
+                        instance,
+                        member,
+                        value: storageValue.$d,
+                        timestamp: Date.now()
+                    });
                 })
                 .then(() => {
                     runWithOwner(owner, () => {
@@ -169,7 +274,10 @@ export const Storage = (options: string | StorageOptions = {}) => {
                                             );
                                         }
                                         bucket
-                                            .setItem(key, newValue as Data)
+                                            .setItem(key, {
+                                                $d: newValue,
+                                                $v: version
+                                            } satisfies StorageValue)
                                             .finally(() => {
                                                 unobserve = observe();
                                             });
@@ -186,3 +294,12 @@ export const Storage = (options: string | StorageOptions = {}) => {
         }
     });
 };
+
+function isValidStorageValue(value: unknown): value is StorageValue {
+    return (
+        typeof value === 'object' &&
+        value !== null &&
+        '$d' in value &&
+        '$v' in value
+    );
+}
