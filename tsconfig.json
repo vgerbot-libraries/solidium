@@ -27,7 +27,7 @@
             "@vgerbot/msgpack-ext": ["packages/msgpack-ext/src"]
         }
     },
-    "exclude": ["**/__tests__", "node_modules", "**/lib"],
+    "exclude": ["packages/*/__tests__", "node_modules", "**/lib"],
     "references": [
         {
             "path": "./packages/solidium/tsconfig.json"
