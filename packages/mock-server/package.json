@@ -9,7 +9,7 @@
     "start": "tsx src/cli.ts",
     "build": "tsc",
     "dev": "nodemon --watch src -e ts --exec tsx src/cli.ts",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "echo 'No tests'",
     "lint": "eslint 'src/**/*.ts'"
   },
   "bin": {
