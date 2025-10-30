@@ -262,7 +262,7 @@ export const Storage = (options: string | StorageOptions = {}) => {
                                     () => {
                                         return instance[member];
                                     },
-                                    newValue => {
+                                    (newValue: unknown) => {
                                         unobserve();
                                         if (bucket.debug) {
                                             console.debug(
