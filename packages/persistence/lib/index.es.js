@@ -411,6 +411,11 @@ function OnStorageChange(options) {
   };
 }
 
+const BUILT_IN_MIGRATION_STRATEGIES = {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  overwrite: (newValue, cachedValue) => newValue,
+  keep: (newValue, cachedValue) => cachedValue
+};
 /**
  * Property decorator that automatically persists a signal property to storage.
  * The decorated property must be a signal created with `@Signal()`.
@@ -449,17 +454,18 @@ function OnStorageChange(options) {
 const Storage = (options = {}) => {
   return defineMemberDecoratorProcessor('storage', {
     afterInstantiation(instance, member, metadata, container) {
-      var _a, _b;
+      var _a, _b, _c;
       // Get default options from class decorator if they exist
       const defaultOptions = getDefaultStorageOptions(metadata);
       // Merge options, with member-specific options taking precedence
       const mergedOptions = Object.assign(Object.assign({}, defaultOptions), typeof options === 'string' ? {
         key: options
       } : options);
+      const version = (_a = mergedOptions.version) !== null && _a !== void 0 ? _a : '';
       const descriptor = Object.getOwnPropertyDescriptor(instance, member);
-      const writable = (_a = descriptor === null || descriptor === void 0 ? void 0 : descriptor.writable) !== null && _a !== void 0 ? _a : true;
+      const writable = (_b = descriptor === null || descriptor === void 0 ? void 0 : descriptor.writable) !== null && _b !== void 0 ? _b : true;
       const [, set] = getSignal(instance, member, descriptor === null || descriptor === void 0 ? void 0 : descriptor.value);
-      const key = (_b = mergedOptions.key) !== null && _b !== void 0 ? _b : member.toString();
+      const key = (_c = mergedOptions.key) !== null && _c !== void 0 ? _c : member.toString();
       const bucketOrName = mergedOptions.bucket || DEFAULT_BUCKET;
       const bucket = typeof bucketOrName != 'object' ? container.getInstance(bucketOrName) : bucketOrName;
       const observe = () => {
@@ -485,19 +491,30 @@ const Storage = (options = {}) => {
         console.debug(`[Storage] ${key} is loaded from ${bucket.name}`);
       }
       const owner = getOwner();
-      bucket.getItem(key).then(value => {
+      bucket.getItem(key).then(storageValue => {
         if (bucket.debug) {
-          console.debug(`[Storage] ${key} is loaded, value: ${value}`);
+          console.debug(`[Storage] ${key} is loaded, value: ${storageValue === null || storageValue === void 0 ? void 0 : storageValue.$d}`);
         }
-        if (value !== null && value !== undefined) {
-          set(value);
-          notifyStorageLoad({
-            instance,
-            member,
-            value,
-            timestamp: Date.now()
-          });
+        if (!isValidStorageValue(storageValue)) {
+          return;
         }
+        const dataVersion = storageValue.$v;
+        if (dataVersion !== version) {
+          const mergeStrategy = mergedOptions.migrationStrategy;
+          if (typeof mergeStrategy === 'string' && BUILT_IN_MIGRATION_STRATEGIES[mergeStrategy]) {
+            set(BUILT_IN_MIGRATION_STRATEGIES[mergeStrategy](storageValue.$d, storageValue.$d));
+          } else if (typeof mergeStrategy === 'function') {
+            set(mergeStrategy(storageValue.$d, storageValue.$d));
+          }
+        } else {
+          set(storageValue.$d);
+        }
+        notifyStorageLoad({
+          instance,
+          member,
+          value: storageValue.$d,
+          timestamp: Date.now()
+        });
       }).then(() => {
         runWithOwner(owner, () => {
           let unobserve = observe();
@@ -510,7 +527,10 @@ const Storage = (options = {}) => {
                 console.debug(`[Storage] ${instance.constructor.name}.${member.toString()}
                                             changed to ${newValue}`.replace(/\s+/g, ' '));
               }
-              bucket.setItem(key, newValue).finally(() => {
+              bucket.setItem(key, {
+                $d: newValue,
+                $v: version
+              }).finally(() => {
                 unobserve = observe();
               });
             }));
@@ -523,6 +543,9 @@ const Storage = (options = {}) => {
     }
   });
 };
+function isValidStorageValue(value) {
+  return typeof value === 'object' && value !== null && '$d' in value && '$v' in value;
+}
 
 /**
  * Enumeration of built-in storage drivers available in the persistence library.
@@ -1445,7 +1468,7 @@ class Persistence {
    * @internal
    */
   init() {
-    console.log('Persistence initialized', this);
+    //
   }
 }
 __decorate([Inject(DEFAULT_BUCKET_CONFIGURATION), __metadata("design:type", Object)], Persistence.prototype, "configuration", void 0);

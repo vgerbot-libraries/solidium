@@ -1,5 +1,6 @@
-import { OutputOptions, RollupOptions } from 'rollup';
+import { OutputOptions, Plugin, PluginContext, RollupOptions } from 'rollup';
 import path from 'path';
+import fs from 'fs';
 import { nodeResolve } from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import babel from '@rollup/plugin-babel';
@@ -9,6 +10,7 @@ import { makeHtmlAttributes } from '@rollup/plugin-html';
 import serve from '@rollup-extras/plugin-serve';
 import alias from '@rollup/plugin-alias';
 import hmr from 'rollup-plugin-hot';
+import dts from 'rollup-plugin-dts';
 
 const pkg = require(path.resolve(process.cwd(), 'package.json'));
 
@@ -60,7 +62,8 @@ const mainConfig: RollupOptions[] = outputConfig.map(output => {
                             : output.format === 'es'
                               ? 'es6'
                               : 'es5',
-                        declarationDir: 'lib/typings'
+                        declarationDir: 'lib/typings',
+                        downlevelIteration: true
                     }
                 },
                 useTsconfigDeclarationDir: true
@@ -213,4 +216,31 @@ function createOutputConfig(
     );
 }
 
-export default mainConfig;
+const dtsconfig = {
+    input: 'lib/typings/index.d.ts',
+    output: {
+        file: 'lib/index.d.ts',
+        format: 'es'
+    },
+    plugins: [
+        dts(),
+        {
+            name: 'cleanup-dts',
+            buildEnd: function (this: PluginContext) {
+                const inputDir = path.resolve(process.cwd(), 'lib/typings');
+                fs.rmdir(inputDir, { recursive: true }, err => {
+                    if (err) {
+                        console.error(
+                            'Failed to remove typings directory: ',
+                            err
+                        );
+                    }
+                });
+            }
+        } satisfies Plugin
+    ]
+} satisfies RollupOptions;
+
+const isExample = pkg.name.indexOf('examples') > -1;
+
+export default mainConfig.concat(isExample ? [] : [dtsconfig]);

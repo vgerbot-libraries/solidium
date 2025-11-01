@@ -4,7 +4,7 @@
   "description": "HTTP mock server for testing different request scenarios",
   "type": "module",
   "main": "lib/index.js",
-  "types": "lib/typings/index.d.ts",
+  "types": "lib/index.d.ts",
   "scripts": {
     "start": "tsx src/cli.ts",
     "build": "tsc",

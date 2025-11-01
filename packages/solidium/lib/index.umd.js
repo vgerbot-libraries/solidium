@@ -4,6 +4,80 @@
     (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.Solidium = {}, global.IOC, global.solidJs, global.web));
 })(this, (function (exports, ioc, solidJs, web) { 'use strict';
 
+    /******************************************************************************
+    Copyright (c) Microsoft Corporation.
+
+    Permission to use, copy, modify, and/or distribute this software for any
+    purpose with or without fee is hereby granted.
+
+    THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+    REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
+    AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+    INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
+    LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
+    OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+    PERFORMANCE OF THIS SOFTWARE.
+    ***************************************************************************** */
+    /* global Reflect, Promise, SuppressedError, Symbol, Iterator */
+
+    var extendStatics = function(d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+
+    function __extends(d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    }
+
+    var __assign = function() {
+        __assign = Object.assign || function __assign(t) {
+            for (var s, i = 1, n = arguments.length; i < n; i++) {
+                s = arguments[i];
+                for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p)) t[p] = s[p];
+            }
+            return t;
+        };
+        return __assign.apply(this, arguments);
+    };
+
+    function __read(o, n) {
+        var m = typeof Symbol === "function" && o[Symbol.iterator];
+        if (!m) return o;
+        var i = m.call(o), r, ar = [], e;
+        try {
+            while ((n === void 0 || n-- > 0) && !(r = i.next()).done) ar.push(r.value);
+        }
+        catch (error) { e = { error: error }; }
+        finally {
+            try {
+                if (r && !r.done && (m = i["return"])) m.call(i);
+            }
+            finally { if (e) throw e.error; }
+        }
+        return ar;
+    }
+
+    function __spreadArray(to, from, pack) {
+        if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
+            if (ar || !(i in from)) {
+                if (!ar) ar = Array.prototype.slice.call(from, 0, i);
+                ar[i] = from[i];
+            }
+        }
+        return to.concat(ar || Array.prototype.slice.call(from));
+    }
+
+    typeof SuppressedError === "function" ? SuppressedError : function (error, suppressed, message) {
+        var e = new Error(message);
+        return e.name = "SuppressedError", e.error = error, e.suppressed = suppressed, e;
+    };
+
     var COMPONENT_TREE_SCOPE = 'solidium-component-tree-scope';
     /**
      * 标记为 ComponentTreeScoped 的类，其不再是全局共享单实例，而是子组件共享单实例
@@ -104,63 +178,6 @@
       Reflect.set(instance, SOLIDIUM_SOLID_OWNER_PROPERTY_KEY, owner);
     }
 
-    /******************************************************************************
-    Copyright (c) Microsoft Corporation.
-
-    Permission to use, copy, modify, and/or distribute this software for any
-    purpose with or without fee is hereby granted.
-
-    THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
-    REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
-    AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
-    INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
-    LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
-    OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
-    PERFORMANCE OF THIS SOFTWARE.
-    ***************************************************************************** */
-    /* global Reflect, Promise, SuppressedError, Symbol, Iterator */
-
-    var extendStatics = function(d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-
-    function __extends(d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    }
-
-    var __assign = function() {
-        __assign = Object.assign || function __assign(t) {
-            for (var s, i = 1, n = arguments.length; i < n; i++) {
-                s = arguments[i];
-                for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p)) t[p] = s[p];
-            }
-            return t;
-        };
-        return __assign.apply(this, arguments);
-    };
-
-    function __spreadArray(to, from, pack) {
-        if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
-            if (ar || !(i in from)) {
-                if (!ar) ar = Array.prototype.slice.call(from, 0, i);
-                ar[i] = from[i];
-            }
-        }
-        return to.concat(ar || Array.prototype.slice.call(from));
-    }
-
-    typeof SuppressedError === "function" ? SuppressedError : function (error, suppressed, message) {
-        var e = new Error(message);
-        return e.name = "SuppressedError", e.error = error, e.suppressed = suppressed, e;
-    };
-
     var IS_MEMBER_DECORATOR_PROCESSOR = Symbol('solidium-is-member-decorator-processor');
     var IS_CLASS_DECORATOR_PROCESSOR = Symbol('solidium-is-class-decorator-processor');
 
@@ -178,7 +195,7 @@
       var classMarkInfo = metadata.getCtorMarkInfo();
       var allClassDecoratorProcessor = new Set();
       if (classMarkInfo) {
-        var classMarkInfoMembers = __spreadArray(__spreadArray([], Object.getOwnPropertyNames(classMarkInfo), true), Object.getOwnPropertySymbols(classMarkInfo), true);
+        var classMarkInfoMembers = __spreadArray(__spreadArray([], __read(Object.getOwnPropertyNames(classMarkInfo)), false), __read(Object.getOwnPropertySymbols(classMarkInfo)), false);
         classMarkInfoMembers.forEach(function (markInfoKey) {
           var processor = classMarkInfo[markInfoKey];
           if (typeof processor !== 'object' || !processor[IS_CLASS_DECORATOR_PROCESSOR]) {
@@ -213,7 +230,7 @@
         if (!markInfo) {
           return;
         }
-        var markInfoMembers = __spreadArray(__spreadArray([], Object.getOwnPropertyNames(markInfo), true), Object.getOwnPropertySymbols(markInfo), true);
+        var markInfoMembers = __spreadArray(__spreadArray([], __read(Object.getOwnPropertyNames(markInfo)), false), __read(Object.getOwnPropertySymbols(markInfo)), false);
         markInfoMembers.forEach(function (key) {
           var markData = markInfo[key];
           if (markData == null || typeof markData !== 'object' || !markData[IS_MEMBER_DECORATOR_PROCESSOR]) {
@@ -279,9 +296,9 @@
       var originGetInstance = appCtx.getInstance;
       appCtx.getInstance = function (id, instanceOwner) {
         var _this = this;
-        var _a = solidJs.createRoot(function (dispose) {
+        var _a = __read(solidJs.createRoot(function (dispose) {
             return [dispose, originGetInstance.call(_this, id, instanceOwner)];
-          }, owner),
+          }, owner), 2),
           dispose = _a[0],
           instance = _a[1];
         if (instance !== null && typeof instance === 'object') {
@@ -419,9 +436,10 @@
       Object.defineProperty(target, member, {
         get: function () {
           var _this = this;
-          var get = solidJs.runWithOwner(owner, function () {
-            return signalMap.get(_this, member, defaultValue);
-          })[0];
+          var _a = __read(solidJs.runWithOwner(owner, function () {
+              return signalMap.get(_this, member, defaultValue);
+            }), 1),
+            get = _a[0];
           if (interceptors === null || interceptors === void 0 ? void 0 : interceptors.getter) {
             return interceptors.getter.call(this, get());
           }
@@ -429,9 +447,9 @@
         },
         set: function (newValue) {
           var _this = this;
-          var _a = solidJs.runWithOwner(owner, function () {
+          var _a = __read(solidJs.runWithOwner(owner, function () {
               return signalMap.get(_this, member);
-            }),
+            }), 2),
             get = _a[0],
             set = _a[1];
           var interceptorMap = target[SETTER_INTERCEPTOR_MAP_KEY];
@@ -472,7 +490,7 @@
 
     var RESULT_MAP = new SignalMap();
     function store(instance, methodName, value) {
-      var _a = RESULT_MAP.get(instance, methodName),
+      var _a = __read(RESULT_MAP.get(instance, methodName), 2),
         set = _a[1];
       set(value);
     }
@@ -480,7 +498,8 @@
       RESULT_MAP.delete(instance, methodName);
     }
     function resultOf(instance, methodName) {
-      var get = RESULT_MAP.get(instance, methodName)[0];
+      var _a = __read(RESULT_MAP.get(instance, methodName), 1),
+        get = _a[0];
       return get();
     }
 
@@ -518,7 +537,7 @@
 
     var NOT_CHANGED_SYMBOL = Symbol('solidium-not-change-symbol');
     function useComputed(fn) {
-      var _a = solidJs.createSignal(NOT_CHANGED_SYMBOL),
+      var _a = __read(solidJs.createSignal(NOT_CHANGED_SYMBOL), 2),
         get = _a[0],
         emitChange = _a[1];
       var getter = solidJs.createMemo(function () {
