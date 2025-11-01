@@ -203,7 +203,7 @@ function createOutputConfig(
                 'is-plain-object': 'isPlainObject',
                 '@vgerbot/ioc': 'IOC',
                 '@vgerbot/solidium': 'Solidium',
-                '@vgerbot/persistence': 'SolidiumPersistence',
+                '@vgerbot/persistence': 'Persistence',
                 '@vgerbot/http': 'SolidiumHttp',
                 '@vgerbot/msgpack-ext': 'MPext'
             },
