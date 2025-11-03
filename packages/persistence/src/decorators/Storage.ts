@@ -1,4 +1,8 @@
-import { defineMemberDecoratorProcessor, getSignal } from '@vgerbot/solidium';
+import {
+    defineMemberDecoratorProcessor,
+    getSignal,
+    hasSignal
+} from '@vgerbot/solidium';
 import { createEffect, getOwner, on, onCleanup, runWithOwner } from 'solid-js';
 import { debounce, leadingAndTrailing } from '@solid-primitives/scheduled';
 import {
@@ -186,7 +190,7 @@ export const Storage = (options: string | StorageOptions = {}) => {
             );
             const writable = descriptor?.writable ?? true;
 
-            const [, set] = getSignal(instance, member, descriptor?.value);
+            const isSignal = hasSignal(instance, member);
             const key = mergedOptions.key ?? member.toString();
             const bucketOrName = mergedOptions.bucket || DEFAULT_BUCKET;
 
@@ -194,6 +198,43 @@ export const Storage = (options: string | StorageOptions = {}) => {
                 typeof bucketOrName != 'object'
                     ? <Bucket>container.getInstance(bucketOrName)
                     : bucketOrName;
+
+            const [get, set] = (() => {
+                if (isSignal) {
+                    const [get, set] = getSignal(
+                        instance,
+                        member,
+                        descriptor?.value
+                    );
+                    return [get, set];
+                } else {
+                    const storageSymbol = Symbol(`__storage_${String(member)}`);
+                    const initialValue = descriptor?.value;
+
+                    (instance as Record<symbol, unknown>)[storageSymbol] =
+                        initialValue;
+
+                    const baseGetter = () => {
+                        return (instance as Record<symbol, unknown>)[
+                            storageSymbol
+                        ];
+                    };
+                    const baseSetter = (newValue: unknown) => {
+                        (instance as Record<symbol, unknown>)[storageSymbol] =
+                            newValue;
+                    };
+
+                    Object.defineProperty(instance, member, {
+                        get: baseGetter,
+                        set: baseSetter,
+                        configurable: true,
+                        enumerable: descriptor?.enumerable ?? true
+                    });
+
+                    return [baseGetter, baseSetter];
+                }
+            })();
+
             const observe = () => {
                 return bucket.observe(key, event => {
                     if (bucket.debug) {
@@ -266,34 +307,33 @@ export const Storage = (options: string | StorageOptions = {}) => {
                 .then(() => {
                     runWithOwner(owner, () => {
                         let unobserve = observe();
-                        if (writable) {
-                            const trigger = leadingAndTrailing(
-                                debounce,
-                                (newValue: unknown) => {
-                                    unobserve();
-                                    if (bucket.debug) {
-                                        console.debug(
-                                            `[Storage] ${instance.constructor.name}.${member.toString()}
-                                    changed to ${newValue}`.replace(/\s+/g, ' ')
-                                        );
-                                    }
-                                    bucket
-                                        .setItem(key, {
-                                            $d: newValue,
-                                            $v: version
-                                        } satisfies StorageValue)
-                                        .finally(() => {
-                                            unobserve = observe();
-                                        });
-                                },
-                                mergedOptions.debounceMs ?? 300
-                            );
-                            createEffect(
-                                on(() => {
-                                    return instance[member];
-                                }, trigger)
-                            );
+
+                        if (!writable) {
+                            onCleanup(() => {
+                                unobserve();
+                            });
+                            return;
                         }
+
+                        const trigger = createSaveTrigger(
+                            unobserve,
+                            () => {
+                                unobserve = observe();
+                            },
+                            bucket,
+                            key,
+                            version,
+                            instance,
+                            member
+                        );
+
+                        setupChangeListener(
+                            isSignal,
+                            instance,
+                            member,
+                            trigger,
+                            get
+                        );
 
                         onCleanup(() => {
                             unobserve();
@@ -303,6 +343,74 @@ export const Storage = (options: string | StorageOptions = {}) => {
         }
     });
 };
+
+function createSaveTrigger(
+    unobserve: () => void,
+    reobserve: () => void,
+    bucket: Bucket,
+    key: string,
+    version: string,
+    instance: object,
+    member: MemberKey
+) {
+    return leadingAndTrailing(
+        debounce,
+        (newValue: unknown) => {
+            unobserve();
+            if (bucket.debug) {
+                console.debug(
+                    `[Storage] ${instance.constructor?.name}.${member.toString()}
+                    changed to ${newValue}`.replace(/\s+/g, ' ')
+                );
+            }
+            bucket
+                .setItem(key, {
+                    $d: newValue,
+                    $v: version
+                } satisfies StorageValue)
+                .finally(() => {
+                    reobserve();
+                });
+        },
+        300
+    );
+}
+
+function setupChangeListener(
+    isSignal: boolean,
+    instance: object,
+    member: MemberKey,
+    trigger: (newValue: unknown) => void,
+    getValue: () => unknown
+) {
+    if (isSignal) {
+        createEffect(
+            on(() => {
+                return getValue();
+            }, trigger)
+        );
+    } else {
+        const currentDescriptor = Object.getOwnPropertyDescriptor(
+            instance,
+            member
+        );
+        if (currentDescriptor) {
+            const originalGetter = currentDescriptor.get;
+            const originalSetter = currentDescriptor.set;
+            Object.defineProperty(instance, member, {
+                get: originalGetter,
+                set: (newValue: unknown) => {
+                    if (originalSetter) {
+                        originalSetter.call(instance, newValue);
+                    }
+                    trigger(newValue);
+                },
+                configurable: currentDescriptor.configurable ?? true,
+                enumerable: currentDescriptor.enumerable ?? true
+            });
+        }
+    }
+}
 
 function isValidStorageValue(value: unknown): value is StorageValue {
     return (
