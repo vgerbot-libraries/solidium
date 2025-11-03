@@ -85,3 +85,6 @@ export function getSignal<T>(
 ) {
     return signalMap.get(instance as object, member, initializeValue);
 }
+export function hasSignal<T>(instance: T, member: MemberKey) {
+    return signalMap.has(instance as object, member);
+}

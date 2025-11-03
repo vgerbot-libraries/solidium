@@ -1,5 +1,5 @@
 import { MemberKey } from '@vgerbot/ioc';
-import { defineSignalMember } from '../helper/defineSignalMember';
+import { defineSignalMember } from '../helper/signal-member';
 import { defineMemberDecoratorProcessor } from '../core/defineMemberDecoratorProcessor';
 
 export const SIGNAL_MARK_KEY = Symbol('solidium_mark_as_signal_property');

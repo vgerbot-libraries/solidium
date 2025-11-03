@@ -1,7 +1,4 @@
-import {
-    defineSignalMember,
-    isSignalMember
-} from '../helper/defineSignalMember';
+import { defineSignalMember, isSignalMember } from '../helper/signal-member';
 import { defineClassDecoratorProcessor } from '../core/defineClassDecoratorProcessor';
 import { runWithSolidiumOwner } from '../core/owner';
 

@@ -29,4 +29,14 @@ export class SignalMap {
             signalMap.delete(key);
         }
     }
+    has(object: object, key: string | number | symbol) {
+        if (!this.store.has(object)) {
+            return false;
+        }
+        const signalMap = this.store.get(object);
+        if (!signalMap?.has(key)) {
+            return false;
+        }
+        return true;
+    }
 }

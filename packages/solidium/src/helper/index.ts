@@ -1,2 +1,2 @@
 export * from './appendSetterInterceptor';
-export * from './defineSignalMember';
+export * from './signal-member';
