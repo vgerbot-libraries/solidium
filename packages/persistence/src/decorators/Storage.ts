@@ -1,5 +1,6 @@
 import { defineMemberDecoratorProcessor, getSignal } from '@vgerbot/solidium';
 import { createEffect, getOwner, on, onCleanup, runWithOwner } from 'solid-js';
+import { debounce, leadingAndTrailing } from '@solid-primitives/scheduled';
 import {
     ApplicationContext,
     ClassMetadataReader,
@@ -104,6 +105,15 @@ export interface StorageOptions {
         | 'overwrite'
         | 'keep'
         | (<T>(newValue?: T, cachedValue?: T) => T | undefined);
+    /**
+     * Debounce delay in milliseconds for save operations.
+     * When the property changes frequently, this delay prevents
+     * excessive storage writes by waiting for the specified time
+     * before actually saving.
+     *
+     * @defaultValue 300 (300ms)
+     */
+    debounceMs?: number;
 }
 
 interface StorageValue {
@@ -257,32 +267,31 @@ export const Storage = (options: string | StorageOptions = {}) => {
                     runWithOwner(owner, () => {
                         let unobserve = observe();
                         if (writable) {
-                            createEffect(
-                                on(
-                                    () => {
-                                        return instance[member];
-                                    },
-                                    (newValue: unknown) => {
-                                        unobserve();
-                                        if (bucket.debug) {
-                                            console.debug(
-                                                `[Storage] ${instance.constructor.name}.${member.toString()}
-                                            changed to ${newValue}`.replace(
-                                                    /\s+/g,
-                                                    ' '
-                                                )
-                                            );
-                                        }
-                                        bucket
-                                            .setItem(key, {
-                                                $d: newValue,
-                                                $v: version
-                                            } satisfies StorageValue)
-                                            .finally(() => {
-                                                unobserve = observe();
-                                            });
+                            const trigger = leadingAndTrailing(
+                                debounce,
+                                (newValue: unknown) => {
+                                    unobserve();
+                                    if (bucket.debug) {
+                                        console.debug(
+                                            `[Storage] ${instance.constructor.name}.${member.toString()}
+                                    changed to ${newValue}`.replace(/\s+/g, ' ')
+                                        );
                                     }
-                                )
+                                    bucket
+                                        .setItem(key, {
+                                            $d: newValue,
+                                            $v: version
+                                        } satisfies StorageValue)
+                                        .finally(() => {
+                                            unobserve = observe();
+                                        });
+                                },
+                                mergedOptions.debounceMs ?? 300
+                            );
+                            createEffect(
+                                on(() => {
+                                    return instance[member];
+                                }, trigger)
                             );
                         }
 

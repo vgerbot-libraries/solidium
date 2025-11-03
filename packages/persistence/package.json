@@ -40,6 +40,7 @@
     "url": "https://github.com/vgerbot-libraries/solidium/issues"
   },
   "dependencies": {
+    "@solid-primitives/scheduled": "^1.5.0",
     "@vgerbot/ioc": "workspace:*",
     "@vgerbot/lazy": "^1.0.7",
     "@vgerbot/msgpack-ext": "workspace:*",
