@@ -11,6 +11,7 @@ import serve from '@rollup-extras/plugin-serve';
 import alias from '@rollup/plugin-alias';
 import hmr from 'rollup-plugin-hot';
 import dts from 'rollup-plugin-dts';
+import tsconfigPaths from 'rollup-plugin-tsconfig-paths';
 
 const pkg = require(path.resolve(process.cwd(), 'package.json'));
 
@@ -42,6 +43,7 @@ const mainConfig: RollupOptions[] = outputConfig.map(output => {
               }
             : false,
         plugins: [
+            tsconfigPaths(),
             nodeResolve({
                 mainFields: ['module', 'browser', 'main'],
                 extensions
