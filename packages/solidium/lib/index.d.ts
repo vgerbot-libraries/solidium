@@ -91,6 +91,7 @@ declare function defineSignalMember<T>(target: T, member: MemberKey, defaultValu
 }): void;
 declare function isSignalMember<T>(target: T, member: MemberKey): boolean;
 declare function getSignal<T>(instance: T, member: MemberKey, initializeValue?: unknown): Signal$1<unknown>;
+declare function hasSignal<T>(instance: T, member: MemberKey): boolean;
 
 declare class Tracker {
     track(callback: (dispose: () => void) => void): () => void;
@@ -99,4 +100,4 @@ declare class Tracker {
 
 declare function runWithSolidiumOwner<T>(instance: object, callback: () => T): T;
 
-export { Auto, Batch, type ClassDecoratorProcessor, Computed, IS_CLASS_DECORATOR_PROCESSOR, IS_MEMBER_DECORATOR_PROCESSOR, type MemberDecoratorProcessor, Observe, type ObserveOptions, SETTER_INTERCEPTOR_MAP_KEY, type SetterInterceptorOptions, type SetterInterceptorTarget, Signal, Solidium, Track, Tracker, appendSetterInterceptor, defineClassDecoratorProcessor, defineMemberDecoratorProcessor, defineSignalMember, getSignal, isSignalMember, resultOf, runWithSolidiumOwner, useApplicationContext, useComputed, useService };
+export { Auto, Batch, type ClassDecoratorProcessor, Computed, IS_CLASS_DECORATOR_PROCESSOR, IS_MEMBER_DECORATOR_PROCESSOR, type MemberDecoratorProcessor, Observe, type ObserveOptions, SETTER_INTERCEPTOR_MAP_KEY, type SetterInterceptorOptions, type SetterInterceptorTarget, Signal, Solidium, Track, Tracker, appendSetterInterceptor, defineClassDecoratorProcessor, defineMemberDecoratorProcessor, defineSignalMember, getSignal, hasSignal, isSignalMember, resultOf, runWithSolidiumOwner, useApplicationContext, useComputed, useService };

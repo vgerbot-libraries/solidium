@@ -578,6 +578,15 @@ interface StorageOptions {
      * ```
      */
     migrationStrategy?: 'overwrite' | 'keep' | (<T>(newValue?: T, cachedValue?: T) => T | undefined);
+    /**
+     * Debounce delay in milliseconds for save operations.
+     * When the property changes frequently, this delay prevents
+     * excessive storage writes by waiting for the specified time
+     * before actually saving.
+     *
+     * @defaultValue 300 (300ms)
+     */
+    debounceMs?: number;
 }
 /**
  * Property decorator that automatically persists a signal property to storage.

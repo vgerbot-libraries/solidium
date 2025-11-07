@@ -366,6 +366,16 @@ var SignalMap = /** @class */function () {
       signalMap.delete(key);
     }
   };
+  SignalMap.prototype.has = function (object, key) {
+    if (!this.store.has(object)) {
+      return false;
+    }
+    var signalMap = this.store.get(object);
+    if (!(signalMap === null || signalMap === void 0 ? void 0 : signalMap.has(key))) {
+      return false;
+    }
+    return true;
+  };
   return SignalMap;
 }();
 
@@ -470,6 +480,9 @@ function isSignalMember(target, member) {
 }
 function getSignal(instance, member, initializeValue) {
   return signalMap.get(instance, member, initializeValue);
+}
+function hasSignal(instance, member) {
+  return signalMap.has(instance, member);
 }
 
 function defineMemberDecoratorProcessor(key, processor) {
@@ -718,6 +731,7 @@ exports.defineClassDecoratorProcessor = defineClassDecoratorProcessor;
 exports.defineMemberDecoratorProcessor = defineMemberDecoratorProcessor;
 exports.defineSignalMember = defineSignalMember;
 exports.getSignal = getSignal;
+exports.hasSignal = hasSignal;
 exports.isSignalMember = isSignalMember;
 exports.resultOf = resultOf;
 exports.runWithSolidiumOwner = runWithSolidiumOwner;

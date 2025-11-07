@@ -1,6 +1,7 @@
 import { ClassMetadata, Inject, Factory, PostInject, createFactoryWrapper } from '@vgerbot/ioc';
-import { defineClassDecoratorProcessor, defineMemberDecoratorProcessor, getSignal } from '@vgerbot/solidium';
-import { getOwner, runWithOwner, createEffect, on, onCleanup } from 'solid-js';
+import { defineClassDecoratorProcessor, defineMemberDecoratorProcessor, hasSignal, getSignal } from '@vgerbot/solidium';
+import { getOwner, runWithOwner, onCleanup, createEffect, on } from 'solid-js';
+import { leadingAndTrailing, debounce } from '@solid-primitives/scheduled';
 import { encode, decode } from '@vgerbot/msgpack-ext';
 import { openDB, deleteDB } from 'idb';
 
@@ -464,10 +465,34 @@ const Storage = (options = {}) => {
       const version = (_a = mergedOptions.version) !== null && _a !== void 0 ? _a : '';
       const descriptor = Object.getOwnPropertyDescriptor(instance, member);
       const writable = (_b = descriptor === null || descriptor === void 0 ? void 0 : descriptor.writable) !== null && _b !== void 0 ? _b : true;
-      const [, set] = getSignal(instance, member, descriptor === null || descriptor === void 0 ? void 0 : descriptor.value);
+      const isSignal = hasSignal(instance, member);
       const key = (_c = mergedOptions.key) !== null && _c !== void 0 ? _c : member.toString();
       const bucketOrName = mergedOptions.bucket || DEFAULT_BUCKET;
       const bucket = typeof bucketOrName != 'object' ? container.getInstance(bucketOrName) : bucketOrName;
+      const [get, set] = (() => {
+        var _a;
+        if (isSignal) {
+          const [get, set] = getSignal(instance, member, descriptor === null || descriptor === void 0 ? void 0 : descriptor.value);
+          return [get, set];
+        } else {
+          const storageSymbol = Symbol(`__storage_${String(member)}`);
+          const initialValue = descriptor === null || descriptor === void 0 ? void 0 : descriptor.value;
+          instance[storageSymbol] = initialValue;
+          const baseGetter = () => {
+            return instance[storageSymbol];
+          };
+          const baseSetter = newValue => {
+            instance[storageSymbol] = newValue;
+          };
+          Object.defineProperty(instance, member, {
+            get: baseGetter,
+            set: baseSetter,
+            configurable: true,
+            enumerable: (_a = descriptor === null || descriptor === void 0 ? void 0 : descriptor.enumerable) !== null && _a !== void 0 ? _a : true
+          });
+          return [baseGetter, baseSetter];
+        }
+      })();
       const observe = () => {
         return bucket.observe(key, event => {
           if (bucket.debug) {
@@ -518,23 +543,16 @@ const Storage = (options = {}) => {
       }).then(() => {
         runWithOwner(owner, () => {
           let unobserve = observe();
-          if (writable) {
-            createEffect(on(() => {
-              return instance[member];
-            }, newValue => {
+          if (!writable) {
+            onCleanup(() => {
               unobserve();
-              if (bucket.debug) {
-                console.debug(`[Storage] ${instance.constructor.name}.${member.toString()}
-                                            changed to ${newValue}`.replace(/\s+/g, ' '));
-              }
-              bucket.setItem(key, {
-                $d: newValue,
-                $v: version
-              }).finally(() => {
-                unobserve = observe();
-              });
-            }));
+            });
+            return;
           }
+          const trigger = createSaveTrigger(unobserve, () => {
+            unobserve = observe();
+          }, bucket, key, version, instance, member);
+          setupChangeListener(isSignal, instance, member, trigger, get);
           onCleanup(() => {
             unobserve();
           });
@@ -543,6 +561,47 @@ const Storage = (options = {}) => {
     }
   });
 };
+function createSaveTrigger(unobserve, reobserve, bucket, key, version, instance, member) {
+  return leadingAndTrailing(debounce, newValue => {
+    var _a;
+    unobserve();
+    if (bucket.debug) {
+      console.debug(`[Storage] ${(_a = instance.constructor) === null || _a === void 0 ? void 0 : _a.name}.${member.toString()}
+                    changed to ${newValue}`.replace(/\s+/g, ' '));
+    }
+    bucket.setItem(key, {
+      $d: newValue,
+      $v: version
+    }).finally(() => {
+      reobserve();
+    });
+  }, 300);
+}
+function setupChangeListener(isSignal, instance, member, trigger, getValue) {
+  var _a, _b;
+  if (isSignal) {
+    createEffect(on(() => {
+      return getValue();
+    }, trigger));
+  } else {
+    const currentDescriptor = Object.getOwnPropertyDescriptor(instance, member);
+    if (currentDescriptor) {
+      const originalGetter = currentDescriptor.get;
+      const originalSetter = currentDescriptor.set;
+      Object.defineProperty(instance, member, {
+        get: originalGetter,
+        set: newValue => {
+          if (originalSetter) {
+            originalSetter.call(instance, newValue);
+          }
+          trigger(newValue);
+        },
+        configurable: (_a = currentDescriptor.configurable) !== null && _a !== void 0 ? _a : true,
+        enumerable: (_b = currentDescriptor.enumerable) !== null && _b !== void 0 ? _b : true
+      });
+    }
+  }
+}
 function isValidStorageValue(value) {
   return typeof value === 'object' && value !== null && '$d' in value && '$v' in value;
 }

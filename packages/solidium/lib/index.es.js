@@ -281,6 +281,16 @@ class SignalMap {
       signalMap.delete(key);
     }
   }
+  has(object, key) {
+    if (!this.store.has(object)) {
+      return false;
+    }
+    const signalMap = this.store.get(object);
+    if (!(signalMap === null || signalMap === void 0 ? void 0 : signalMap.has(key))) {
+      return false;
+    }
+    return true;
+  }
 }
 
 const extraDatas = new WeakMap();
@@ -379,6 +389,9 @@ function isSignalMember(target, member) {
 }
 function getSignal(instance, member, initializeValue) {
   return signalMap.get(instance, member, initializeValue);
+}
+function hasSignal(instance, member) {
+  return signalMap.has(instance, member);
 }
 
 function defineMemberDecoratorProcessor(key, processor) {
@@ -596,5 +609,5 @@ class Tracker {
   }
 }
 
-export { Auto, Batch, Computed, IS_CLASS_DECORATOR_PROCESSOR, IS_MEMBER_DECORATOR_PROCESSOR, Observe, SETTER_INTERCEPTOR_MAP_KEY, Signal, Solidium, Track, Tracker, appendSetterInterceptor, defineClassDecoratorProcessor, defineMemberDecoratorProcessor, defineSignalMember, getSignal, isSignalMember, resultOf, runWithSolidiumOwner, useApplicationContext, useComputed, useService };
+export { Auto, Batch, Computed, IS_CLASS_DECORATOR_PROCESSOR, IS_MEMBER_DECORATOR_PROCESSOR, Observe, SETTER_INTERCEPTOR_MAP_KEY, Signal, Solidium, Track, Tracker, appendSetterInterceptor, defineClassDecoratorProcessor, defineMemberDecoratorProcessor, defineSignalMember, getSignal, hasSignal, isSignalMember, resultOf, runWithSolidiumOwner, useApplicationContext, useComputed, useService };
 //# sourceMappingURL=index.es.js.map

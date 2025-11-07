@@ -3,6 +3,7 @@
 var ioc = require('@vgerbot/ioc');
 var solidium = require('@vgerbot/solidium');
 var solidJs = require('solid-js');
+var scheduled = require('@solid-primitives/scheduled');
 var msgpackExt = require('@vgerbot/msgpack-ext');
 var idb = require('idb');
 
@@ -546,11 +547,38 @@ var Storage = function (options) {
       var version = (_a = mergedOptions.version) !== null && _a !== void 0 ? _a : '';
       var descriptor = Object.getOwnPropertyDescriptor(instance, member);
       var writable = (_b = descriptor === null || descriptor === void 0 ? void 0 : descriptor.writable) !== null && _b !== void 0 ? _b : true;
-      var _d = __read(solidium.getSignal(instance, member, descriptor === null || descriptor === void 0 ? void 0 : descriptor.value), 2),
-        set = _d[1];
+      var isSignal = solidium.hasSignal(instance, member);
       var key = (_c = mergedOptions.key) !== null && _c !== void 0 ? _c : member.toString();
       var bucketOrName = mergedOptions.bucket || DEFAULT_BUCKET;
       var bucket = typeof bucketOrName != 'object' ? container.getInstance(bucketOrName) : bucketOrName;
+      var _d = __read(function () {
+          var _a;
+          if (isSignal) {
+            var _b = __read(solidium.getSignal(instance, member, descriptor === null || descriptor === void 0 ? void 0 : descriptor.value), 2),
+              get_1 = _b[0],
+              set_1 = _b[1];
+            return [get_1, set_1];
+          } else {
+            var storageSymbol_1 = Symbol("__storage_".concat(String(member)));
+            var initialValue = descriptor === null || descriptor === void 0 ? void 0 : descriptor.value;
+            instance[storageSymbol_1] = initialValue;
+            var baseGetter = function () {
+              return instance[storageSymbol_1];
+            };
+            var baseSetter = function (newValue) {
+              instance[storageSymbol_1] = newValue;
+            };
+            Object.defineProperty(instance, member, {
+              get: baseGetter,
+              set: baseSetter,
+              configurable: true,
+              enumerable: (_a = descriptor === null || descriptor === void 0 ? void 0 : descriptor.enumerable) !== null && _a !== void 0 ? _a : true
+            });
+            return [baseGetter, baseSetter];
+          }
+        }(), 2),
+        get = _d[0],
+        set = _d[1];
       var observe = function () {
         return bucket.observe(key, function (event) {
           if (bucket.debug) {
@@ -601,22 +629,16 @@ var Storage = function (options) {
       }).then(function () {
         solidJs.runWithOwner(owner, function () {
           var unobserve = observe();
-          if (writable) {
-            solidJs.createEffect(solidJs.on(function () {
-              return instance[member];
-            }, function (newValue) {
+          if (!writable) {
+            solidJs.onCleanup(function () {
               unobserve();
-              if (bucket.debug) {
-                console.debug("[Storage] ".concat(instance.constructor.name, ".").concat(member.toString(), "\n                                            changed to ").concat(newValue).replace(/\s+/g, ' '));
-              }
-              bucket.setItem(key, {
-                $d: newValue,
-                $v: version
-              }).finally(function () {
-                unobserve = observe();
-              });
-            }));
+            });
+            return;
           }
+          var trigger = createSaveTrigger(unobserve, function () {
+            unobserve = observe();
+          }, bucket, key, version, instance, member);
+          setupChangeListener(isSignal, instance, member, trigger, get);
           solidJs.onCleanup(function () {
             unobserve();
           });
@@ -625,6 +647,46 @@ var Storage = function (options) {
     }
   });
 };
+function createSaveTrigger(unobserve, reobserve, bucket, key, version, instance, member) {
+  return scheduled.leadingAndTrailing(scheduled.debounce, function (newValue) {
+    var _a;
+    unobserve();
+    if (bucket.debug) {
+      console.debug("[Storage] ".concat((_a = instance.constructor) === null || _a === void 0 ? void 0 : _a.name, ".").concat(member.toString(), "\n                    changed to ").concat(newValue).replace(/\s+/g, ' '));
+    }
+    bucket.setItem(key, {
+      $d: newValue,
+      $v: version
+    }).finally(function () {
+      reobserve();
+    });
+  }, 300);
+}
+function setupChangeListener(isSignal, instance, member, trigger, getValue) {
+  var _a, _b;
+  if (isSignal) {
+    solidJs.createEffect(solidJs.on(function () {
+      return getValue();
+    }, trigger));
+  } else {
+    var currentDescriptor = Object.getOwnPropertyDescriptor(instance, member);
+    if (currentDescriptor) {
+      var originalGetter = currentDescriptor.get;
+      var originalSetter_1 = currentDescriptor.set;
+      Object.defineProperty(instance, member, {
+        get: originalGetter,
+        set: function (newValue) {
+          if (originalSetter_1) {
+            originalSetter_1.call(instance, newValue);
+          }
+          trigger(newValue);
+        },
+        configurable: (_a = currentDescriptor.configurable) !== null && _a !== void 0 ? _a : true,
+        enumerable: (_b = currentDescriptor.enumerable) !== null && _b !== void 0 ? _b : true
+      });
+    }
+  }
+}
 function isValidStorageValue(value) {
   return typeof value === 'object' && value !== null && '$d' in value && '$v' in value;
 }
