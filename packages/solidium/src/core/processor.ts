@@ -80,7 +80,7 @@ function initMemberDecoratorProcessorsSet<T>(
     const instanceMembers = metadata.getAllMarkedMembers();
     const allMemberDecoratorProcessors = new Map<
         MemberKey,
-        Set<MemberDecoratorProcessor<unknown>>
+        Array<MemberDecoratorProcessor<unknown>>
     >();
     instanceMembers.forEach(member => {
         const markInfo = metadata.getMembersMarkInfo(member);
@@ -102,15 +102,21 @@ function initMemberDecoratorProcessorsSet<T>(
             ) {
                 return;
             }
-            const processors =
-                allMemberDecoratorProcessors.get(member) || new Set();
+            const processors = allMemberDecoratorProcessors.get(member) || [];
             allMemberDecoratorProcessors.set(member, processors);
-            processors.add(markData);
+            processors.push(markData);
         });
     });
     if (allMemberDecoratorProcessors.size === 0) {
         return;
     }
+    allMemberDecoratorProcessors.forEach(value => {
+        value.sort((a, b) => {
+            const priorityA = a.priority ?? 0;
+            const priorityB = b.priority ?? 0;
+            return priorityA > priorityB ? 1 : -1;
+        });
+    });
     Object.defineProperty(
         constructor,
         SOLIDIUM_MEMBER_DECORATOR_PROCESSOR_KEY,

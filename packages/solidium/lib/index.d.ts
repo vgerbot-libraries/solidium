@@ -61,6 +61,7 @@ declare const IS_MEMBER_DECORATOR_PROCESSOR: unique symbol;
 declare const IS_CLASS_DECORATOR_PROCESSOR: unique symbol;
 interface MemberDecoratorProcessor<T> {
     [IS_MEMBER_DECORATOR_PROCESSOR]: true;
+    priority?: number;
     beforeInstantiation?: (constructor: Newable<T>, member: MemberKey, metadata: ClassMetadataReader<T>, container: ApplicationContext) => void;
     afterInstantiation?: (instance: T, member: MemberKey, metadata: ClassMetadataReader<T>, container: ApplicationContext) => void;
 }

@@ -236,14 +236,22 @@
           if (markData == null || typeof markData !== 'object' || !markData[IS_MEMBER_DECORATOR_PROCESSOR]) {
             return;
           }
-          var processors = allMemberDecoratorProcessors.get(member) || new Set();
+          var processors = allMemberDecoratorProcessors.get(member) || [];
           allMemberDecoratorProcessors.set(member, processors);
-          processors.add(markData);
+          processors.push(markData);
         });
       });
       if (allMemberDecoratorProcessors.size === 0) {
         return;
       }
+      allMemberDecoratorProcessors.forEach(function (value) {
+        value.sort(function (a, b) {
+          var _a, _b;
+          var priorityA = (_a = a.priority) !== null && _a !== void 0 ? _a : 0;
+          var priorityB = (_b = b.priority) !== null && _b !== void 0 ? _b : 0;
+          return priorityA > priorityB ? 1 : -1;
+        });
+      });
       Object.defineProperty(constructor, SOLIDIUM_MEMBER_DECORATOR_PROCESSOR_KEY, {
         enumerable: false,
         configurable: false,
@@ -494,6 +502,7 @@
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     function Signal(_) {
       return defineMemberDecoratorProcessor(SIGNAL_MARK_KEY, {
+        priority: -1,
         afterInstantiation: function (instance, member) {
           defineSignalMember(instance, member, instance[member]);
           return instance;

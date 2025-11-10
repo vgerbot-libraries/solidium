@@ -154,14 +154,22 @@ function initMemberDecoratorProcessorsSet(constructor, container) {
       if (markData == null || typeof markData !== 'object' || !markData[IS_MEMBER_DECORATOR_PROCESSOR]) {
         return;
       }
-      const processors = allMemberDecoratorProcessors.get(member) || new Set();
+      const processors = allMemberDecoratorProcessors.get(member) || [];
       allMemberDecoratorProcessors.set(member, processors);
-      processors.add(markData);
+      processors.push(markData);
     });
   });
   if (allMemberDecoratorProcessors.size === 0) {
     return;
   }
+  allMemberDecoratorProcessors.forEach(value => {
+    value.sort((a, b) => {
+      var _a, _b;
+      const priorityA = (_a = a.priority) !== null && _a !== void 0 ? _a : 0;
+      const priorityB = (_b = b.priority) !== null && _b !== void 0 ? _b : 0;
+      return priorityA > priorityB ? 1 : -1;
+    });
+  });
   Object.defineProperty(constructor, SOLIDIUM_MEMBER_DECORATOR_PROCESSOR_KEY, {
     enumerable: false,
     configurable: false,
@@ -404,6 +412,7 @@ const SIGNAL_MARK_KEY = Symbol('solidium_mark_as_signal_property');
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function Signal(_ = {}) {
   return defineMemberDecoratorProcessor(SIGNAL_MARK_KEY, {
+    priority: -1,
     afterInstantiation(instance, member) {
       defineSignalMember(instance, member, instance[member]);
       return instance;

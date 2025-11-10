@@ -12,6 +12,7 @@ export interface SignalOptions {
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function Signal(_: SignalOptions = {}) {
     return defineMemberDecoratorProcessor(SIGNAL_MARK_KEY, {
+        priority: -1,
         afterInstantiation<T>(instance: T, member: MemberKey) {
             defineSignalMember(instance, member, instance[member as keyof T]);
             return instance;

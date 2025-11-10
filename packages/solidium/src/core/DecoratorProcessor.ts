@@ -14,6 +14,7 @@ export const IS_CLASS_DECORATOR_PROCESSOR = Symbol(
 
 export interface MemberDecoratorProcessor<T> {
     [IS_MEMBER_DECORATOR_PROCESSOR]: true;
+    priority?: number;
     beforeInstantiation?: (
         constructor: Newable<T>,
         member: MemberKey,
