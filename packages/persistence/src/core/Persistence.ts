@@ -91,7 +91,11 @@ export class Persistence {
         name: string,
         configuration: BucketConfiguration
     ): typeof Persistence {
-        return createFactoryWrapper(name, configuration, Persistence);
+        return createFactoryWrapper(
+            name,
+            new Bucket(configuration),
+            Persistence
+        );
     }
     @Inject(DEFAULT_BUCKET_CONFIGURATION)
     private configuration: BucketConfiguration = {

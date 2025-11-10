@@ -1,5 +1,5 @@
 import { ClassMetadata, Inject, Factory, PostInject, createFactoryWrapper } from '@vgerbot/ioc';
-import { defineClassDecoratorProcessor, defineMemberDecoratorProcessor, hasSignal, getSignal } from '@vgerbot/solidium';
+import { defineClassDecoratorProcessor, defineMemberDecoratorProcessor, isSignalMember, getSignal } from '@vgerbot/solidium';
 import { getOwner, runWithOwner, onCleanup, createEffect, on } from 'solid-js';
 import { leadingAndTrailing, debounce } from '@solid-primitives/scheduled';
 import { encode, decode } from '@vgerbot/msgpack-ext';
@@ -465,18 +465,18 @@ const Storage = (options = {}) => {
       const version = (_a = mergedOptions.version) !== null && _a !== void 0 ? _a : '';
       const descriptor = Object.getOwnPropertyDescriptor(instance, member);
       const writable = (_b = descriptor === null || descriptor === void 0 ? void 0 : descriptor.writable) !== null && _b !== void 0 ? _b : true;
-      const isSignal = hasSignal(instance, member);
+      const isSignal = isSignalMember(instance, member);
       const key = (_c = mergedOptions.key) !== null && _c !== void 0 ? _c : member.toString();
       const bucketOrName = mergedOptions.bucket || DEFAULT_BUCKET;
       const bucket = typeof bucketOrName != 'object' ? container.getInstance(bucketOrName) : bucketOrName;
+      const initialValue = instance[member];
       const [get, set] = (() => {
         var _a;
         if (isSignal) {
-          const [get, set] = getSignal(instance, member, descriptor === null || descriptor === void 0 ? void 0 : descriptor.value);
+          const [get, set] = getSignal(instance, member, initialValue);
           return [get, set];
         } else {
           const storageSymbol = Symbol(`__storage_${String(member)}`);
-          const initialValue = descriptor === null || descriptor === void 0 ? void 0 : descriptor.value;
           instance[storageSymbol] = initialValue;
           const baseGetter = () => {
             return instance[storageSymbol];
@@ -1513,7 +1513,7 @@ class Persistence {
    * ```
    */
   static bucket(name, configuration) {
-    return createFactoryWrapper(name, configuration, Persistence);
+    return createFactoryWrapper(name, new Bucket(configuration), Persistence);
   }
   /**
    * Factory method that creates and returns the default bucket instance.

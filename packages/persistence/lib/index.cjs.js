@@ -547,20 +547,20 @@ var Storage = function (options) {
       var version = (_a = mergedOptions.version) !== null && _a !== void 0 ? _a : '';
       var descriptor = Object.getOwnPropertyDescriptor(instance, member);
       var writable = (_b = descriptor === null || descriptor === void 0 ? void 0 : descriptor.writable) !== null && _b !== void 0 ? _b : true;
-      var isSignal = solidium.hasSignal(instance, member);
+      var isSignal = solidium.isSignalMember(instance, member);
       var key = (_c = mergedOptions.key) !== null && _c !== void 0 ? _c : member.toString();
       var bucketOrName = mergedOptions.bucket || DEFAULT_BUCKET;
       var bucket = typeof bucketOrName != 'object' ? container.getInstance(bucketOrName) : bucketOrName;
+      var initialValue = instance[member];
       var _d = __read(function () {
           var _a;
           if (isSignal) {
-            var _b = __read(solidium.getSignal(instance, member, descriptor === null || descriptor === void 0 ? void 0 : descriptor.value), 2),
+            var _b = __read(solidium.getSignal(instance, member, initialValue), 2),
               get_1 = _b[0],
               set_1 = _b[1];
             return [get_1, set_1];
           } else {
             var storageSymbol_1 = Symbol("__storage_".concat(String(member)));
-            var initialValue = descriptor === null || descriptor === void 0 ? void 0 : descriptor.value;
             instance[storageSymbol_1] = initialValue;
             var baseGetter = function () {
               return instance[storageSymbol_1];
@@ -1885,7 +1885,7 @@ var Persistence = /** @class */function () {
    * ```
    */
   Persistence.bucket = function (name, configuration) {
-    return ioc.createFactoryWrapper(name, configuration, Persistence);
+    return ioc.createFactoryWrapper(name, new Bucket(configuration), Persistence);
   };
   /**
    * Factory method that creates and returns the default bucket instance.

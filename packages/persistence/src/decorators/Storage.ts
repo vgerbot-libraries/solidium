@@ -1,7 +1,7 @@
 import {
     defineMemberDecoratorProcessor,
     getSignal,
-    hasSignal
+    isSignalMember
 } from '@vgerbot/solidium';
 import { createEffect, getOwner, on, onCleanup, runWithOwner } from 'solid-js';
 import { debounce, leadingAndTrailing } from '@solid-primitives/scheduled';
@@ -190,7 +190,7 @@ export const Storage = (options: string | StorageOptions = {}) => {
             );
             const writable = descriptor?.writable ?? true;
 
-            const isSignal = hasSignal(instance, member);
+            const isSignal = isSignalMember(instance, member);
             const key = mergedOptions.key ?? member.toString();
             const bucketOrName = mergedOptions.bucket || DEFAULT_BUCKET;
 
@@ -199,17 +199,18 @@ export const Storage = (options: string | StorageOptions = {}) => {
                     ? <Bucket>container.getInstance(bucketOrName)
                     : bucketOrName;
 
+            const initialValue = instance[member];
+
             const [get, set] = (() => {
                 if (isSignal) {
                     const [get, set] = getSignal(
                         instance,
                         member,
-                        descriptor?.value
+                        initialValue
                     );
                     return [get, set];
                 } else {
                     const storageSymbol = Symbol(`__storage_${String(member)}`);
-                    const initialValue = descriptor?.value;
 
                     (instance as Record<symbol, unknown>)[storageSymbol] =
                         initialValue;
