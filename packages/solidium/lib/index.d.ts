@@ -1,6 +1,6 @@
 import * as solid_js from 'solid-js';
 import { ParentProps, Signal as Signal$1 } from 'solid-js';
-import { ApplicationContext, Newable, MemberKey, ClassMetadataReader } from '@vgerbot/ioc';
+import { ApplicationContext, Newable, MemberKey, ClassMetadata } from '@vgerbot/ioc';
 import * as packages_ioc_dist_src from 'packages/ioc/dist/src';
 
 type SolidiumProps = ParentProps<{
@@ -62,13 +62,13 @@ declare const IS_CLASS_DECORATOR_PROCESSOR: unique symbol;
 interface MemberDecoratorProcessor<T> {
     [IS_MEMBER_DECORATOR_PROCESSOR]: true;
     priority?: number;
-    beforeInstantiation?: (constructor: Newable<T>, member: MemberKey, metadata: ClassMetadataReader<T>, container: ApplicationContext) => void;
-    afterInstantiation?: (instance: T, member: MemberKey, metadata: ClassMetadataReader<T>, container: ApplicationContext) => void;
+    beforeInstantiation?: (constructor: Newable<T>, member: MemberKey, metadata: ClassMetadata<T>, container: ApplicationContext) => void;
+    afterInstantiation?: (instance: T, member: MemberKey, metadata: ClassMetadata<T>, container: ApplicationContext) => void;
 }
 interface ClassDecoratorProcessor<T> {
     [IS_CLASS_DECORATOR_PROCESSOR]: true;
-    beforeInstantiation?: (constructor: Newable<T>, metadata: ClassMetadataReader<T>, container: ApplicationContext) => void;
-    afterInstantiation?: (instance: T, metadata: ClassMetadataReader<T>, container: ApplicationContext) => T;
+    beforeInstantiation?: (constructor: Newable<T>, metadata: ClassMetadata<T>, container: ApplicationContext) => void;
+    afterInstantiation?: (instance: T, metadata: ClassMetadata<T>, container: ApplicationContext) => T;
 }
 
 declare function defineClassDecoratorProcessor<T>(key: string | symbol, processor: Omit<ClassDecoratorProcessor<T>, typeof IS_CLASS_DECORATOR_PROCESSOR>): ClassDecorator;

@@ -1,4 +1,4 @@
-import { ClassMetadata, Inject, Factory, PostInject, createFactoryWrapper } from '@vgerbot/ioc';
+import { Inject, Factory, PostInject, createFactoryWrapper } from '@vgerbot/ioc';
 import { defineClassDecoratorProcessor, defineMemberDecoratorProcessor, isSignalMember, getSignal } from '@vgerbot/solidium';
 import { getOwner, runWithOwner, onCleanup, createEffect, on } from 'solid-js';
 import { leadingAndTrailing, debounce } from '@solid-primitives/scheduled';
@@ -255,10 +255,9 @@ const DEFAULT_STORAGE_OPTIONS = Symbol('solidium-default-storage-options');
  */
 const DefaultStorage = (options = {}) => {
   return defineClassDecoratorProcessor(DEFAULT_STORAGE_OPTIONS, {
-    beforeInstantiation(constructor) {
+    beforeInstantiation(constructor, metadata) {
       // Store the default options in class metadata using Mark
-      const classMetadata = ClassMetadata.getInstance(constructor);
-      classMetadata.marker().ctor(DEFAULT_STORAGE_OPTIONS, options);
+      metadata.marker().ctor(DEFAULT_STORAGE_OPTIONS, options);
     }
   });
 };
@@ -457,7 +456,7 @@ const Storage = (options = {}) => {
     afterInstantiation(instance, member, metadata, container) {
       var _a, _b, _c;
       // Get default options from class decorator if they exist
-      const defaultOptions = getDefaultStorageOptions(metadata);
+      const defaultOptions = getDefaultStorageOptions(metadata.reader());
       // Merge options, with member-specific options taking precedence
       const mergedOptions = Object.assign(Object.assign({}, defaultOptions), typeof options === 'string' ? {
         key: options

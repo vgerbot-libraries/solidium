@@ -5,11 +5,7 @@ import {
 } from '@vgerbot/solidium';
 import { createEffect, getOwner, on, onCleanup, runWithOwner } from 'solid-js';
 import { debounce, leadingAndTrailing } from '@solid-primitives/scheduled';
-import {
-    ApplicationContext,
-    ClassMetadataReader,
-    MemberKey
-} from '@vgerbot/ioc';
+import { ApplicationContext, ClassMetadata, MemberKey } from '@vgerbot/ioc';
 import { Bucket } from '../core/bucket/Bucket';
 import { DEFAULT_BUCKET } from '../core/constants';
 import { notifyStorageLoad } from './OnStorageLoad';
@@ -171,11 +167,11 @@ export const Storage = (options: string | StorageOptions = {}) => {
         afterInstantiation<T extends Record<MemberKey, unknown>>(
             instance: T,
             member: MemberKey,
-            metadata: ClassMetadataReader<T>,
+            metadata: ClassMetadata<T>,
             container: ApplicationContext
         ) {
             // Get default options from class decorator if they exist
-            const defaultOptions = getDefaultStorageOptions(metadata);
+            const defaultOptions = getDefaultStorageOptions(metadata.reader());
 
             // Merge options, with member-specific options taking precedence
             const mergedOptions: StorageOptions = {

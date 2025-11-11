@@ -330,10 +330,9 @@ var DefaultStorage = function (options) {
     options = {};
   }
   return solidium.defineClassDecoratorProcessor(DEFAULT_STORAGE_OPTIONS, {
-    beforeInstantiation: function (constructor) {
+    beforeInstantiation: function (constructor, metadata) {
       // Store the default options in class metadata using Mark
-      var classMetadata = ioc.ClassMetadata.getInstance(constructor);
-      classMetadata.marker().ctor(DEFAULT_STORAGE_OPTIONS, options);
+      metadata.marker().ctor(DEFAULT_STORAGE_OPTIONS, options);
     }
   });
 };
@@ -539,7 +538,7 @@ var Storage = function (options) {
     afterInstantiation: function (instance, member, metadata, container) {
       var _a, _b, _c;
       // Get default options from class decorator if they exist
-      var defaultOptions = getDefaultStorageOptions(metadata);
+      var defaultOptions = getDefaultStorageOptions(metadata.reader());
       // Merge options, with member-specific options taking precedence
       var mergedOptions = __assign(__assign({}, defaultOptions), typeof options === 'string' ? {
         key: options

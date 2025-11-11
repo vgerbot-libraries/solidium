@@ -109,8 +109,9 @@ function initClassDecoratorProcessorsSet(constructor, container) {
   if (hasOwn(constructor, SOLIDIUM_CLASS_DECORATOR_PROCESSOR_KEY)) {
     return;
   }
-  const metadata = ClassMetadata.getInstance(constructor).reader();
-  const classMarkInfo = metadata.getCtorMarkInfo();
+  const metadata = ClassMetadata.getInstance(constructor);
+  const metadataReader = metadata.reader();
+  const classMarkInfo = metadataReader.getCtorMarkInfo();
   const allClassDecoratorProcessor = new Set();
   if (classMarkInfo) {
     const classMarkInfoMembers = [...Object.getOwnPropertyNames(classMarkInfo), ...Object.getOwnPropertySymbols(classMarkInfo)];
@@ -140,11 +141,12 @@ function initMemberDecoratorProcessorsSet(constructor, container) {
   if (hasOwn(constructor, SOLIDIUM_MEMBER_DECORATOR_PROCESSOR_KEY)) {
     return;
   }
-  const metadata = ClassMetadata.getInstance(constructor).reader();
-  const instanceMembers = metadata.getAllMarkedMembers();
+  const metadata = ClassMetadata.getInstance(constructor);
+  const metadataReader = metadata.reader();
+  const instanceMembers = metadataReader.getAllMarkedMembers();
   const allMemberDecoratorProcessors = new Map();
   instanceMembers.forEach(member => {
-    const markInfo = metadata.getMembersMarkInfo(member);
+    const markInfo = metadataReader.getMembersMarkInfo(member);
     if (!markInfo) {
       return;
     }
@@ -190,7 +192,7 @@ function beforeInstantiation(constructor, container) {
 }
 function afterInstantiation(instance, container) {
   const constructor = instance.constructor;
-  const metadata = ClassMetadata.getInstance(constructor).reader();
+  const metadata = ClassMetadata.getInstance(constructor);
   const allClassProcessors = constructor[SOLIDIUM_CLASS_DECORATOR_PROCESSOR_KEY];
   if (allClassProcessors) {
     allClassProcessors.forEach(processor => {

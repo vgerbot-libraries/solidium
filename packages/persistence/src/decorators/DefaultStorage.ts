@@ -32,10 +32,12 @@ export const DEFAULT_STORAGE_OPTIONS = Symbol(
  */
 export const DefaultStorage = (options: Omit<StorageOptions, 'key'> = {}) => {
     return defineClassDecoratorProcessor(DEFAULT_STORAGE_OPTIONS, {
-        beforeInstantiation<T>(constructor: Newable<T>) {
+        beforeInstantiation<T>(
+            constructor: Newable<T>,
+            metadata: ClassMetadata<T>
+        ) {
             // Store the default options in class metadata using Mark
-            const classMetadata = ClassMetadata.getInstance(constructor);
-            classMetadata.marker().ctor(DEFAULT_STORAGE_OPTIONS, options);
+            metadata.marker().ctor(DEFAULT_STORAGE_OPTIONS, options);
         }
     }) as ClassDecorator;
 };
