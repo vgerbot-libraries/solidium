@@ -28,13 +28,16 @@ function Prepared(): MethodDecorator {
         if (!origin) {
             return;
         }
-        let prepare_promise: Promise<void>;
         descriptor.value = async function (this: Bucket, ...args: unknown[]) {
+            let prepare_promise: Promise<void> | undefined =
+                Reflect.getMetadata(PREPARE, this);
+
             if (!prepare_promise) {
                 prepare_promise = this[PREPARE]().finally(() => {
                     descriptor.value = origin;
                     Object.defineProperty(this, propertyKey, descriptor);
                 });
+                Reflect.defineMetadata(PREPARE, prepare_promise, this);
             }
             await prepare_promise;
             return origin.apply(this, args) as unknown;
@@ -49,7 +52,7 @@ interface PrivateBucketAPI {
  * Represents a storage bucket that provides a high-level API for persistent data storage.
  * A bucket uses a storage driver for the underlying storage mechanism and a serializer
  * for encoding/decoding data.
- * 
+ *
  * @public
  */
 export class Bucket {
@@ -102,22 +105,25 @@ export class Bucket {
     /**
      * Observes changes to a specific storage key within this bucket.
      * The observer will be notified when the key is updated or removed.
-     * 
+     *
      * @param key - The key to observe
      * @param onChange - Callback function invoked when the key changes
      * @returns A function that can be called to stop observing
-     * 
+     *
      * @example
      * ```typescript
      * const unobserve = bucket.observe('myKey', (event) => {
      *   console.log('Value changed:', event.newValue);
      * });
-     * 
+     *
      * // Later, to stop observing:
      * unobserve();
      * ```
      */
-    observe(key: string, onChange: (event: ChangeEvent) => void): () => void {
+    observe(
+        key: string,
+        onChange: (event: ChangeEvent) => void
+    ): () => Promise<void> {
         const preparePromise = this.prepared();
         const unobserve = this.driver.observe(key, event => {
             return onChange({
@@ -126,17 +132,17 @@ export class Bucket {
             });
         });
         return () => {
-            preparePromise.then(unobserve);
+            return preparePromise.then(unobserve);
         };
     }
     /**
      * Stores a value in the bucket under the specified key.
      * The value will be serialized before storage.
-     * 
+     *
      * @param key - The key to store the value under
      * @param value - The value to store
      * @returns A promise that resolves when the value is stored
-     * 
+     *
      * @example
      * ```typescript
      * await bucket.setItem('user', { name: 'John', age: 30 });
@@ -150,11 +156,11 @@ export class Bucket {
     /**
      * Retrieves a value from the bucket by key.
      * The value will be deserialized before being returned.
-     * 
+     *
      * @param key - The key of the value to retrieve
      * @returns A promise that resolves to the stored value, or undefined if not found
      * @typeParam T - The expected type of the stored value
-     * 
+     *
      * @example
      * ```typescript
      * const user = await bucket.getItem<User>('user');
@@ -173,7 +179,7 @@ export class Bucket {
     }
     /**
      * Clears all items from the bucket.
-     * 
+     *
      * @returns A promise that resolves when the bucket is cleared
      */
     @Prepared()
@@ -182,7 +188,7 @@ export class Bucket {
     }
     /**
      * Removes an item from the bucket by key.
-     * 
+     *
      * @param key - The key of the item to remove
      * @returns A promise that resolves when the item is removed
      */
@@ -192,10 +198,10 @@ export class Bucket {
     /**
      * Creates a property decorator that binds a signal property to this bucket.
      * This is equivalent to using `@Storage({ bucket: this, key })`.
-     * 
+     *
      * @param key - The storage key to use for this property
      * @returns A property decorator
-     * 
+     *
      * @example
      * ```typescript
      * class MyService {

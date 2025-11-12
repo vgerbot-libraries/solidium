@@ -631,10 +631,12 @@
                 });
                 return;
               }
-              var trigger = createSaveTrigger(unobserve, function () {
+              var storageOnPropertyChange = createSaveTrigger(function () {
+                unobserve();
+              }, function () {
                 unobserve = observe();
               }, bucket, key, version, instance, member);
-              setupChangeListener(isSignal, instance, member, trigger, get);
+              observePropertyChange(isSignal, instance, member, storageOnPropertyChange, get, set);
               solidJs.onCleanup(function () {
                 unobserve();
               });
@@ -644,21 +646,32 @@
       });
     };
     function createSaveTrigger(unobserve, reobserve, bucket, key, version, instance, member) {
+      var _this = this;
       return scheduled.leadingAndTrailing(scheduled.debounce, function (newValue) {
-        var _a;
-        unobserve();
-        if (bucket.debug) {
-          console.debug("[Storage] ".concat((_a = instance.constructor) === null || _a === void 0 ? void 0 : _a.name, ".").concat(member.toString(), "\n                    changed to ").concat(newValue).replace(/\s+/g, ' '));
-        }
-        bucket.setItem(key, {
-          $d: newValue,
-          $v: version
-        }).finally(function () {
-          reobserve();
+        return __awaiter(_this, void 0, void 0, function () {
+          var _a;
+          return __generator(this, function (_b) {
+            switch (_b.label) {
+              case 0:
+                return [4 /*yield*/, unobserve()];
+              case 1:
+                _b.sent();
+                if (bucket.debug) {
+                  console.debug("[Storage] ".concat((_a = instance.constructor) === null || _a === void 0 ? void 0 : _a.name, ".").concat(member.toString(), "\n                    changed to ").concat(newValue).replace(/\s+/g, ' '));
+                }
+                bucket.setItem(key, {
+                  $d: newValue,
+                  $v: version
+                }).finally(function () {
+                  reobserve();
+                });
+                return [2 /*return*/];
+            }
+          });
         });
       }, 300);
     }
-    function setupChangeListener(isSignal, instance, member, trigger, getValue) {
+    function observePropertyChange(isSignal, instance, member, trigger, getValue, setValue) {
       var _a, _b;
       if (isSignal) {
         solidJs.createEffect(solidJs.on(function () {
@@ -667,14 +680,10 @@
       } else {
         var currentDescriptor = Object.getOwnPropertyDescriptor(instance, member);
         if (currentDescriptor) {
-          var originalGetter = currentDescriptor.get;
-          var originalSetter_1 = currentDescriptor.set;
           Object.defineProperty(instance, member, {
-            get: originalGetter,
+            get: getValue,
             set: function (newValue) {
-              if (originalSetter_1) {
-                originalSetter_1.call(instance, newValue);
-              }
+              setValue(newValue);
               trigger(newValue);
             },
             configurable: (_a = currentDescriptor.configurable) !== null && _a !== void 0 ? _a : true,
@@ -1352,12 +1361,22 @@
       IndexedDBStorageDriver.prototype.prepare = function () {
         return __awaiter(this, void 0, void 0, function () {
           var idb$1;
+          var _this = this;
           return __generator(this, function (_a) {
             switch (_a.label) {
               case 0:
                 return [4 /*yield*/, idb.openDB(this.bucketName, this.version, {
+                  blocked: function (currentVersion, blockedVersion, event) {
+                    console.log('blocked', currentVersion, blockedVersion, event);
+                  },
+                  blocking: function (currentVersion, blockedVersion, event) {
+                    console.log('blocking', currentVersion, blockedVersion, event);
+                  },
                   upgrade: function (db) {
                     db.createObjectStore(STORE_NAME);
+                  },
+                  terminated: function () {
+                    console.log('bucket terminated: ', _this.bucketName);
                   }
                 })];
               case 1:
@@ -1581,22 +1600,24 @@
         if (!origin) {
           return;
         }
-        var prepare_promise;
         descriptor.value = function () {
           var args = [];
           for (var _i = 0; _i < arguments.length; _i++) {
             args[_i] = arguments[_i];
           }
           return __awaiter(this, void 0, void 0, function () {
+            var prepare_promise;
             var _this = this;
             return __generator(this, function (_a) {
               switch (_a.label) {
                 case 0:
+                  prepare_promise = Reflect.getMetadata(PREPARE, this);
                   if (!prepare_promise) {
                     prepare_promise = this[PREPARE]().finally(function () {
                       descriptor.value = origin;
                       Object.defineProperty(_this, propertyKey, descriptor);
                     });
+                    Reflect.defineMetadata(PREPARE, prepare_promise, this);
                   }
                   return [4 /*yield*/, prepare_promise];
                 case 1:
@@ -1691,7 +1712,7 @@
           }));
         });
         return function () {
-          preparePromise.then(unobserve);
+          return preparePromise.then(unobserve);
         };
       };
       /**

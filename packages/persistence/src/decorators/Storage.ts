@@ -312,8 +312,10 @@ export const Storage = (options: string | StorageOptions = {}) => {
                             return;
                         }
 
-                        const trigger = createSaveTrigger(
-                            unobserve,
+                        const storageOnPropertyChange = createSaveTrigger(
+                            () => {
+                                unobserve();
+                            },
                             () => {
                                 unobserve = observe();
                             },
@@ -324,12 +326,13 @@ export const Storage = (options: string | StorageOptions = {}) => {
                             member
                         );
 
-                        setupChangeListener(
+                        observePropertyChange(
                             isSignal,
                             instance,
                             member,
-                            trigger,
-                            get
+                            storageOnPropertyChange,
+                            get,
+                            set
                         );
 
                         onCleanup(() => {
@@ -352,8 +355,8 @@ function createSaveTrigger(
 ) {
     return leadingAndTrailing(
         debounce,
-        (newValue: unknown) => {
-            unobserve();
+        async (newValue: unknown) => {
+            await unobserve();
             if (bucket.debug) {
                 console.debug(
                     `[Storage] ${instance.constructor?.name}.${member.toString()}
@@ -373,12 +376,13 @@ function createSaveTrigger(
     );
 }
 
-function setupChangeListener(
+function observePropertyChange(
     isSignal: boolean,
     instance: object,
     member: MemberKey,
     trigger: (newValue: unknown) => void,
-    getValue: () => unknown
+    getValue: () => unknown,
+    setValue: (value: unknown) => void
 ) {
     if (isSignal) {
         createEffect(
@@ -392,14 +396,10 @@ function setupChangeListener(
             member
         );
         if (currentDescriptor) {
-            const originalGetter = currentDescriptor.get;
-            const originalSetter = currentDescriptor.set;
             Object.defineProperty(instance, member, {
-                get: originalGetter,
+                get: getValue,
                 set: (newValue: unknown) => {
-                    if (originalSetter) {
-                        originalSetter.call(instance, newValue);
-                    }
+                    setValue(newValue);
                     trigger(newValue);
                 },
                 configurable: currentDescriptor.configurable ?? true,

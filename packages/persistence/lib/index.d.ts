@@ -319,7 +319,7 @@ declare class Bucket {
      * unobserve();
      * ```
      */
-    observe(key: string, onChange: (event: ChangeEvent) => void): () => void;
+    observe(key: string, onChange: (event: ChangeEvent) => void): () => Promise<void>;
     /**
      * Stores a value in the bucket under the specified key.
      * The value will be serialized before storage.

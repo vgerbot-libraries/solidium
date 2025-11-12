@@ -548,10 +548,12 @@ const Storage = (options = {}) => {
             });
             return;
           }
-          const trigger = createSaveTrigger(unobserve, () => {
+          const storageOnPropertyChange = createSaveTrigger(() => {
+            unobserve();
+          }, () => {
             unobserve = observe();
           }, bucket, key, version, instance, member);
-          setupChangeListener(isSignal, instance, member, trigger, get);
+          observePropertyChange(isSignal, instance, member, storageOnPropertyChange, get, set);
           onCleanup(() => {
             unobserve();
           });
@@ -561,9 +563,9 @@ const Storage = (options = {}) => {
   });
 };
 function createSaveTrigger(unobserve, reobserve, bucket, key, version, instance, member) {
-  return leadingAndTrailing(debounce, newValue => {
+  return leadingAndTrailing(debounce, newValue => __awaiter(this, void 0, void 0, function* () {
     var _a;
-    unobserve();
+    yield unobserve();
     if (bucket.debug) {
       console.debug(`[Storage] ${(_a = instance.constructor) === null || _a === void 0 ? void 0 : _a.name}.${member.toString()}
                     changed to ${newValue}`.replace(/\s+/g, ' '));
@@ -574,9 +576,9 @@ function createSaveTrigger(unobserve, reobserve, bucket, key, version, instance,
     }).finally(() => {
       reobserve();
     });
-  }, 300);
+  }), 300);
 }
-function setupChangeListener(isSignal, instance, member, trigger, getValue) {
+function observePropertyChange(isSignal, instance, member, trigger, getValue, setValue) {
   var _a, _b;
   if (isSignal) {
     createEffect(on(() => {
@@ -585,14 +587,10 @@ function setupChangeListener(isSignal, instance, member, trigger, getValue) {
   } else {
     const currentDescriptor = Object.getOwnPropertyDescriptor(instance, member);
     if (currentDescriptor) {
-      const originalGetter = currentDescriptor.get;
-      const originalSetter = currentDescriptor.set;
       Object.defineProperty(instance, member, {
-        get: originalGetter,
+        get: getValue,
         set: newValue => {
-          if (originalSetter) {
-            originalSetter.call(instance, newValue);
-          }
+          setValue(newValue);
           trigger(newValue);
         },
         configurable: (_a = currentDescriptor.configurable) !== null && _a !== void 0 ? _a : true,
@@ -1111,8 +1109,17 @@ class IndexedDBStorageDriver {
   prepare() {
     return __awaiter(this, void 0, void 0, function* () {
       const idb = yield openDB(this.bucketName, this.version, {
+        blocked(currentVersion, blockedVersion, event) {
+          console.log('blocked', currentVersion, blockedVersion, event);
+        },
+        blocking(currentVersion, blockedVersion, event) {
+          console.log('blocking', currentVersion, blockedVersion, event);
+        },
         upgrade(db) {
           db.createObjectStore(STORE_NAME);
+        },
+        terminated: () => {
+          console.log('bucket terminated: ', this.bucketName);
         }
       });
       this.idbDefer.resolve(idb);
@@ -1252,14 +1259,15 @@ function Prepared() {
     if (!origin) {
       return;
     }
-    let prepare_promise;
     descriptor.value = function (...args) {
       return __awaiter(this, void 0, void 0, function* () {
+        let prepare_promise = Reflect.getMetadata(PREPARE, this);
         if (!prepare_promise) {
           prepare_promise = this[PREPARE]().finally(() => {
             descriptor.value = origin;
             Object.defineProperty(this, propertyKey, descriptor);
           });
+          Reflect.defineMetadata(PREPARE, prepare_promise, this);
         }
         yield prepare_promise;
         return origin.apply(this, args);
@@ -1339,7 +1347,7 @@ class Bucket {
       }));
     });
     return () => {
-      preparePromise.then(unobserve);
+      return preparePromise.then(unobserve);
     };
   }
   /**

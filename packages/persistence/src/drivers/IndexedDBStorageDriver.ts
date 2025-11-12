@@ -49,8 +49,17 @@ export class IndexedDBStorageDriver implements StorageDriver {
      */
     async prepare(): Promise<void> {
         const idb = await openDB(this.bucketName, this.version, {
+            blocked(currentVersion, blockedVersion, event) {
+                console.log('blocked', currentVersion, blockedVersion, event);
+            },
+            blocking(currentVersion, blockedVersion, event) {
+                console.log('blocking', currentVersion, blockedVersion, event);
+            },
             upgrade(db) {
                 db.createObjectStore(STORE_NAME);
+            },
+            terminated: () => {
+                console.log('bucket terminated: ', this.bucketName);
             }
         });
         this.idbDefer.resolve(idb);
