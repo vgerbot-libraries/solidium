@@ -32,6 +32,28 @@
     "type": "git",
     "url": "git+https://github.com/vgerbot-libraries/solidium.git"
   },
+  "keywords": [
+    "msgpack",
+    "MessagePack",
+    "circular-references",
+    "circular",
+    "serialization",
+    "deserialization",
+    "binary",
+    "data",
+    "data-structures",
+    "structures",
+    "structures-clone",
+    "clone",
+    "serialize",
+    "deserialize",
+    "encode",
+    "decode",
+    "typedarray",
+    "ext",
+    "universal",
+    "codecs"
+  ],
   "scripts": {
     "prebuild": "zx ../../scripts/clear.mjs -- ./lib"
   },
