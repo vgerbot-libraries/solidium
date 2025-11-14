@@ -25,6 +25,8 @@ const { encode, decode } = require('@vgerbot/msgpack-ext');
 const data = {
   name: "example",
   numbers: [1, 2, 3],
+  set: new Set(["apple", new Map([["category1", [{ name: "foo", value: 42 }]], ["category2", [{ name: "bar", value: 100 }]]])]),
+  buffer: new ArrayBuffer(4),
   circular: null
 };
 
