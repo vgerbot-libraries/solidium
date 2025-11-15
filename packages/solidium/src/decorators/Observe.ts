@@ -28,7 +28,7 @@ type ScheduledObserverOptions = {
 };
 
 export type ObserveOptions<T> =
-    | {}
+    | object
     | DependencyObserverOptions<T>
     | ScheduledObserverOptions;
 interface ObserverableObject {
@@ -39,7 +39,7 @@ export function Observe<T>(
     options: DependencyObserverOptions<T>
 ): MethodDecorator;
 export function Observe(options: ScheduledObserverOptions): MethodDecorator;
-export function Observe(options?: {}): MethodDecorator;
+export function Observe(options?: object): MethodDecorator;
 /**
  *
  * @param options optional

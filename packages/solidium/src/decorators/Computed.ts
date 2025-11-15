@@ -4,6 +4,46 @@ import { defineMemberDecoratorProcessor } from '../core/defineMemberDecoratorPro
 
 export const COMPUTED_GETTER_MARK_KEY = Symbol('solidium_computed_getter');
 
+/**
+ * A property decorator that transforms a class getter into a memoized,
+ * lazily-evaluated computed property.
+ *
+ * The decorated getter will be converted into a `solid-js` memo under the hood,
+ * but it will not be evaluated until it's accessed for the first time.
+ * Once evaluated, its value is cached and will only be re-calculated when its
+ * underlying reactive dependencies change.
+ *
+ * This decorator should only be applied to getter methods without a corresponding
+ * setter.
+ *
+ * @example
+ * ```ts
+ * class MyStore {
+ *   @Signal
+ *   firstName = 'John';
+ *
+ *   @Signal
+ *   lastName = 'Doe';
+ *
+ *   @Computed
+ *   get fullName() {
+ *     console.log('Computing fullName...');
+ *     return `${this.firstName} ${this.lastName}`;
+ *   }
+ * }
+ *
+ * const store = useService(MyStore);
+ * // At this point, 'Computing fullName...' has not been logged.
+ *
+ * console.log(store.fullName); // Logs 'Computing fullName...' and then 'John Doe'
+ * console.log(store.fullName); // Logs 'John Doe' directly from cache.
+ *
+ * store.firstName = 'Jane';
+ * // The value is now stale, but re-computation is deferred.
+ *
+ * console.log(store.fullName); // Logs 'Computing fullName...' and then 'Jane Doe'
+ * ```
+ */
 export const Computed = defineMemberDecoratorProcessor(
     COMPUTED_GETTER_MARK_KEY,
     {
