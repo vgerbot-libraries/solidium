@@ -1,8 +1,8 @@
 (function (global, factory) {
-    typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('@vgerbot/ioc'), require('solid-js'), require('solid-js/web')) :
-    typeof define === 'function' && define.amd ? define(['exports', '@vgerbot/ioc', 'solid-js', 'solid-js/web'], factory) :
-    (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.Solidium = {}, global.IOC, global.solidJs, global.web));
-})(this, (function (exports, ioc, solidJs, web) { 'use strict';
+    typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('@vgerbot/ioc'), require('solid-js'), require('solid-js/web'), require('solid-js/store')) :
+    typeof define === 'function' && define.amd ? define(['exports', '@vgerbot/ioc', 'solid-js', 'solid-js/web', 'solid-js/store'], factory) :
+    (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.Solidium = {}, global.IOC, global.solidJs, global.web, global.store$1));
+})(this, (function (exports, ioc, solidJs, web, store$1) { 'use strict';
 
     /******************************************************************************
     Copyright (c) Microsoft Corporation.
@@ -80,7 +80,8 @@
 
     var COMPONENT_TREE_SCOPE = 'solidium-component-tree-scope';
     /**
-     * 标记为 ComponentTreeScoped 的类，其不再是全局共享单实例，而是子组件共享单实例
+     * Classes marked with ComponentTreeScope are no longer globally shared singletons,
+     * but instead are singletons shared among child components within a component tree.
      */
     ioc.Scope(COMPONENT_TREE_SCOPE);
 
@@ -501,6 +502,33 @@
     }
 
     var SIGNAL_MARK_KEY = Symbol('solidium_mark_as_signal_property');
+    /**
+     * Decorator that turns a class property into a reactive signal.
+     *
+     * When applied to a property, it replaces the property with a getter and a setter.
+     * The first time the property is accessed, a SolidJS signal is created with the property's initial value.
+     * Subsequent accesses will return the current value of the signal.
+     * When the property is assigned a new value, the signal is updated.
+     *
+     * This allows other parts of the application, such as components or other reactive code,
+     * to subscribe to changes in the property's value.
+     *
+     * Example usage:
+     * ```typescript
+     * class MyStore {
+     *   @Signal()
+     *   count = 0;
+     * }
+     *
+     * const store = new MyStore();
+     *
+     * createEffect(() => {
+     *   console.log('Count changed:', store.count);
+     * });
+     *
+     * store.count = 1; // This will trigger the effect and log the new value.
+     * ```
+     */
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     function Signal(_) {
       return defineMemberDecoratorProcessor(SIGNAL_MARK_KEY, {
@@ -560,6 +588,36 @@
     }
 
     var NOT_CHANGED_SYMBOL = Symbol('solidium-not-change-symbol');
+    /**
+     * Creates a new memoized computation that is lazily evaluated.
+     *
+     * Unlike `createMemo` from `solid-js`, the computation function `fn` is not
+     * executed until the returned getter is accessed for the first time. After the
+     * initial access, it behaves like a standard memo, re-computing its value
+     * only when its dependencies change.
+     *
+     * @param fn The computation function to be memoized. It should not take any
+     *   arguments and should return a value of type T.
+     * @returns A getter function that returns the memoized value. Accessing this
+     *   getter tracks the computation in the current reactive context.
+     *
+     * @example
+     * ```ts
+     * const [count, setCount] = createSignal(0);
+     * const doubleCount = useComputed(() => {
+     *   console.log('Computing doubleCount...');
+     *   return count() * 2;
+     * });
+     *
+     * // At this point, 'Computing doubleCount...' has not been logged yet.
+     *
+     * console.log(doubleCount()); // Logs 'Computing doubleCount...' and then 0
+     * console.log(doubleCount()); // Logs 0, no re-computation
+     *
+     * setCount(5);
+     * console.log(doubleCount()); // Logs 'Computing doubleCount...' and then 10
+     * ```
+     */
     function useComputed(fn) {
       var _a = __read(solidJs.createSignal(NOT_CHANGED_SYMBOL), 2),
         get = _a[0],
@@ -580,6 +638,46 @@
     }
 
     var COMPUTED_GETTER_MARK_KEY = Symbol('solidium_computed_getter');
+    /**
+     * A property decorator that transforms a class getter into a memoized,
+     * lazily-evaluated computed property.
+     *
+     * The decorated getter will be converted into a `solid-js` memo under the hood,
+     * but it will not be evaluated until it's accessed for the first time.
+     * Once evaluated, its value is cached and will only be re-calculated when its
+     * underlying reactive dependencies change.
+     *
+     * This decorator should only be applied to getter methods without a corresponding
+     * setter.
+     *
+     * @example
+     * ```ts
+     * class MyStore {
+     *   @Signal
+     *   firstName = 'John';
+     *
+     *   @Signal
+     *   lastName = 'Doe';
+     *
+     *   @Computed
+     *   get fullName() {
+     *     console.log('Computing fullName...');
+     *     return `${this.firstName} ${this.lastName}`;
+     *   }
+     * }
+     *
+     * const store = useService(MyStore);
+     * // At this point, 'Computing fullName...' has not been logged.
+     *
+     * console.log(store.fullName); // Logs 'Computing fullName...' and then 'John Doe'
+     * console.log(store.fullName); // Logs 'John Doe' directly from cache.
+     *
+     * store.firstName = 'Jane';
+     * // The value is now stale, but re-computation is deferred.
+     *
+     * console.log(store.fullName); // Logs 'Computing fullName...' and then 'Jane Doe'
+     * ```
+     */
     var Computed = defineMemberDecoratorProcessor(COMPUTED_GETTER_MARK_KEY, {
       afterInstantiation: function (instance, member) {
         var prototype = Object.getPrototypeOf(instance);
@@ -667,6 +765,70 @@
       }
     });
 
+    var SOLIDIUM_MARK_CLASS_STORE = Symbol('solidium-mark-class-store');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    var proxyCache = new WeakMap();
+    var Store = function () {
+      return defineClassDecoratorProcessor(SOLIDIUM_MARK_CLASS_STORE, {
+        afterInstantiation: function (instance) {
+          if (!instance || typeof instance !== 'object') {
+            return instance;
+          }
+          var _a = __read(store$1.createStore(instance), 2),
+            object = _a[0],
+            set = _a[1];
+          var createProxyForNestedObject = function (obj, path, setter) {
+            if (path === void 0) {
+              path = [];
+            }
+            if (setter === void 0) {
+              setter = set;
+            }
+            if (proxyCache.has(obj)) {
+              return proxyCache.get(obj);
+            }
+            var proxy = new Proxy(obj, {
+              get: function (target, p, receiver) {
+                var value = Reflect.get(target, p, receiver);
+                if (!!value && typeof value === 'object') {
+                  return createProxyForNestedObject(value, __spreadArray(__spreadArray([], __read(path), false), [p], false), setter);
+                }
+                return value;
+              },
+              set: function (target, p, newValue) {
+                if (path.length === 0) {
+                  setter(p, newValue);
+                } else {
+                  setter.apply(void 0, __spreadArray(__spreadArray([], __read(path), false), [p, newValue], false));
+                }
+                return true;
+              }
+            });
+            proxyCache.set(obj, proxy);
+            return proxy;
+          };
+          return createProxyForNestedObject(object);
+        }
+      });
+    };
+
+    var SETTER_INTERCEPTOR_METHOD_MARK_KEY = Symbol('solidium_setter_interceptor_method');
+    var SetterInterceptor = function (options) {
+      switch (typeof options) {
+        case 'string':
+        case 'symbol':
+          options = {
+            key: options
+          };
+          break;
+      }
+      return defineMemberDecoratorProcessor(SETTER_INTERCEPTOR_METHOD_MARK_KEY, {
+        beforeInstantiation: function (constructor, member) {
+          appendSetterInterceptor(constructor.prototype, options, member);
+        }
+      });
+    };
+
     var MissingSolidiumContextError = /** @class */function (_super) {
       __extends(MissingSolidiumContextError, _super);
       function MissingSolidiumContextError() {
@@ -733,8 +895,10 @@
     exports.IS_MEMBER_DECORATOR_PROCESSOR = IS_MEMBER_DECORATOR_PROCESSOR;
     exports.Observe = Observe;
     exports.SETTER_INTERCEPTOR_MAP_KEY = SETTER_INTERCEPTOR_MAP_KEY;
+    exports.SetterInterceptor = SetterInterceptor;
     exports.Signal = Signal;
     exports.Solidium = Solidium;
+    exports.Store = Store;
     exports.Track = Track;
     exports.Tracker = Tracker;
     exports.appendSetterInterceptor = appendSetterInterceptor;

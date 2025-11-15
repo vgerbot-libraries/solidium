@@ -4,3 +4,5 @@ export { Computed } from './Computed';
 export { Batch } from './Batch';
 export { Track } from './Track';
 export { Auto } from './Auto';
+export { Store } from './Store';
+export { SetterInterceptor } from './SetterInterceptor';
