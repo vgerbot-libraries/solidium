@@ -17,9 +17,11 @@ export default tseslint.config(
                 'max-len': ['error', 120],
                 'arrow-parens': 'off',
                 'no-unused-vars': 'off',
+                'no-redeclare': 'off',
                 '@typescript-eslint/no-dynamic-delete': 'off',
                 '@typescript-eslint/no-unsafe-function-type': 'off',
-                '@typescript-eslint/no-unused-vars': 'error'
+                '@typescript-eslint/no-unused-vars': 'error',
+                '@typescript-eslint/no-redeclare': 'error'
             },
             languageOptions: {
                 parserOptions: {
