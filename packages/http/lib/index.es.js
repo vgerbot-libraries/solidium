@@ -1,6 +1,6 @@
-import { Generate, Inject, ApplicationContext, PostInject, Scope, InstanceScope } from '@vgerbot/ioc';
+import { Inject, Factory, Generate, ApplicationContext, PostInject, Scope, InstanceScope } from '@vgerbot/ioc';
 import { lazyMember } from '@vgerbot/lazy';
-import { DEFAULT_BUCKET } from '@vgerbot/persistence';
+import { Persistence, DEFAULT_BUCKET, Bucket } from '@vgerbot/persistence';
 import { Signal, runWithSolidiumOwner } from '@vgerbot/solidium';
 import { ReplaySubject, lastValueFrom, switchMap, take } from 'rxjs';
 import { getOwner, createRoot, createEffect, on } from 'solid-js';
@@ -2099,6 +2099,26 @@ class FetchRequestAdapter {
 }
 
 const DEFAULT_HTTP_CONFIGURATION = Symbol('solidium-default-http-configuration');
+function keep(...args) {
+  return args;
+}
+class Http {
+  static configure(config) {
+    class HttpConfigurationFactory {
+      produce() {
+        var _a;
+        (_a = config.cacheBucket) !== null && _a !== void 0 ? _a : config.cacheBucket = this.defaultBucket.name;
+        return config;
+      }
+    }
+    __decorate([Inject(), __metadata("design:type", Persistence)], HttpConfigurationFactory.prototype, "persistence", void 0);
+    __decorate([Inject(DEFAULT_BUCKET), __metadata("design:type", Bucket)], HttpConfigurationFactory.prototype, "defaultBucket", void 0);
+    __decorate([Factory(DEFAULT_HTTP_CONFIGURATION), __metadata("design:type", Function), __metadata("design:paramtypes", []), __metadata("design:returntype", void 0)], HttpConfigurationFactory.prototype, "produce", null);
+    keep(HttpConfigurationFactory);
+    return Http;
+  }
+  init() {}
+}
 
 function buildEndpointClass(endpointClass, metadata) {
   Reflect.set(endpointClass.prototype, GET_INTERCEPTORS, function (exclude) {
@@ -4609,5 +4629,5 @@ function Cache(config = DEFAULT_CACHE_CONFIG) {
   });
 }
 
-export { AbortError, BadGatewayError, BadRequestError, Cache, CacheInterceptor, CachePolicies, CancellationError, CircuitBreakerError, CircuitBreakerInterceptor, ConflictError, DEFAULT_CACHE_CONFIG, Defer, Delete, EXECUTE, Endpoint, ErrorContextInterceptor, Events, ExpectationFailedError, FailedDependencyError, FetchRequestAdapter, ForbiddenError, GatewayTimeoutError, Get, GoneError, HTTPVersionNotSupportedError, Header, HttpError, HttpHeaders, HttpResponse, HttpStatusError, ImATeapotError, InsufficientStorageError, InternalServerError, Key, LengthRequiredError, LockedError, LoopDetectedError, MaxRetryAttemptsReachedError, MethodNotAllowedError, MisdirectedRequestError, NetworkAuthenticationRequiredError, NetworkError, NotAcceptableError, NotExtendedError, NotFoundError, NotImplementedError, ParseError, PathVariable, Payload, PayloadTooLargeError, PaymentRequiredError, Post, PreconditionFailedError, PreconditionRequiredError, Progress, PromiseStatus, ProxyAuthenticationRequiredError, Put, Query, RangeNotSatisfiableError, Request, RequestHeaderFieldsTooLargeError, RequestMethod, RequestStatus, RequestTimeoutError, Resource, ResourceError, RestfulResource, RetryInterceptor, SETUP, SET_DATA, SET_ERROR, SWR, SWRInstance, SWRMutation, ServerError, ServiceUnavailableError, TimeoutError, TimeoutInterceptor, TooEarlyError, TooManyRequestsError, URITooLongError, UnauthorizedError, UnavailableForLegalReasonsError, UnprocessableEntityError, UnsupportedMediaTypeError, UpgradeRequiredError, VariantAlsoNegotiatesError, XMLHttpRequestAdapter, buildEndpointClass, createRequestDecorator, download, isInterceptor, isInterceptorConstructor, isURL, joinPath, jsonsse, mergeAbortSignal, parseHeaders, resolveURL, restful, upload };
+export { AbortError, BadGatewayError, BadRequestError, Cache, CacheInterceptor, CachePolicies, CancellationError, CircuitBreakerError, CircuitBreakerInterceptor, ConflictError, DEFAULT_CACHE_CONFIG, DEFAULT_HTTP_CONFIGURATION, Defer, Delete, EXECUTE, Endpoint, ErrorContextInterceptor, Events, ExpectationFailedError, FailedDependencyError, FetchRequestAdapter, ForbiddenError, GatewayTimeoutError, Get, GoneError, HTTPVersionNotSupportedError, Header, Http, HttpError, HttpHeaders, HttpResponse, HttpStatusError, ImATeapotError, InsufficientStorageError, InternalServerError, Key, LengthRequiredError, LockedError, LoopDetectedError, MaxRetryAttemptsReachedError, MethodNotAllowedError, MisdirectedRequestError, NetworkAuthenticationRequiredError, NetworkError, NotAcceptableError, NotExtendedError, NotFoundError, NotImplementedError, ParseError, PathVariable, Payload, PayloadTooLargeError, PaymentRequiredError, Post, PreconditionFailedError, PreconditionRequiredError, Progress, PromiseStatus, ProxyAuthenticationRequiredError, Put, Query, RangeNotSatisfiableError, Request, RequestHeaderFieldsTooLargeError, RequestMethod, RequestStatus, RequestTimeoutError, Resource, ResourceError, RestfulResource, RetryInterceptor, SETUP, SET_DATA, SET_ERROR, SWR, SWRInstance, SWRMutation, ServerError, ServiceUnavailableError, TimeoutError, TimeoutInterceptor, TooEarlyError, TooManyRequestsError, URITooLongError, UnauthorizedError, UnavailableForLegalReasonsError, UnprocessableEntityError, UnsupportedMediaTypeError, UpgradeRequiredError, VariantAlsoNegotiatesError, XMLHttpRequestAdapter, buildEndpointClass, createRequestDecorator, download, isInterceptor, isInterceptorConstructor, isURL, joinPath, jsonsse, mergeAbortSignal, parseHeaders, resolveURL, restful, upload };
 //# sourceMappingURL=index.es.js.map

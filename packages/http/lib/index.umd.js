@@ -2885,7 +2885,7 @@
     }();
 
     var DEFAULT_HTTP_CONFIGURATION = Symbol('solidium-default-http-configuration');
-    /** @class */(function () {
+    var Http = /** @class */function () {
       function Http() {}
       Http.configure = function (config) {
         /** @class */(function () {
@@ -2904,7 +2904,7 @@
       };
       Http.prototype.init = function () {};
       return Http;
-    })();
+    }();
 
     function buildEndpointClass(endpointClass, metadata) {
       Reflect.set(endpointClass.prototype, GET_INTERCEPTORS, function (exclude) {
@@ -5811,6 +5811,7 @@
     exports.CircuitBreakerInterceptor = CircuitBreakerInterceptor;
     exports.ConflictError = ConflictError;
     exports.DEFAULT_CACHE_CONFIG = DEFAULT_CACHE_CONFIG;
+    exports.DEFAULT_HTTP_CONFIGURATION = DEFAULT_HTTP_CONFIGURATION;
     exports.Defer = Defer;
     exports.Delete = Delete;
     exports.EXECUTE = EXECUTE;
@@ -5826,6 +5827,7 @@
     exports.GoneError = GoneError;
     exports.HTTPVersionNotSupportedError = HTTPVersionNotSupportedError;
     exports.Header = Header;
+    exports.Http = Http;
     exports.HttpError = HttpError;
     exports.HttpHeaders = HttpHeaders;
     exports.HttpResponse = HttpResponse;

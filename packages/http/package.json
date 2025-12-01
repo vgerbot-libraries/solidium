@@ -17,7 +17,8 @@
         ".": {
             "import": "./lib/index.es.js",
             "browser": "./lib/index.umd.js",
-            "require": "./lib/index.cjs.js"
+            "require": "./lib/index.cjs.js",
+            "types": "./lib/index.d.ts"
         }
     },
     "library": "SolidiumHttp",

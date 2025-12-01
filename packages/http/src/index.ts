@@ -70,6 +70,7 @@ export * from './resource/ResourceError';
 
 export * from './core/Reactive';
 export * from './core/EndpointInstance';
+export * from './core/Http';
 
 // Cache management
 export * from './cache';
