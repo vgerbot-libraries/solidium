@@ -2151,7 +2151,9 @@ function buildEndpointClass(endpointClass, metadata) {
     return methods;
   })(endpointClass.prototype, METHODS);
   Inject(ApplicationContext)(endpointClass.prototype, APPLICATION_CONTEXT);
-  Inject(DEFAULT_HTTP_CONFIGURATION)(endpointClass.prototype, HTTP_CONFIGURATION);
+  lazyMember(endpointInstance => {
+    return endpointInstance[APPLICATION_CONTEXT].getInstance(DEFAULT_HTTP_CONFIGURATION);
+  })(endpointClass.prototype, HTTP_CONFIGURATION);
 }
 
 class RequestMethodMetadata {

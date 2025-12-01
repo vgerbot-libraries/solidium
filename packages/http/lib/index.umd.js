@@ -2942,7 +2942,9 @@
         return methods;
       })(endpointClass.prototype, METHODS);
       ioc.Inject(ioc.ApplicationContext)(endpointClass.prototype, APPLICATION_CONTEXT);
-      ioc.Inject(DEFAULT_HTTP_CONFIGURATION)(endpointClass.prototype, HTTP_CONFIGURATION);
+      lazy.lazyMember(function (endpointInstance) {
+        return endpointInstance[APPLICATION_CONTEXT].getInstance(DEFAULT_HTTP_CONFIGURATION);
+      })(endpointClass.prototype, HTTP_CONFIGURATION);
     }
 
     var RequestMethodMetadata = /** @class */function () {

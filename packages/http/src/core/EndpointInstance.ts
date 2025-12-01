@@ -100,8 +100,9 @@ export function buildEndpointClass(
     })(endpointClass.prototype, METHODS);
 
     Inject(ApplicationContext)(endpointClass.prototype, APPLICATION_CONTEXT);
-    Inject(DEFAULT_HTTP_CONFIGURATION)(
-        endpointClass.prototype,
-        HTTP_CONFIGURATION
-    );
+    lazyMember((endpointInstance: EndpointInstance) => {
+        return endpointInstance[APPLICATION_CONTEXT].getInstance(
+            DEFAULT_HTTP_CONFIGURATION
+        );
+    })(endpointClass.prototype, HTTP_CONFIGURATION);
 }
