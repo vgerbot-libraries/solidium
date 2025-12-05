@@ -4038,6 +4038,7 @@
         if (!this.instances.has(key)) {
           var instance = new SWRInstance(key, fetcher, config);
           this.instances.set(key, instance);
+          instance.mutate();
           return instance;
         } else {
           return this.instances.get(key);
@@ -5013,6 +5014,10 @@
             return state;
           });
         }, swrConfig);
+        var newState = instance.getState().data;
+        if (newState !== this.state) {
+          this.state = newState;
+        }
         instance === null || instance === void 0 ? void 0 : instance.onStateChange(function (state) {
           _this.state = state.data;
         });
