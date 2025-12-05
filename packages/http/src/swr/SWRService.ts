@@ -28,6 +28,7 @@ export class SWRService {
                     ResourceExecutionState<unknown, unknown>
                 >
             );
+            instance.mutate();
             return instance;
         } else {
             return this.instances.get(key) as SWRInstance<

@@ -158,6 +158,14 @@ export class RestfulResource<T, E = unknown> extends Resource<T, E> {
             },
             swrConfig as SWRConfig
         );
+        const newState = instance.getState().data as ResourceExecutionState<
+            T,
+            E
+        >;
+        if (newState !== this.state) {
+            this.state = newState;
+        }
+
         instance?.onStateChange(state => {
             this.state = state.data as ResourceExecutionState<T, E>;
         });
