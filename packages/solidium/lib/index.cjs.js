@@ -391,7 +391,9 @@ var SignalMap = /** @class */function () {
   return SignalMap;
 }();
 
+// eslint-disable-next-line @typescript-eslint/no-wrapper-object-types
 var extraDatas = new WeakMap();
+// eslint-disable-next-line @typescript-eslint/no-wrapper-object-types
 function extraDataOf(target, key) {
   if (!target || typeof target !== 'object') {
     return undefined;
@@ -542,15 +544,18 @@ function Signal(_) {
 }
 
 var RESULT_MAP = new SignalMap();
+// eslint-disable-next-line @typescript-eslint/no-wrapper-object-types
 function store(instance, methodName, value) {
   var _a = __read(RESULT_MAP.get(instance, methodName), 2),
     set = _a[1];
   set(value);
 }
+// eslint-disable-next-line @typescript-eslint/no-wrapper-object-types
 function clean(instance, methodName) {
   RESULT_MAP.delete(instance, methodName);
 }
 function resultOf(instance, methodName) {
+  // eslint-disable-next-line @typescript-eslint/no-wrapper-object-types
   var _a = __read(RESULT_MAP.get(instance, methodName), 1),
     get = _a[0];
   return get();
@@ -571,8 +576,10 @@ function Observe(options) {
       // TODO: supports scheduling
       var fn = function () {
         var ret = instance[methodName].call(instance);
+        // eslint-disable-next-line @typescript-eslint/no-wrapper-object-types
         store(instance, methodName, ret);
         solidJs.onCleanup(function () {
+          // eslint-disable-next-line @typescript-eslint/no-wrapper-object-types
           clean(instance, methodName);
         });
       };

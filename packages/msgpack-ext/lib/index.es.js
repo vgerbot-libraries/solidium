@@ -247,7 +247,7 @@ class CodecContext {
 
 class EncodeContext extends CodecContext {
   constructor() {
-    super();
+    super(...arguments);
     this.objectPathMap = new Map();
   }
   recording(object, path) {

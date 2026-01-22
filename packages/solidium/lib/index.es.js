@@ -305,7 +305,9 @@ class SignalMap {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-wrapper-object-types
 const extraDatas = new WeakMap();
+// eslint-disable-next-line @typescript-eslint/no-wrapper-object-types
 function extraDataOf(target, key) {
   if (!target || typeof target !== 'object') {
     return undefined;
@@ -452,14 +454,17 @@ function Signal(_ = {}) {
 }
 
 const RESULT_MAP = new SignalMap();
+// eslint-disable-next-line @typescript-eslint/no-wrapper-object-types
 function store(instance, methodName, value) {
   const [, set] = RESULT_MAP.get(instance, methodName);
   set(value);
 }
+// eslint-disable-next-line @typescript-eslint/no-wrapper-object-types
 function clean(instance, methodName) {
   RESULT_MAP.delete(instance, methodName);
 }
 function resultOf(instance, methodName) {
+  // eslint-disable-next-line @typescript-eslint/no-wrapper-object-types
   const [get] = RESULT_MAP.get(instance, methodName);
   return get();
 }
@@ -476,8 +481,10 @@ function Observe(options = {}) {
       // TODO: supports scheduling
       const fn = () => {
         const ret = instance[methodName].call(instance);
+        // eslint-disable-next-line @typescript-eslint/no-wrapper-object-types
         store(instance, methodName, ret);
         onCleanup(() => {
+          // eslint-disable-next-line @typescript-eslint/no-wrapper-object-types
           clean(instance, methodName);
         });
       };
