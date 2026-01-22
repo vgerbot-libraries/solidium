@@ -33,6 +33,7 @@ export function Cache(config: CacheConfig = DEFAULT_CACHE_CONFIG) {
 			methodMetadata.appendInterceptor(
 				CacheInterceptor.createWithConfig(config),
 			);
+			return undefined;
 		},
 	);
 }

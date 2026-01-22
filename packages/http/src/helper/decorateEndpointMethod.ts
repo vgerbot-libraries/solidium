@@ -7,8 +7,8 @@ export function decorateEndpointMethod(
 		clazz: Function,
 		methodName: string | symbol,
 		methodMetadata: RequestMethodMetadata,
-		// eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-	) => TypedPropertyDescriptor<(...args: any[]) => any> | undefined,
+		// biome-ignore lint/suspicious/noConfusingVoidType: void
+	) => TypedPropertyDescriptor<(...args: any[]) => any> | void,
 ) {
 	return function decorateMethod<
 		R = any,

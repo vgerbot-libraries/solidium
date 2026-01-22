@@ -53,9 +53,10 @@ export function Solidium(props: SolidiumProps) {
 		return instance as T;
 	};
 
-	appCtx.registerBeforeInstantiationProcessor(<T>(constructor: Newable<T>) =>
-		beforeInstantiation(constructor, appCtx),
-	);
+	appCtx.registerBeforeInstantiationProcessor(<T>(constructor: Newable<T>) => {
+		beforeInstantiation(constructor, appCtx);
+		return undefined;
+	});
 	appCtx.registerAfterInstantiationProcessor(
 		<T extends object>(instance: T) => {
 			setupOwner(instance, owner as Owner);
