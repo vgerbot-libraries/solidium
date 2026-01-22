@@ -5,7 +5,7 @@ import { Bucket } from './Bucket';
 
 /**
  * Event object emitted when a storage item changes in a bucket.
- * 
+ *
  * @public
  */
 export interface ChangeEvent {

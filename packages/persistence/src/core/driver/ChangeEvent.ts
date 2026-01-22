@@ -5,7 +5,7 @@ import { StorageDriver } from './StorageDriver';
 
 /**
  * Event object emitted by a storage driver when a storage item changes.
- * 
+ *
  * @public
  */
 export interface DriverChangeEvent {

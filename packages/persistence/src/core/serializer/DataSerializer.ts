@@ -1,7 +1,7 @@
 /**
  * Interface for serializing and deserializing data for storage.
  * Custom implementations can be provided to support different serialization formats.
- * 
+ *
  * @public
  */
 export interface DataSerializer {

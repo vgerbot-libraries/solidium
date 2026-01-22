@@ -126,4 +126,17 @@ This project is licensed under the [MIT License][link-license].
 - [@vgerbot/ioc](https://github.com/vgerbot-libraries/ioc) - The IoC container powering Solidium
 - [SolidJS](https://solidjs.com/) - The reactive framework Solidium is built for
 
-[badge-wip]:https://img.shields.io/badge/Status-WIP-yellow?style=for-t
+[badge-wip]:https://img.shields.io/badge/Status-WIP-yellow?style=for-the-badge
+[badge-prettier]:https://img.shields.io/badge/Code%20Style-Prettier-ff69b4?style=for-the-badge
+[badge-eslint]:https://img.shields.io/badge/Code%20Linting-ESLint-4B32C3?style=for-the-badge
+[badge-license]:https://img.shields.io/badge/License-MIT-green?style=for-the-badge
+[badge-prs]:https://img.shields.io/badge/PRs-Welcome-brightgreen?style=for-the-badge
+[badge-issues]:https://img.shields.io/github/issues/vgerbot-libraries/solidium?style=for-the-badge
+
+[link-home-page]:https://github.com/vgerbot-libraries/solidium
+[link-issues]:https://github.com/vgerbot-libraries/solidium/issues
+[link-license]:./LICENSE
+[link-eslint]:https://eslint.org/
+[link-prettier]:https://prettier.io/
+[link-docs]:TODO
+[link-guidelines]:TODO

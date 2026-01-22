@@ -1,9 +1,9 @@
 /**
  * Event object passed to `@OnStorageLoad` decorated methods.
- * 
+ *
  * @typeParam T - The type of the class instance
  * @typeParam D - The type of the loaded data
- * 
+ *
  * @public
  */
 export interface StorageLoadEvent<T, D = unknown> {
@@ -39,7 +39,7 @@ export type InternalStorageLoadEvent<T> = Omit<
 >;
 /**
  * Type definition for storage load event listener functions.
- * 
+ *
  * @public
  */
 export type StorageLoadEventListener = <T>(event: StorageLoadEvent<T>) => void;
@@ -63,7 +63,7 @@ export function notifyStorageLoad<T>(event: InternalStorageLoadEvent<T>) {
 
 /**
  * Configuration options for the OnStorageLoad decorator.
- * 
+ *
  * @public
  */
 export interface StorageLoadNotifyOptions {
@@ -79,13 +79,13 @@ export interface StorageLoadNotifyOptions {
  * Method decorator that marks a method to be called when storage properties are loaded.
  * The decorated method will receive a {@link StorageLoadEvent} with information about
  * the loaded property.
- * 
+ *
  * This is useful for performing actions after storage values are restored, such as
  * validation, transformation, or triggering side effects.
- * 
+ *
  * @param options - Optional configuration to filter which properties trigger the callback
  * @returns A method decorator
- * 
+ *
  * @example
  * Called for any storage property load:
  * ```typescript
@@ -93,18 +93,18 @@ export interface StorageLoadNotifyOptions {
  *   @Signal()
  *   @Storage()
  *   theme: string = 'light';
- *   
+ *
  *   @Signal()
  *   @Storage()
  *   fontSize: number = 14;
- *   
+ *
  *   @OnStorageLoad()
  *   onAnyPropertyLoaded(event: StorageLoadEvent<UserSettings>) {
  *     console.log(`Loaded ${String(event.member)}: ${event.value}`);
  *   }
  * }
  * ```
- * 
+ *
  * @example
  * Called only for specific properties:
  * ```typescript
@@ -112,11 +112,11 @@ export interface StorageLoadNotifyOptions {
  *   @Signal()
  *   @Storage()
  *   theme: string = 'light';
- *   
+ *
  *   @Signal()
  *   @Storage()
  *   fontSize: number = 14;
- *   
+ *
  *   @OnStorageLoad({ members: ['theme', 'fontSize'] })
  *   onBothLoaded(event: StorageLoadEvent<UserSettings>) {
  *     // Called after both theme and fontSize are loaded
@@ -126,7 +126,7 @@ export interface StorageLoadNotifyOptions {
  *   }
  * }
  * ```
- * 
+ *
  * @public
  */
 export function OnStorageLoad(options?: StorageLoadNotifyOptions) {

@@ -1,6 +1,6 @@
 /**
  * Indicates the source of a storage change event.
- * 
+ *
  * @public
  */
 export enum ChangeBy {

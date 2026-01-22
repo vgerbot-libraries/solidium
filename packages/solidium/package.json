@@ -34,7 +34,10 @@
     "url": "git+https://github.com/vgerbot-libraries/solidium.git"
   },
   "scripts": {
-    "prebuild": "zx ../../scripts/clear.mjs -- ./lib"
+    "build": "rollup -c ../../rollup.config.js",
+    "test": "cross-env NODE_ENV=test jest -c ../../jest.config.js --passWithNoTests",
+    "lint": "eslint 'src/**/*.{ts,tsx}' '__tests__/**/*.{ts,tsx}' --no-error-on-unmatched-pattern",
+    "format": "eslint --fix 'src/**/*.{ts,tsx}' '__tests__/**/*.{ts,tsx}' --no-error-on-unmatched-pattern"
   },
   "bugs": {
     "url": "https://github.com/vgerbot-libraries/solidium/issues"

@@ -1,6 +1,6 @@
 /**
  * Enumeration of built-in storage drivers available in the persistence library.
- * 
+ *
  * @public
  */
 export enum DefaultDrivers {

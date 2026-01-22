@@ -4,10 +4,6 @@ import { ObjectPath } from '../core/ObjectPath';
 export class EncodeContext extends CodecContext {
     private readonly objectPathMap = new Map<unknown, ObjectPath[]>();
 
-    constructor() {
-        super();
-    }
-
     recording(object: unknown, path: ObjectPath): void {
         if (object === null || object === undefined) {
             return;

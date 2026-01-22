@@ -1,6 +1,6 @@
 /**
  * Defines the type of action performed on storage.
- * 
+ *
  * @public
  */
 export enum ActionType {

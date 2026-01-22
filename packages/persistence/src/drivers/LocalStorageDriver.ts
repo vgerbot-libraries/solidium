@@ -5,19 +5,20 @@ import { BrowserStorageDriver } from './BrowserStorageDriver';
 /**
  * Storage driver implementation that uses the browser's localStorage API.
  * Data persists across browser sessions and tabs.
- * 
+ *
  * @public
  */
 export class LocalStorageDriver
     extends BrowserStorageDriver
-    implements StorageDriver {
+    implements StorageDriver
+{
     /**
      * The name identifier for this driver.
      */
     readonly name = 'LocalStorageDriver';
     /**
      * Creates a new LocalStorageDriver instance with the specified bucket name.
-     * 
+     *
      * @param bucketName - The name of the storage bucket
      * @returns A new LocalStorageDriver instance
      */
@@ -26,7 +27,7 @@ export class LocalStorageDriver
     }
     /**
      * Creates a new LocalStorageDriver instance.
-     * 
+     *
      * @param options - Configuration options for the driver
      */
     constructor(options: StorageDriverOptions) {

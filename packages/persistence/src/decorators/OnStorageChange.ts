@@ -5,9 +5,9 @@ import { ChangeBy } from '../types/ChangeBy';
 /**
  * Event object passed to `@OnStorageChange` decorated methods.
  * Extends {@link ChangeEvent} with additional context about the instance and property.
- * 
+ *
  * @typeParam T - The type of the class instance
- * 
+ *
  * @public
  */
 export interface StorageChangeEvent<T> extends ChangeEvent {
@@ -19,15 +19,16 @@ export interface StorageChangeEvent<T> extends ChangeEvent {
      * The property key that changed in storage.
      */
     member: PropertyKey;
-
 }
 
 /**
  * Type definition for storage change event listener functions.
- * 
+ *
  * @public
  */
-export type StorageChangeEventListener<T> = (event: StorageChangeEvent<T>) => void;
+export type StorageChangeEventListener<T> = (
+    event: StorageChangeEvent<T>
+) => void;
 
 const STORAGE_CHANGE_EVENTS = Symbol('storage-change-events');
 
@@ -47,7 +48,7 @@ export function notifyStorageChange<T>(event: StorageChangeEvent<T>) {
 /**
  * Configuration options for the OnStorageChange decorator.
  * Allows filtering which storage changes trigger the decorated method.
- * 
+ *
  * @public
  */
 export interface StorageChangeNotifyOptions {
@@ -74,13 +75,13 @@ export interface StorageChangeNotifyOptions {
  * Method decorator that marks a method to be called when storage properties change.
  * Unlike {@link OnStorageLoad}, which is called only once when data is initially loaded,
  * this decorator is called whenever the storage value changes (including updates and removals).
- * 
+ *
  * The decorated method receives a {@link StorageChangeEvent} with information about the change,
  * including what changed, who made the change, and the old/new values.
- * 
+ *
  * @param options - Optional configuration to filter which changes trigger the callback
  * @returns A method decorator
- * 
+ *
  * @example
  * Called for any storage property change:
  * ```typescript
@@ -88,11 +89,11 @@ export interface StorageChangeNotifyOptions {
  *   @Signal()
  *   @Storage()
  *   theme: string = 'light';
- *   
+ *
  *   @Signal()
  *   @Storage()
  *   fontSize: number = 14;
- *   
+ *
  *   @OnStorageChange()
  *   onAnyChange(event: StorageChangeEvent<UserSettings>) {
  *     console.log(`${String(event.member)} changed to ${event.newValue}`);
@@ -100,7 +101,7 @@ export interface StorageChangeNotifyOptions {
  *   }
  * }
  * ```
- * 
+ *
  * @example
  * Filter by specific properties:
  * ```typescript
@@ -108,11 +109,11 @@ export interface StorageChangeNotifyOptions {
  *   @Signal()
  *   @Storage()
  *   theme: string = 'light';
- *   
+ *
  *   @Signal()
  *   @Storage()
  *   fontSize: number = 14;
- *   
+ *
  *   @OnStorageChange({ members: ['theme'] })
  *   onThemeChange(event: StorageChangeEvent<UserSettings>) {
  *     // Only called when theme changes
@@ -120,7 +121,7 @@ export interface StorageChangeNotifyOptions {
  *   }
  * }
  * ```
- * 
+ *
  * @example
  * Filter by change source (cross-tab synchronization):
  * ```typescript
@@ -128,7 +129,7 @@ export interface StorageChangeNotifyOptions {
  *   @Signal()
  *   @Storage()
  *   theme: string = 'light';
- *   
+ *
  *   @OnStorageChange({ changeBy: ChangeBy.OTHER })
  *   onExternalChange(event: StorageChangeEvent<UserSettings>) {
  *     // Only called when changes come from other tabs/windows
@@ -137,7 +138,7 @@ export interface StorageChangeNotifyOptions {
  *   }
  * }
  * ```
- * 
+ *
  * @example
  * Filter by action type:
  * ```typescript
@@ -145,7 +146,7 @@ export interface StorageChangeNotifyOptions {
  *   @Signal()
  *   @Storage()
  *   theme: string = 'light';
- *   
+ *
  *   @OnStorageChange({ action: ActionType.REMOVE })
  *   onSettingRemoved(event: StorageChangeEvent<UserSettings>) {
  *     // Only called when a setting is removed
@@ -154,7 +155,7 @@ export interface StorageChangeNotifyOptions {
  *   }
  * }
  * ```
- * 
+ *
  * @example
  * Combine multiple filters:
  * ```typescript
@@ -162,7 +163,7 @@ export interface StorageChangeNotifyOptions {
  *   @Signal()
  *   @Storage()
  *   theme: string = 'light';
- *   
+ *
  *   @OnStorageChange({
  *     members: ['theme', 'fontSize'],
  *     changeBy: ChangeBy.OTHER,
@@ -174,17 +175,19 @@ export interface StorageChangeNotifyOptions {
  *   }
  * }
  * ```
- * 
+ *
  * @public
  */
 export function OnStorageChange(options?: StorageChangeNotifyOptions) {
-
     return <T extends object>(target: T, propertyKey: PropertyKey) => {
         const events: StorageChangeEventListener<T>[] =
             Reflect.getMetadata(STORAGE_CHANGE_EVENTS, target) ?? [];
         Reflect.defineMetadata(STORAGE_CHANGE_EVENTS, events, target);
 
-        events.push(function listener<T>(this: T, event: StorageChangeEvent<T>) {
+        events.push(function listener<T>(
+            this: T,
+            event: StorageChangeEvent<T>
+        ) {
             if (options?.members && !options.members.includes(event.member)) {
                 return;
             }
@@ -201,6 +204,6 @@ export function OnStorageChange(options?: StorageChangeNotifyOptions) {
                 propertyKey
             ) as StorageChangeEventListener<T>;
             method.call(this, event);
-        })
+        });
     };
 }

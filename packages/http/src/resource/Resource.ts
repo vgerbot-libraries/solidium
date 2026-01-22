@@ -31,11 +31,11 @@ export const SET_ERROR = Symbol('setError');
  */
 export const SETUP = Symbol('setup');
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 /**
  * Type alias for a Resource with any data type.
  * @internal
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type AnyResource = Resource<any, unknown>;
 
 /**

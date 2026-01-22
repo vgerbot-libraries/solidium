@@ -11,13 +11,13 @@ import { ActionType } from '../types/ActionType';
 /**
  * Abstract base class for storage drivers that use browser Web Storage APIs
  * (localStorage or sessionStorage).
- * 
+ *
  * This class provides common functionality for:
  * - Key normalization and namespacing
  * - Serialization to/from Blob format
  * - Change event observation
  * - Cross-tab synchronization via storage events
- * 
+ *
  * @public
  */
 export abstract class BrowserStorageDriver implements StorageDriver {
@@ -31,14 +31,14 @@ export abstract class BrowserStorageDriver implements StorageDriver {
     >();
     /**
      * Creates a new BrowserStorageDriver instance.
-     * 
+     *
      * @param options - Configuration options for the driver
      * @param storage - The Web Storage API object (localStorage or sessionStorage)
      */
     protected constructor(
         private readonly options: StorageDriverOptions,
         protected readonly storage: Storage
-    ) { }
+    ) {}
     private getKeyPrefix() {
         return this.options.bucketName;
     }
@@ -48,7 +48,7 @@ export abstract class BrowserStorageDriver implements StorageDriver {
     /**
      * Prepares the driver for use by setting up storage event listeners.
      * This enables cross-tab synchronization.
-     * 
+     *
      * @returns A promise that resolves when preparation is complete
      */
     prepare(): Promise<void> {
@@ -76,7 +76,7 @@ export abstract class BrowserStorageDriver implements StorageDriver {
     }
     /**
      * Checks if the storage API is supported in the current environment.
-     * 
+     *
      * @returns A promise that resolves to true if supported, false otherwise
      */
     supports(): Promise<boolean> {
@@ -84,7 +84,7 @@ export abstract class BrowserStorageDriver implements StorageDriver {
     }
     /**
      * Iterates over all key-value pairs in this bucket.
-     * 
+     *
      * @yields Objects containing key and value (as Blob)
      */
     async *iterate(): AsyncGenerator<{ key: string; value: Blob }> {
@@ -108,7 +108,7 @@ export abstract class BrowserStorageDriver implements StorageDriver {
     }
     /**
      * Retrieves an item from storage by key.
-     * 
+     *
      * @param key - The key of the item to retrieve
      * @returns A promise that resolves to the stored Blob, or undefined if not found
      */
@@ -125,7 +125,7 @@ export abstract class BrowserStorageDriver implements StorageDriver {
     }
     /**
      * Removes an item from storage by key.
-     * 
+     *
      * @param key - The key of the item to remove
      * @returns A promise that resolves when the item is removed
      */
@@ -150,7 +150,7 @@ export abstract class BrowserStorageDriver implements StorageDriver {
     }
     /**
      * Stores an item in storage.
-     * 
+     *
      * @param key - The key to store the item under
      * @param value - The Blob value to store
      * @returns A promise that resolves when the item is stored
@@ -176,7 +176,7 @@ export abstract class BrowserStorageDriver implements StorageDriver {
     }
     /**
      * Returns the number of items in this bucket.
-     * 
+     *
      * @returns A promise that resolves to the item count
      */
     async length(): Promise<number> {
@@ -189,7 +189,7 @@ export abstract class BrowserStorageDriver implements StorageDriver {
     }
     /**
      * Returns the key at the specified index.
-     * 
+     *
      * @param index - The index of the key to retrieve
      * @returns A promise that resolves to the key, or undefined if index is out of bounds
      */
@@ -261,7 +261,7 @@ export abstract class BrowserStorageDriver implements StorageDriver {
     }
     /**
      * Iterates over all keys in this bucket.
-     * 
+     *
      * @yields Storage keys belonging to this bucket
      */
     async *keys(): AsyncGenerator<string> {
@@ -276,7 +276,7 @@ export abstract class BrowserStorageDriver implements StorageDriver {
     }
     /**
      * Clears all items from this bucket.
-     * 
+     *
      * @returns A promise that resolves when all items are cleared
      */
     async clear(): Promise<void> {
@@ -286,7 +286,7 @@ export abstract class BrowserStorageDriver implements StorageDriver {
     }
     /**
      * Observes changes to a specific storage key.
-     * 
+     *
      * @param key - The key to observe
      * @param onChange - Callback function invoked when the key changes
      * @returns A function that can be called to stop observing

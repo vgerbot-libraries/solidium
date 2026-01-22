@@ -1,5 +1,7 @@
-const extraDatas = new WeakMap<Object, Map<unknown, Map<unknown, unknown>>>();
-export function extraDataOf<T extends Object>(target: T, key: unknown) {
+// eslint-disable-next-line @typescript-eslint/no-wrapper-object-types
+const extraDatas = new WeakMap<object, Map<unknown, Map<unknown, unknown>>>();
+// eslint-disable-next-line @typescript-eslint/no-wrapper-object-types
+export function extraDataOf<T extends object>(target: T, key: unknown) {
     if (!target || typeof target !== 'object') {
         return undefined;
     }

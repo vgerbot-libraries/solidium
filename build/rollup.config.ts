@@ -12,6 +12,7 @@ import alias from '@rollup/plugin-alias';
 import hmr from 'rollup-plugin-hot';
 import dts from 'rollup-plugin-dts';
 import tsconfigPaths from 'rollup-plugin-tsconfig-paths';
+import del from 'rollup-plugin-delete';
 
 const pkg = require(path.resolve(process.cwd(), 'package.json'));
 
@@ -31,7 +32,7 @@ const outputConfig = [
 const extensions = ['.ts', '.tsx', '.js', '.jsx'];
 
 // Main bundle configuration
-const mainConfig: RollupOptions[] = outputConfig.map(output => {
+const mainConfig: RollupOptions[] = outputConfig.map((output, index) => {
     return {
         output: output,
         input: inputFile,
@@ -43,6 +44,7 @@ const mainConfig: RollupOptions[] = outputConfig.map(output => {
               }
             : false,
         plugins: [
+            index === 0 && del({ targets: 'lib/*' }),
             tsconfigPaths(),
             nodeResolve({
                 mainFields: ['module', 'browser', 'main'],

@@ -28,9 +28,8 @@ type ScheduledObserverOptions = {
 };
 
 export type ObserveOptions<T> =
-    | object
-    | DependencyObserverOptions<T>
-    | ScheduledObserverOptions;
+    // eslint-disable-next-line @typescript-eslint/no-wrapper-object-types
+    object | DependencyObserverOptions<T> | ScheduledObserverOptions;
 interface ObserverableObject {
     [key: MemberKey]: () => unknown;
 }
@@ -39,6 +38,7 @@ export function Observe<T>(
     options: DependencyObserverOptions<T>
 ): MethodDecorator;
 export function Observe(options: ScheduledObserverOptions): MethodDecorator;
+// eslint-disable-next-line @typescript-eslint/no-wrapper-object-types
 export function Observe(options?: object): MethodDecorator;
 /**
  *
@@ -53,9 +53,11 @@ export function Observe<T>(options: ObserveOptions<T> = {}) {
                 // TODO: supports scheduling
                 const fn = () => {
                     const ret = instance[methodName].call(instance);
-                    store(instance as Object, methodName, ret);
+                    // eslint-disable-next-line @typescript-eslint/no-wrapper-object-types
+                    store(instance as object, methodName, ret);
                     onCleanup(() => {
-                        clean(instance as Object, methodName);
+                        // eslint-disable-next-line @typescript-eslint/no-wrapper-object-types
+                        clean(instance as object, methodName);
                     });
                 };
                 if ('deps' in options) {

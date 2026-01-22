@@ -1,6 +1,6 @@
 /**
  * Options for initializing a storage driver.
- * 
+ *
  * @public
  */
 export interface StorageDriverOptions {

@@ -4,7 +4,10 @@ export class ObjectPath {
         [key: string]: ObjectPath;
     } = {};
     public parent: ObjectPath;
-    constructor(public readonly path: string[], parent?: ObjectPath) {
+    constructor(
+        public readonly path: string[],
+        parent?: ObjectPath
+    ) {
         this.str = path.join('.');
         this.parent = parent || this;
     }

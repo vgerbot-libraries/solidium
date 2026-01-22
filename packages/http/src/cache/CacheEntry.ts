@@ -11,5 +11,6 @@ export interface CacheEntry {
     expiresAt: number;
 
     /** Metadata about the entry */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     metadata: Record<string, any>;
 }

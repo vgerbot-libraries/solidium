@@ -9,7 +9,7 @@ export class InstanceWrapper {
         return this.serialNo > other.serialNo
             ? -1
             : this.serialNo < other.serialNo
-            ? 1
-            : 0;
+              ? 1
+              : 0;
     }
 }

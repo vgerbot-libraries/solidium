@@ -10,7 +10,8 @@
     "build": "tsc",
     "dev": "nodemon --watch src -e ts --exec tsx src/cli.ts",
     "test": "echo 'No tests'",
-    "lint": "eslint 'src/**/*.ts'"
+    "lint": "eslint 'src/**/*.ts'",
+    "format": "prettier --write 'src/**/*.ts'"
   },
   "bin": {
     "mock-server": "lib/cli.js"

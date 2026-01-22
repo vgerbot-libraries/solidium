@@ -3,7 +3,7 @@ import { StorageDriverOptions } from './StorageDriverOptions';
 
 /**
  * Constructor interface for storage driver implementations.
- * 
+ *
  * @public
  */
 export interface StorageDriverConstructor {
@@ -15,12 +15,12 @@ export interface StorageDriverConstructor {
      * Constructs a new storage driver instance.
      * @param options - Configuration options for the driver
      */
-    new(options: StorageDriverOptions): StorageDriver;
+    new (options: StorageDriverOptions): StorageDriver;
 }
 
 /**
  * Type definition for storage driver change event listeners.
- * 
+ *
  * @public
  * @param event - The change event object
  */
@@ -31,7 +31,7 @@ export type StorageDriverChangeEventListener = (
 /**
  * Interface that all storage drivers must implement.
  * Provides a unified API for different storage backends (localStorage, IndexedDB, etc.).
- * 
+ *
  * @public
  */
 export interface StorageDriver {

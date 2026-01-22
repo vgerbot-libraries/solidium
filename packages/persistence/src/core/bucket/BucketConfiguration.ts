@@ -4,7 +4,7 @@ import { DefaultDrivers } from '../../drivers/DefaultDrivers';
 
 /**
  * Configuration options for creating a storage bucket.
- * 
+ *
  * @public
  */
 export interface BucketConfiguration {

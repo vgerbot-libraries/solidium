@@ -4,7 +4,7 @@ import { encode, decode } from '@vgerbot/msgpack-ext';
 /**
  * Default serializer implementation using MessagePack format.
  * Provides efficient binary serialization for JavaScript values.
- * 
+ *
  * @public
  */
 export class DefaultSerializer implements DataSerializer {
