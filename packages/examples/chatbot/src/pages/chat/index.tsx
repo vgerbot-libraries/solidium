@@ -1,9 +1,9 @@
-import { AuthHandler } from '../../auth/AuthHandler';
+import { AuthHandler } from "../../auth/AuthHandler";
 
 export function ChatPage() {
-    return (
-        <div>
-            <AuthHandler />
-        </div>
-    );
+	return (
+		<div>
+			<AuthHandler />
+		</div>
+	);
 }

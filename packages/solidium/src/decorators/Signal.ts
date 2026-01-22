@@ -1,8 +1,8 @@
-import { MemberKey } from '@vgerbot/ioc';
-import { defineSignalMember } from '../helper/signal-member';
-import { defineMemberDecoratorProcessor } from '../core/defineMemberDecoratorProcessor';
+import type { MemberKey } from "@vgerbot/ioc";
+import { defineMemberDecoratorProcessor } from "../core/defineMemberDecoratorProcessor";
+import { defineSignalMember } from "../helper/signal-member";
 
-export const SIGNAL_MARK_KEY = Symbol('solidium_mark_as_signal_property');
+export const SIGNAL_MARK_KEY = Symbol("solidium_mark_as_signal_property");
 
 /**
  * Options for the Signal decorator.
@@ -39,11 +39,11 @@ export type SignalOptions = object;
  */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function Signal(_: SignalOptions = {}) {
-    return defineMemberDecoratorProcessor(SIGNAL_MARK_KEY, {
-        priority: -1,
-        afterInstantiation<T>(instance: T, member: MemberKey) {
-            defineSignalMember(instance, member, instance[member as keyof T]);
-            return instance;
-        }
-    });
+	return defineMemberDecoratorProcessor(SIGNAL_MARK_KEY, {
+		priority: -1,
+		afterInstantiation<T>(instance: T, member: MemberKey) {
+			defineSignalMember(instance, member, instance[member as keyof T]);
+			return instance;
+		},
+	});
 }

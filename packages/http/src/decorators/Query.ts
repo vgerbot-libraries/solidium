@@ -1,4 +1,4 @@
-import { appendExecHandler } from '../common/appendExecHandler';
+import { appendExecHandler } from "../common/appendExecHandler";
 
 /**
  * Parameter decorator that binds a method parameter to a URL query parameter.
@@ -44,27 +44,23 @@ import { appendExecHandler } from '../common/appendExecHandler';
  * @returns A parameter decorator
  */
 export function Query(
-    name: string,
-    defaultValue?: string | number | boolean | Array<string | number | boolean>
+	name: string,
+	defaultValue?: string | number | boolean | Array<string | number | boolean>,
 ) {
-    return function (
-        target: object,
-        methodName: string,
-        parameterIndex: number
-    ) {
-        appendExecHandler(
-            target.constructor,
-            methodName,
-            (instance, metadata, params, args) => {
-                const value = args[parameterIndex] ?? defaultValue;
-                if (Array.isArray(value)) {
-                    value.forEach(value => {
-                        params.queryParams.append(name, value);
-                    });
-                } else if (value !== null && value !== undefined) {
-                    params.queryParams.set(name, value + '');
-                }
-            }
-        );
-    };
+	return (target: object, methodName: string, parameterIndex: number) => {
+		appendExecHandler(
+			target.constructor,
+			methodName,
+			(_instance, _metadata, params, args) => {
+				const value = args[parameterIndex] ?? defaultValue;
+				if (Array.isArray(value)) {
+					value.forEach((value) => {
+						params.queryParams.append(name, value);
+					});
+				} else if (value !== null && value !== undefined) {
+					params.queryParams.set(name, `${value}`);
+				}
+			},
+		);
+	};
 }

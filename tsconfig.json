@@ -1,45 +1,46 @@
 {
-    "compilerOptions": {
-        "module": "esnext",
-        "moduleResolution": "node",
-        "baseUrl": "./",
-        "target": "es5",
-        "lib": ["esnext", "DOM"],
-        "strict": true,
-        "noImplicitAny": true,
-        "noUnusedLocals": true,
-        "alwaysStrict": true,
-        "preserveConstEnums": true,
-        "removeComments": false,
-        "sourceMap": true,
-        "importHelpers": true,
-        "declaration": true,
-        "incremental": true,
-        "listFiles": true,
-        "forceConsistentCasingInFileNames": true,
-        "esModuleInterop": true,
-        "experimentalDecorators": true,
-        "emitDecoratorMetadata": true,
-        "paths": {
-            "@vgerbot/http": ["packages/http/src"],
-            "@vgerbot/solidium": ["packages/solidium/src"],
-            "@vgerbot/persistence": ["packages/persistence/src"],
-            "@vgerbot/msgpack-ext": ["packages/msgpack-ext/src"]
-        }
-    },
-    "exclude": ["packages/*/__tests__", "node_modules", "**/lib"],
-    "references": [
-        {
-            "path": "./packages/solidium/tsconfig.json"
-        },
-        {
-            "path": "./packages/http/tsconfig.json"
-        },
-        {
-            "path": "./packages/persistence/tsconfig.json"
-        },
-        {
-            "path": "./packages/ioc/tsconfig.json"
-        }
-    ]
+	"compilerOptions": {
+		"module": "esnext",
+		"moduleResolution": "node",
+		"baseUrl": "./",
+		"target": "es5",
+		"lib": ["esnext", "DOM"],
+		"strict": true,
+		"noImplicitAny": true,
+		"noUnusedLocals": true,
+		"noImplicitReturns": false,
+		"alwaysStrict": true,
+		"preserveConstEnums": true,
+		"removeComments": false,
+		"sourceMap": true,
+		"importHelpers": true,
+		"declaration": true,
+		"incremental": true,
+		"listFiles": true,
+		"forceConsistentCasingInFileNames": true,
+		"esModuleInterop": true,
+		"experimentalDecorators": true,
+		"emitDecoratorMetadata": true,
+		"paths": {
+			"@vgerbot/http": ["packages/http/src"],
+			"@vgerbot/solidium": ["packages/solidium/src"],
+			"@vgerbot/persistence": ["packages/persistence/src"],
+			"@vgerbot/msgpack-ext": ["packages/msgpack-ext/src"]
+		}
+	},
+	"exclude": ["packages/*/__tests__", "node_modules", "**/lib"],
+	"references": [
+		{
+			"path": "./packages/solidium/tsconfig.json"
+		},
+		{
+			"path": "./packages/http/tsconfig.json"
+		},
+		{
+			"path": "./packages/persistence/tsconfig.json"
+		},
+		{
+			"path": "./packages/ioc/tsconfig.json"
+		}
+	]
 }

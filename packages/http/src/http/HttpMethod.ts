@@ -1,8 +1,8 @@
 export type HttpMethod =
-    | 'GET'
-    | 'POST'
-    | 'PUT'
-    | 'DELETE'
-    | 'HEAD'
-    | 'OPTIONS'
-    | 'PATCH';
+	| "GET"
+	| "POST"
+	| "PUT"
+	| "DELETE"
+	| "HEAD"
+	| "OPTIONS"
+	| "PATCH";

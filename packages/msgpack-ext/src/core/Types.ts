@@ -1,3 +1,3 @@
 export enum Types {
-    Reference = 0
+	Reference = 0,
 }

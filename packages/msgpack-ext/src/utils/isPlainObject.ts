@@ -1,22 +1,22 @@
 export function isObject(o: unknown): o is object {
-    return Object.prototype.toString.call(o) === '[object Object]';
+	return Object.prototype.toString.call(o) === "[object Object]";
 }
 
 export function isPlainObject(o: unknown): o is object {
-    if (isObject(o) === false) return false;
+	if (isObject(o) === false) return false;
 
-    // If has modified constructor
-    const ctor = o.constructor;
-    if (ctor === undefined) return true;
+	// If has modified constructor
+	const ctor = o.constructor;
+	if (ctor === undefined) return true;
 
-    // If has modified prototype
-    const prot = ctor.prototype;
-    if (isObject(prot) === false) return false;
+	// If has modified prototype
+	const prot = ctor.prototype;
+	if (isObject(prot) === false) return false;
 
-    if (Object.prototype.hasOwnProperty.call(prot, 'isPrototypeOf') === false) {
-        return false;
-    }
+	if (Object.hasOwn(prot, "isPrototypeOf") === false) {
+		return false;
+	}
 
-    // Most likely a plain Object
-    return true;
+	// Most likely a plain Object
+	return true;
 }

@@ -1,11 +1,11 @@
-import { HttpSource } from '../http/HttpSource';
-import { AdapterOptions } from './AdapterOptions';
+import type { HttpSource } from "../http/HttpSource";
+import type { AdapterOptions } from "./AdapterOptions";
 
 export interface RequestAdapter {
-    abort(): void;
+	abort(): void;
 
-    execute(): Promise<HttpSource>;
+	execute(): Promise<HttpSource>;
 }
 export type RequestAdapterConstructor = new (
-    options: AdapterOptions
+	options: AdapterOptions,
 ) => RequestAdapter;

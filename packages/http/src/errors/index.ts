@@ -1,57 +1,53 @@
 // Export base error
-export { HttpError } from './base';
-
-// Export general errors
-export { TimeoutError, NetworkError, AbortError, ParseError } from './general';
-
-// Export base status error
-export { HttpStatusError } from './status';
-
+export { HttpError } from "./base";
 // Export client errors (4xx)
 export {
-    BadRequestError,
-    UnauthorizedError,
-    PaymentRequiredError,
-    ForbiddenError,
-    NotFoundError,
-    MethodNotAllowedError,
-    NotAcceptableError,
-    ProxyAuthenticationRequiredError,
-    RequestTimeoutError,
-    ConflictError,
-    GoneError,
-    LengthRequiredError,
-    PreconditionFailedError,
-    PayloadTooLargeError,
-    URITooLongError,
-    UnsupportedMediaTypeError,
-    RangeNotSatisfiableError,
-    ExpectationFailedError,
-    ImATeapotError,
-    MisdirectedRequestError,
-    UnprocessableEntityError,
-    LockedError,
-    FailedDependencyError,
-    TooEarlyError,
-    UpgradeRequiredError,
-    PreconditionRequiredError,
-    TooManyRequestsError,
-    RequestHeaderFieldsTooLargeError,
-    UnavailableForLegalReasonsError
-} from './client';
-
+	BadRequestError,
+	ConflictError,
+	ExpectationFailedError,
+	FailedDependencyError,
+	ForbiddenError,
+	GoneError,
+	ImATeapotError,
+	LengthRequiredError,
+	LockedError,
+	MethodNotAllowedError,
+	MisdirectedRequestError,
+	NotAcceptableError,
+	NotFoundError,
+	PayloadTooLargeError,
+	PaymentRequiredError,
+	PreconditionFailedError,
+	PreconditionRequiredError,
+	ProxyAuthenticationRequiredError,
+	RangeNotSatisfiableError,
+	RequestHeaderFieldsTooLargeError,
+	RequestTimeoutError,
+	TooEarlyError,
+	TooManyRequestsError,
+	UnauthorizedError,
+	UnavailableForLegalReasonsError,
+	UnprocessableEntityError,
+	UnsupportedMediaTypeError,
+	UpgradeRequiredError,
+	URITooLongError,
+} from "./client";
+// Export general errors
+export { AbortError, NetworkError, ParseError, TimeoutError } from "./general";
 // Export server errors (5xx)
 export {
-    ServerError,
-    InternalServerError,
-    NotImplementedError,
-    BadGatewayError,
-    ServiceUnavailableError,
-    GatewayTimeoutError,
-    HTTPVersionNotSupportedError,
-    VariantAlsoNegotiatesError,
-    InsufficientStorageError,
-    LoopDetectedError,
-    NotExtendedError,
-    NetworkAuthenticationRequiredError
-} from './server';
+	BadGatewayError,
+	GatewayTimeoutError,
+	HTTPVersionNotSupportedError,
+	InsufficientStorageError,
+	InternalServerError,
+	LoopDetectedError,
+	NetworkAuthenticationRequiredError,
+	NotExtendedError,
+	NotImplementedError,
+	ServerError,
+	ServiceUnavailableError,
+	VariantAlsoNegotiatesError,
+} from "./server";
+// Export base status error
+export { HttpStatusError } from "./status";

@@ -1,13 +1,13 @@
-import { defineClassDecoratorProcessor } from '@vgerbot/solidium';
-import { ClassMetadata, ClassMetadataReader, Newable } from '@vgerbot/ioc';
-import { StorageOptions } from './Storage';
+import type { ClassMetadata, ClassMetadataReader, Newable } from "@vgerbot/ioc";
+import { defineClassDecoratorProcessor } from "@vgerbot/solidium";
+import type { StorageOptions } from "./Storage";
 
 /**
  * Symbol to mark class with default storage options
  * This is used internally to store and retrieve default storage options for a class
  */
 export const DEFAULT_STORAGE_OPTIONS = Symbol(
-    'solidium-default-storage-options'
+	"solidium-default-storage-options",
 );
 
 /**
@@ -30,16 +30,16 @@ export const DEFAULT_STORAGE_OPTIONS = Symbol(
  * }
  * ```
  */
-export const DefaultStorage = (options: Omit<StorageOptions, 'key'> = {}) => {
-    return defineClassDecoratorProcessor(DEFAULT_STORAGE_OPTIONS, {
-        beforeInstantiation<T>(
-            constructor: Newable<T>,
-            metadata: ClassMetadata<T>
-        ) {
-            // Store the default options in class metadata using Mark
-            metadata.marker().ctor(DEFAULT_STORAGE_OPTIONS, options);
-        }
-    }) as ClassDecorator;
+export const DefaultStorage = (options: Omit<StorageOptions, "key"> = {}) => {
+	return defineClassDecoratorProcessor(DEFAULT_STORAGE_OPTIONS, {
+		beforeInstantiation<T>(
+			_constructor: Newable<T>,
+			metadata: ClassMetadata<T>,
+		) {
+			// Store the default options in class metadata using Mark
+			metadata.marker().ctor(DEFAULT_STORAGE_OPTIONS, options);
+		},
+	}) as ClassDecorator;
 };
 
 /**
@@ -47,10 +47,8 @@ export const DefaultStorage = (options: Omit<StorageOptions, 'key'> = {}) => {
  * This is used internally by the Storage decorator
  */
 export function getDefaultStorageOptions<T>(
-    metadata: ClassMetadataReader<T>
+	metadata: ClassMetadataReader<T>,
 ): StorageOptions | undefined {
-    const ctorMarkInfo = metadata.getCtorMarkInfo();
-    return ctorMarkInfo?.[DEFAULT_STORAGE_OPTIONS] as
-        | StorageOptions
-        | undefined;
+	const ctorMarkInfo = metadata.getCtorMarkInfo();
+	return ctorMarkInfo?.[DEFAULT_STORAGE_OPTIONS] as StorageOptions | undefined;
 }

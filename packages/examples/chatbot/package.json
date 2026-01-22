@@ -1,32 +1,32 @@
 {
-  "name": "chatbot-client",
-  "version": "0.0.0",
-  "description": "",
-  "type": "module",
-  "scripts": {
-    "start": "vite",
-    "dev": "vite",
-    "build": "vite build",
-    "serve": "vite preview"
-  },
-  "license": "MIT",
-  "devDependencies": {
-    "esbuild-plugin-tsc": "^0.5.0",
-    "typescript": "^5.7.2",
-    "unplugin-swc": "^1.5.3",
-    "vite": "^6.0.0",
-    "vite-plugin-solid": "^2.11.6"
-  },
-  "dependencies": {
-    "@picocss/pico": "^2.1.1",
-    "@solidjs/router": "^0.15.3",
-    "@vgerbot/http": "workspace:*",
-    "@vgerbot/ioc": "workspace:*",
-    "@vgerbot/solidium": "workspace:*",
-    "@vgerbot/persistence": "workspace:*",
-    "msw": "^2.8.4",
-    "reflect-metadata": "^0.2.2",
-    "solid-js": "^1.9.5",
-    "vite-plugin-emit-metadata": "^0.2.0"
-  }
+	"name": "chatbot-client",
+	"version": "0.0.0",
+	"description": "",
+	"type": "module",
+	"scripts": {
+		"start": "vite",
+		"dev": "vite",
+		"build": "vite build",
+		"serve": "vite preview"
+	},
+	"license": "MIT",
+	"devDependencies": {
+		"esbuild-plugin-tsc": "^0.5.0",
+		"typescript": "^5.7.2",
+		"unplugin-swc": "^1.5.3",
+		"vite": "^6.0.0",
+		"vite-plugin-solid": "^2.11.6"
+	},
+	"dependencies": {
+		"@picocss/pico": "^2.1.1",
+		"@solidjs/router": "^0.15.3",
+		"@vgerbot/http": "workspace:*",
+		"@vgerbot/ioc": "workspace:*",
+		"@vgerbot/solidium": "workspace:*",
+		"@vgerbot/persistence": "workspace:*",
+		"msw": "^2.8.4",
+		"reflect-metadata": "^0.2.2",
+		"solid-js": "^1.9.5",
+		"vite-plugin-emit-metadata": "^0.2.0"
+	}
 }

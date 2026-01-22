@@ -1,6 +1,6 @@
-import { ByteStream } from '../http/ByteStream';
-import { DownloadResource } from '../resource/DownloadResource';
-import { execute } from './execute';
+import type { ByteStream } from "../http/ByteStream";
+import { DownloadResource } from "../resource/DownloadResource";
+import { execute } from "./execute";
 
 /**
  * Executes a file download request with progress tracking.
@@ -62,5 +62,5 @@ import { execute } from './execute';
  * ```
  */
 export function download(...args: unknown[]) {
-    return execute<ByteStream, DownloadResource>(args, DownloadResource);
+	return execute<ByteStream, DownloadResource>(args, DownloadResource);
 }

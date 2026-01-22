@@ -1,3 +1,3 @@
-export * from './useComputed';
-export * from './useIoC';
-export * from './useService';
+export * from "./useComputed";
+export * from "./useIoC";
+export * from "./useService";

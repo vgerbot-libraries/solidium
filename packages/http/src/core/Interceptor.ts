@@ -1,7 +1,7 @@
-import { EndpointInstance } from './EndpointInstance';
-import { ExecuteRequestMethodParams } from './ExecuteRequestParams';
-import { HttpResponse } from './HttpResponse';
-import { RequestMethod } from './RequestMethod';
+import type { EndpointInstance } from "./EndpointInstance";
+import type { ExecuteRequestMethodParams } from "./ExecuteRequestParams";
+import type { HttpResponse } from "./HttpResponse";
+import type { RequestMethod } from "./RequestMethod";
 
 /**
  * Interface for HTTP request/response interceptors.
@@ -56,47 +56,46 @@ import { RequestMethod } from './RequestMethod';
  * ```
  */
 export interface Interceptor {
-    /**
-     * Invokes the interceptor in the request/response chain.
-     *
-     * @param instance - The endpoint instance making the request
-     * @param method - The request method being invoked
-     * @param params - The request parameters (can be modified)
-     * @param next - Function to call the next interceptor or the actual request
-     * @returns Promise resolving to the HTTP response
-     */
-    invoke(
-        instance: EndpointInstance,
-        method: RequestMethod,
-        params: ExecuteRequestMethodParams,
-        next: InterceptorNextFunction
-    ): Promise<HttpResponse>;
+	/**
+	 * Invokes the interceptor in the request/response chain.
+	 *
+	 * @param instance - The endpoint instance making the request
+	 * @param method - The request method being invoked
+	 * @param params - The request parameters (can be modified)
+	 * @param next - Function to call the next interceptor or the actual request
+	 * @returns Promise resolving to the HTTP response
+	 */
+	invoke(
+		instance: EndpointInstance,
+		method: RequestMethod,
+		params: ExecuteRequestMethodParams,
+		next: InterceptorNextFunction,
+	): Promise<HttpResponse>;
 }
 export type InterceptorConstructor = new () => Interceptor;
 
 export type InterceptorNextFunction = (
-    instance: EndpointInstance,
-    method: RequestMethod,
-    params: ExecuteRequestMethodParams
+	instance: EndpointInstance,
+	method: RequestMethod,
+	params: ExecuteRequestMethodParams,
 ) => Promise<HttpResponse>;
 
 export function isInterceptorConstructor(
-    value: unknown
+	value: unknown,
 ): value is InterceptorConstructor {
-    return (
-        typeof value === 'function' &&
-        typeof value.prototype['invoke'] === 'function'
-    );
+	return (
+		typeof value === "function" && typeof value.prototype.invoke === "function"
+	);
 }
 export function isInterceptor(value: unknown): value is Interceptor {
-    return (
-        typeof value === 'object' &&
-        !!value &&
-        'invoke' in value &&
-        typeof value['invoke'] === 'function'
-    );
+	return (
+		typeof value === "object" &&
+		!!value &&
+		"invoke" in value &&
+		typeof value.invoke === "function"
+	);
 }
 export type InterceptorTypeIdentifier =
-    | InterceptorConstructor
-    | string
-    | symbol;
+	| InterceptorConstructor
+	| string
+	| symbol;

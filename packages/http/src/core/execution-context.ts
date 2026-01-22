@@ -1,19 +1,19 @@
-import { EndpointInstance } from './EndpointInstance';
-import { ExecuteRequestMethodParams } from './ExecuteRequestParams';
-import { RequestMethod } from './RequestMethod';
+import type { EndpointInstance } from "./EndpointInstance";
+import type { ExecuteRequestMethodParams } from "./ExecuteRequestParams";
+import type { RequestMethod } from "./RequestMethod";
 
 export interface ExecutionContext {
-    instance: EndpointInstance;
-    method: RequestMethod;
-    params: ExecuteRequestMethodParams;
+	instance: EndpointInstance;
+	method: RequestMethod;
+	params: ExecuteRequestMethodParams;
 }
 
 let executionContext: ExecutionContext | undefined;
 
 export function getExecutionContext() {
-    return executionContext;
+	return executionContext;
 }
 
 export function setExecutionContext(context?: ExecutionContext) {
-    executionContext = context;
+	executionContext = context;
 }

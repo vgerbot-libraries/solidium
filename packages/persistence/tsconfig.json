@@ -1,22 +1,20 @@
 {
-    "extends": "../../tsconfig.json",
-    "include": [
-        "src"
-    ],
-    "compilerOptions": {
-        "composite": true,
-        "rootDir": "src",
-        "baseUrl": "./"
-    },
-    "references": [
-        {
-            "path": "../solidium"
-        },
-        {
-            "path": "../ioc"
-        },
-        {
-            "path": "../msgpack-ext"
-        }
-    ]
+	"extends": "../../tsconfig.json",
+	"include": ["src"],
+	"compilerOptions": {
+		"composite": true,
+		"rootDir": "src",
+		"baseUrl": "./"
+	},
+	"references": [
+		{
+			"path": "../solidium"
+		},
+		{
+			"path": "../ioc"
+		},
+		{
+			"path": "../msgpack-ext"
+		}
+	]
 }

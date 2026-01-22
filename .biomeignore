@@ -1,0 +1,13 @@
+node_modules
+dist
+lib
+coverage
+.turbo
+docs
+**/node_modules/**
+**/dist/**
+**/lib/**
+**/coverage/**
+**/.turbo/**
+**/docs/**
+**/*.d.ts

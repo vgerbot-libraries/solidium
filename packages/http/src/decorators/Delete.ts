@@ -1,9 +1,9 @@
-import { createRequestDecorator, RequestOptions } from './Request';
+import { createRequestDecorator, type RequestOptions } from "./Request";
 
 /**
  * Options for configuring a DELETE request, excluding the HTTP method.
  */
-export type DeleteRequestOptions = Omit<RequestOptions, 'method'>;
+export type DeleteRequestOptions = Omit<RequestOptions, "method">;
 
 /**
  * Decorator that marks a method as an HTTP DELETE request handler.
@@ -32,5 +32,5 @@ export type DeleteRequestOptions = Omit<RequestOptions, 'method'>;
  * @returns A method decorator
  */
 export function Delete(options: string | DeleteRequestOptions) {
-    return createRequestDecorator(options, 'DELETE');
+	return createRequestDecorator(options, "DELETE");
 }

@@ -1,9 +1,9 @@
-import { createRequestDecorator, RequestOptions } from './Request';
+import { createRequestDecorator, type RequestOptions } from "./Request";
 
 /**
  * Options for configuring a POST request, excluding the HTTP method.
  */
-export type PostRequestOptions = Omit<RequestOptions, 'method'>;
+export type PostRequestOptions = Omit<RequestOptions, "method">;
 
 /**
  * Decorator that marks a method as an HTTP POST request handler.
@@ -45,5 +45,5 @@ export type PostRequestOptions = Omit<RequestOptions, 'method'>;
  * @returns A method decorator
  */
 export function Post(options: string | PostRequestOptions) {
-    return createRequestDecorator(options, 'POST');
+	return createRequestDecorator(options, "POST");
 }

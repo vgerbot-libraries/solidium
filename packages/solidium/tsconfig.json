@@ -1,12 +1,14 @@
 {
-    "extends": "../../tsconfig.json",
-    "include": ["src"],
-    "compilerOptions": {
-        "composite": true,
-        "rootDir": "src",
-        "declaration": true
-    },
-    "references": [{
-        "path": "../ioc/"
-    }]
+	"extends": "../../tsconfig.json",
+	"include": ["src"],
+	"compilerOptions": {
+		"composite": true,
+		"rootDir": "src",
+		"declaration": true
+	},
+	"references": [
+		{
+			"path": "../ioc/"
+		}
+	]
 }

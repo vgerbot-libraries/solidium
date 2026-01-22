@@ -1,38 +1,38 @@
-import path from 'path';
+import path from "node:path";
 
 const packageName = path.basename(process.cwd());
 const basedir = `<rootDir>/packages/${packageName}`;
 
 export default {
-    transform: {
-        '\\.tsx?$': [
-            'rollup-jest',
-            {
-                configFile: path.resolve(__dirname, '../rollup.config.test.js')
-            }
-        ]
-    },
-    testEnvironment: 'jsdom',
-    testMatch: [
-        `${basedir}/__tests__/**/*.spec.ts`,
-        `${basedir}/__tests__/**/*.spec.tsx`
-    ],
-    moduleFileExtensions: ['ts', 'js', 'tsx'],
-    collectCoverage: true,
-    collectCoverageFrom: [`${basedir}/src/**/*.ts`],
-    coveragePathIgnorePatterns: ['/__tests__/', '/node_modules/'],
-    coverageProvider: 'v8',
-    coverageDirectory: `${basedir}/report/coverage/`,
-    coverageReporters: ['json', 'html', 'text-summary'],
-    reporters: [
-        'default',
-        [
-            'jest-html-reporter',
-            {
-                pageTitle: 'Test Report',
-                outputPath: './report/test-report.html'
-            }
-        ]
-    ],
-    setupFiles: ['<rootDir>/__tests__/setup.jest.ts']
+	transform: {
+		"\\.tsx?$": [
+			"rollup-jest",
+			{
+				configFile: path.resolve(__dirname, "../rollup.config.test.js"),
+			},
+		],
+	},
+	testEnvironment: "jsdom",
+	testMatch: [
+		`${basedir}/__tests__/**/*.spec.ts`,
+		`${basedir}/__tests__/**/*.spec.tsx`,
+	],
+	moduleFileExtensions: ["ts", "js", "tsx"],
+	collectCoverage: true,
+	collectCoverageFrom: [`${basedir}/src/**/*.ts`],
+	coveragePathIgnorePatterns: ["/__tests__/", "/node_modules/"],
+	coverageProvider: "v8",
+	coverageDirectory: `${basedir}/report/coverage/`,
+	coverageReporters: ["json", "html", "text-summary"],
+	reporters: [
+		"default",
+		[
+			"jest-html-reporter",
+			{
+				pageTitle: "Test Report",
+				outputPath: "./report/test-report.html",
+			},
+		],
+	],
+	setupFiles: ["<rootDir>/__tests__/setup.jest.ts"],
 };

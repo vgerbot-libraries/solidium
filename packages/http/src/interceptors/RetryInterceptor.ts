@@ -1,40 +1,40 @@
-import { Interceptor, InterceptorNextFunction } from '../core/Interceptor';
-import { RequestMethod } from '../core/RequestMethod';
-import { ExecuteRequestMethodParams } from '../core/ExecuteRequestParams';
-import { HttpResponse } from '../core/HttpResponse';
-import { HttpError, HttpStatusError } from '../errors/HttpError';
-import { EndpointInstance } from '../core/EndpointInstance';
+import type { EndpointInstance } from "../core/EndpointInstance";
+import type { ExecuteRequestMethodParams } from "../core/ExecuteRequestParams";
+import type { HttpResponse } from "../core/HttpResponse";
+import type { Interceptor, InterceptorNextFunction } from "../core/Interceptor";
+import type { RequestMethod } from "../core/RequestMethod";
+import { HttpError, HttpStatusError } from "../errors/HttpError";
 
 /**
  * Configuration options for the {@link RetryInterceptor}.
  */
 export interface RetryConfig {
-    /** Maximum number of retry attempts before giving up */
-    maxAttempts: number;
-    /** Multiplier for exponential backoff (e.g., 2 doubles the delay each retry) */
-    backoffFactor: number;
-    /** Initial delay in milliseconds before the first retry */
-    initialDelay: number;
-    /** Maximum delay in milliseconds between retries (caps exponential growth) */
-    maxDelay: number;
-    /** HTTP status codes that should trigger a retry (e.g., [408, 500, 502, 503, 504]) */
-    retryableStatuses: number[];
-    /** Custom function to determine if an error should trigger a retry */
-    retryable: (error: unknown) => Promise<boolean>;
+	/** Maximum number of retry attempts before giving up */
+	maxAttempts: number;
+	/** Multiplier for exponential backoff (e.g., 2 doubles the delay each retry) */
+	backoffFactor: number;
+	/** Initial delay in milliseconds before the first retry */
+	initialDelay: number;
+	/** Maximum delay in milliseconds between retries (caps exponential growth) */
+	maxDelay: number;
+	/** HTTP status codes that should trigger a retry (e.g., [408, 500, 502, 503, 504]) */
+	retryableStatuses: number[];
+	/** Custom function to determine if an error should trigger a retry */
+	retryable: (error: unknown) => Promise<boolean>;
 }
 
 const DEFAULT_CONFIG: RetryConfig = {
-    maxAttempts: 3,
-    backoffFactor: 2,
-    initialDelay: 1000,
-    maxDelay: 10000,
-    retryableStatuses: [408, 500, 502, 503, 504],
-    async retryable(error) {
-        if (error instanceof HttpStatusError) {
-            return this.retryableStatuses.includes(error.status);
-        }
-        return true;
-    }
+	maxAttempts: 3,
+	backoffFactor: 2,
+	initialDelay: 1000,
+	maxDelay: 10000,
+	retryableStatuses: [408, 500, 502, 503, 504],
+	async retryable(error) {
+		if (error instanceof HttpStatusError) {
+			return this.retryableStatuses.includes(error.status);
+		}
+		return true;
+	},
 };
 
 /**
@@ -106,59 +106,59 @@ const DEFAULT_CONFIG: RetryConfig = {
  * ```
  */
 export class RetryInterceptor implements Interceptor {
-    private readonly config: RetryConfig;
+	private readonly config: RetryConfig;
 
-    constructor(config: Partial<RetryConfig> = {}) {
-        this.config = { ...DEFAULT_CONFIG, ...config };
-    }
+	constructor(config: Partial<RetryConfig> = {}) {
+		this.config = { ...DEFAULT_CONFIG, ...config };
+	}
 
-    private delay(ms: number): Promise<void> {
-        return new Promise(resolve => setTimeout(resolve, ms));
-    }
+	private delay(ms: number): Promise<void> {
+		return new Promise((resolve) => setTimeout(resolve, ms));
+	}
 
-    async invoke(
-        instance: EndpointInstance,
-        method: RequestMethod,
-        params: ExecuteRequestMethodParams,
-        next: InterceptorNextFunction
-    ): Promise<HttpResponse> {
-        let attempt = 0;
-        let delay = this.config.initialDelay;
+	async invoke(
+		instance: EndpointInstance,
+		method: RequestMethod,
+		params: ExecuteRequestMethodParams,
+		next: InterceptorNextFunction,
+	): Promise<HttpResponse> {
+		let attempt = 0;
+		let delay = this.config.initialDelay;
 
-        while (attempt < this.config.maxAttempts) {
-            try {
-                return await next(instance, method, params);
-            } catch (error) {
-                const retryable = await this.config.retryable(error);
-                if (!retryable) {
-                    throw error;
-                }
-                attempt++;
-                if (attempt === this.config.maxAttempts) {
-                    throwMaxRetryAttempsReachedError(error);
-                }
+		while (attempt < this.config.maxAttempts) {
+			try {
+				return await next(instance, method, params);
+			} catch (error) {
+				const retryable = await this.config.retryable(error);
+				if (!retryable) {
+					throw error;
+				}
+				attempt++;
+				if (attempt === this.config.maxAttempts) {
+					throwMaxRetryAttempsReachedError(error);
+				}
 
-                await this.delay(delay);
-                delay = Math.min(
-                    delay * this.config.backoffFactor,
-                    this.config.maxDelay
-                );
-            }
-        }
+				await this.delay(delay);
+				delay = Math.min(
+					delay * this.config.backoffFactor,
+					this.config.maxDelay,
+				);
+			}
+		}
 
-        // This should never be reached due to the throw above
-        throw new Error('Unexpected retry loop exit');
+		// This should never be reached due to the throw above
+		throw new Error("Unexpected retry loop exit");
 
-        function throwMaxRetryAttempsReachedError(error: unknown) {
-            throw new MaxRetryAttemptsReachedError(attempt, error);
-        }
-    }
+		function throwMaxRetryAttempsReachedError(error: unknown) {
+			throw new MaxRetryAttemptsReachedError(attempt, error);
+		}
+	}
 }
 export class MaxRetryAttemptsReachedError extends HttpError {
-    constructor(
-        public readonly attempts: number,
-        public readonly originalError: unknown
-    ) {
-        super('Max retry attempts reached');
-    }
+	constructor(
+		public readonly attempts: number,
+		public readonly originalError: unknown,
+	) {
+		super("Max retry attempts reached");
+	}
 }

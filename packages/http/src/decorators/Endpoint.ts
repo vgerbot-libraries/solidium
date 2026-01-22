@@ -1,7 +1,7 @@
 import {
-    EndpointMetadata,
-    EndpointOptions
-} from '../metadata/EndpointMetadata';
+	EndpointMetadata,
+	type EndpointOptions,
+} from "../metadata/EndpointMetadata";
 
 /**
  * Decorator that marks a class as an HTTP endpoint and configures its base settings.
@@ -56,7 +56,7 @@ import {
  * @returns A class decorator
  */
 export function Endpoint(options: EndpointOptions): ClassDecorator {
-    return (target: Function) => {
-        EndpointMetadata.from(target).setOptions(options);
-    };
+	return (target: Function) => {
+		EndpointMetadata.from(target).setOptions(options);
+	};
 }

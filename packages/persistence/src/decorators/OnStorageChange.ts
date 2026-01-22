@@ -1,6 +1,6 @@
-import { ChangeEvent } from '../core/bucket/ChangeEvent';
-import { ActionType } from '../types/ActionType';
-import { ChangeBy } from '../types/ChangeBy';
+import type { ChangeEvent } from "../core/bucket/ChangeEvent";
+import type { ActionType } from "../types/ActionType";
+import type { ChangeBy } from "../types/ChangeBy";
 
 /**
  * Event object passed to `@OnStorageChange` decorated methods.
@@ -11,14 +11,14 @@ import { ChangeBy } from '../types/ChangeBy';
  * @public
  */
 export interface StorageChangeEvent<T> extends ChangeEvent {
-    /**
-     * The class instance where the storage property changed.
-     */
-    instance: T;
-    /**
-     * The property key that changed in storage.
-     */
-    member: PropertyKey;
+	/**
+	 * The class instance where the storage property changed.
+	 */
+	instance: T;
+	/**
+	 * The property key that changed in storage.
+	 */
+	member: PropertyKey;
 }
 
 /**
@@ -27,22 +27,22 @@ export interface StorageChangeEvent<T> extends ChangeEvent {
  * @public
  */
 export type StorageChangeEventListener<T> = (
-    event: StorageChangeEvent<T>
+	event: StorageChangeEvent<T>,
 ) => void;
 
-const STORAGE_CHANGE_EVENTS = Symbol('storage-change-events');
+const STORAGE_CHANGE_EVENTS = Symbol("storage-change-events");
 
 /**
  * Internal function to notify all registered storage change listeners.
  * @internal
  */
 export function notifyStorageChange<T>(event: StorageChangeEvent<T>) {
-    const prototype = Object.getPrototypeOf(event.instance);
-    const events: StorageChangeEventListener<T>[] =
-        Reflect.getMetadata(STORAGE_CHANGE_EVENTS, prototype) ?? [];
-    events.forEach(handle => {
-        handle.call(event.instance, event);
-    });
+	const prototype = Object.getPrototypeOf(event.instance);
+	const events: StorageChangeEventListener<T>[] =
+		Reflect.getMetadata(STORAGE_CHANGE_EVENTS, prototype) ?? [];
+	events.forEach((handle) => {
+		handle.call(event.instance, event);
+	});
 }
 
 /**
@@ -52,23 +52,23 @@ export function notifyStorageChange<T>(event: StorageChangeEvent<T>) {
  * @public
  */
 export interface StorageChangeNotifyOptions {
-    /**
-     * Filter by change source. If specified, only changes from this source will trigger the callback.
-     * - `ChangeBy.SELF`: Only changes made by the current instance
-     * - `ChangeBy.OTHER`: Only changes made by other instances (e.g., other tabs)
-     */
-    changeBy?: ChangeBy;
-    /**
-     * Filter by action type. If specified, only this type of action will trigger the callback.
-     * - `ActionType.UPDATE`: Only update/insert operations
-     * - `ActionType.REMOVE`: Only remove operations
-     */
-    action?: ActionType;
-    /**
-     * Filter by property keys. If specified, only changes to these properties will trigger the callback.
-     * If not specified, changes to any storage property will trigger the callback.
-     */
-    members?: PropertyKey[];
+	/**
+	 * Filter by change source. If specified, only changes from this source will trigger the callback.
+	 * - `ChangeBy.SELF`: Only changes made by the current instance
+	 * - `ChangeBy.OTHER`: Only changes made by other instances (e.g., other tabs)
+	 */
+	changeBy?: ChangeBy;
+	/**
+	 * Filter by action type. If specified, only this type of action will trigger the callback.
+	 * - `ActionType.UPDATE`: Only update/insert operations
+	 * - `ActionType.REMOVE`: Only remove operations
+	 */
+	action?: ActionType;
+	/**
+	 * Filter by property keys. If specified, only changes to these properties will trigger the callback.
+	 * If not specified, changes to any storage property will trigger the callback.
+	 */
+	members?: PropertyKey[];
 }
 
 /**
@@ -179,31 +179,28 @@ export interface StorageChangeNotifyOptions {
  * @public
  */
 export function OnStorageChange(options?: StorageChangeNotifyOptions) {
-    return <T extends object>(target: T, propertyKey: PropertyKey) => {
-        const events: StorageChangeEventListener<T>[] =
-            Reflect.getMetadata(STORAGE_CHANGE_EVENTS, target) ?? [];
-        Reflect.defineMetadata(STORAGE_CHANGE_EVENTS, events, target);
+	return <T extends object>(target: T, propertyKey: PropertyKey) => {
+		const events: StorageChangeEventListener<T>[] =
+			Reflect.getMetadata(STORAGE_CHANGE_EVENTS, target) ?? [];
+		Reflect.defineMetadata(STORAGE_CHANGE_EVENTS, events, target);
 
-        events.push(function listener<T>(
-            this: T,
-            event: StorageChangeEvent<T>
-        ) {
-            if (options?.members && !options.members.includes(event.member)) {
-                return;
-            }
-            if (options?.changeBy && event.changeBy !== options.changeBy) {
-                return;
-            }
+		events.push(function listener<T>(this: T, event: StorageChangeEvent<T>) {
+			if (options?.members && !options.members.includes(event.member)) {
+				return;
+			}
+			if (options?.changeBy && event.changeBy !== options.changeBy) {
+				return;
+			}
 
-            if (options?.action && event.action !== options.action) {
-                return;
-            }
+			if (options?.action && event.action !== options.action) {
+				return;
+			}
 
-            const method = Reflect.get(
-                this as object,
-                propertyKey
-            ) as StorageChangeEventListener<T>;
-            method.call(this, event);
-        });
-    };
+			const method = Reflect.get(
+				this as object,
+				propertyKey,
+			) as StorageChangeEventListener<T>;
+			method.call(this, event);
+		});
+	};
 }

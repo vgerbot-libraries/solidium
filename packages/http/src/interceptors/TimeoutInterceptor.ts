@@ -1,21 +1,21 @@
-import { Interceptor, InterceptorNextFunction } from '../core/Interceptor';
-import { RequestMethod } from '../core/RequestMethod';
-import { ExecuteRequestMethodParams } from '../core/ExecuteRequestParams';
-import { HttpResponse } from '../core/HttpResponse';
-import { TimeoutError } from '../errors/HttpError';
-import { mergeAbortSignal } from '../common/mergeAbortSignal';
-import { EndpointInstance } from '../core/EndpointInstance';
+import { mergeAbortSignal } from "../common/mergeAbortSignal";
+import type { EndpointInstance } from "../core/EndpointInstance";
+import type { ExecuteRequestMethodParams } from "../core/ExecuteRequestParams";
+import type { HttpResponse } from "../core/HttpResponse";
+import type { Interceptor, InterceptorNextFunction } from "../core/Interceptor";
+import type { RequestMethod } from "../core/RequestMethod";
+import { TimeoutError } from "../errors/HttpError";
 
 /**
  * Configuration options for the {@link TimeoutInterceptor}.
  */
 export interface TimeoutConfig {
-    /** Timeout duration in milliseconds */
-    timeout: number;
+	/** Timeout duration in milliseconds */
+	timeout: number;
 }
 
 const DEFAULT_CONFIG: TimeoutConfig = {
-    timeout: 30000 // 30 seconds
+	timeout: 30000, // 30 seconds
 };
 
 /**
@@ -93,48 +93,45 @@ const DEFAULT_CONFIG: TimeoutConfig = {
  * ```
  */
 export class TimeoutInterceptor implements Interceptor {
-    private readonly config: TimeoutConfig;
+	private readonly config: TimeoutConfig;
 
-    constructor(config: Partial<TimeoutConfig> = {}) {
-        this.config = { ...DEFAULT_CONFIG, ...config };
-    }
+	constructor(config: Partial<TimeoutConfig> = {}) {
+		this.config = { ...DEFAULT_CONFIG, ...config };
+	}
 
-    async invoke(
-        instance: EndpointInstance,
-        method: RequestMethod,
-        params: ExecuteRequestMethodParams,
-        next: InterceptorNextFunction
-    ): Promise<HttpResponse> {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(
-            () => controller.abort(),
-            this.config.timeout
-        );
+	async invoke(
+		instance: EndpointInstance,
+		method: RequestMethod,
+		params: ExecuteRequestMethodParams,
+		next: InterceptorNextFunction,
+	): Promise<HttpResponse> {
+		const controller = new AbortController();
+		const timeoutId = setTimeout(() => controller.abort(), this.config.timeout);
 
-        try {
-            // Merge the timeout signal with any existing signal
-            const signal = mergeAbortSignal(params.signal, controller.signal);
+		try {
+			// Merge the timeout signal with any existing signal
+			const signal = mergeAbortSignal(params.signal, controller.signal);
 
-            return await Promise.race([
-                next(instance, method, { ...params, signal }),
-                new Promise<never>((_, reject) =>
-                    setTimeout(
-                        () =>
-                            reject(
-                                new TimeoutError(
-                                    `Request timeout after ${this.config.timeout}ms`,
-                                    {
-                                        timeout: this.config.timeout,
-                                        method: method.name.toString()
-                                    }
-                                )
-                            ),
-                        this.config.timeout
-                    )
-                )
-            ]);
-        } finally {
-            clearTimeout(timeoutId);
-        }
-    }
+			return await Promise.race([
+				next(instance, method, { ...params, signal }),
+				new Promise<never>((_, reject) =>
+					setTimeout(
+						() =>
+							reject(
+								new TimeoutError(
+									`Request timeout after ${this.config.timeout}ms`,
+									{
+										timeout: this.config.timeout,
+										method: method.name.toString(),
+									},
+								),
+							),
+						this.config.timeout,
+					),
+				),
+			]);
+		} finally {
+			clearTimeout(timeoutId);
+		}
+	}
 }

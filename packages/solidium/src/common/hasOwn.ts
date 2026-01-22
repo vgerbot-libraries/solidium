@@ -1,3 +1,6 @@
 export function hasOwn(object: unknown, propertyKey: string | symbol) {
-    return Object.prototype.hasOwnProperty.call(object, propertyKey);
+	if (object === null || object === undefined) {
+		return false;
+	}
+	return Object.hasOwn(object, propertyKey);
 }

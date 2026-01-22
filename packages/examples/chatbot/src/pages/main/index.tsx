@@ -1,9 +1,5 @@
-import { ThemeSwitcher } from '../../components/theme-switcher';
+import { ThemeSwitcher } from "../../components/theme-switcher";
 
 export function MainPage() {
-    return (
-        <>
-            <ThemeSwitcher></ThemeSwitcher>
-        </>
-    );
+	return <ThemeSwitcher></ThemeSwitcher>;
 }

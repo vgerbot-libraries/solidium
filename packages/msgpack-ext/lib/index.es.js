@@ -1,8 +1,29 @@
 import { encode as encode$1, decode as decode$1, ExtensionCodec } from '@msgpack/msgpack';
 
+var Types;
+(function (Types) {
+  Types[Types["Reference"] = 0] = "Reference";
+})(Types || (Types = {}));
+
 class Reference {
   constructor(path) {
     this.path = path;
+  }
+}
+
+class ReferenceCodec {
+  constructor() {
+    this.type = Types.Reference;
+  }
+  encode(input) {
+    if (input instanceof Reference) {
+      return encode$1(input.path);
+    }
+    return null;
+  }
+  decode(data) {
+    const result = decode$1(data);
+    return new Reference(result);
   }
 }
 
@@ -63,7 +84,7 @@ class ArrayMapper extends IterableMapper {
 }
 
 function isObject(o) {
-  return Object.prototype.toString.call(o) === '[object Object]';
+  return Object.prototype.toString.call(o) === "[object Object]";
 }
 function isPlainObject(o) {
   if (isObject(o) === false) return false;
@@ -73,7 +94,7 @@ function isPlainObject(o) {
   // If has modified prototype
   const prot = ctor.prototype;
   if (isObject(prot) === false) return false;
-  if (Object.prototype.hasOwnProperty.call(prot, 'isPrototypeOf') === false) {
+  if (Object.hasOwn(prot, "isPrototypeOf") === false) {
     return false;
   }
   // Most likely a plain Object
@@ -103,7 +124,7 @@ class MapMapper extends IterableMapper {
     });
   }
   canRevive(object) {
-    return isPlainObject(object) && '$' in object && '_' in object && object.$ === 2 && Array.isArray(object._);
+    return isPlainObject(object) && "$" in object && "_" in object && object.$ === 2 && Array.isArray(object._);
   }
 }
 
@@ -157,7 +178,7 @@ class SetMapper extends IterableMapper {
     });
   }
   canRevive(object) {
-    return isPlainObject(object) && '$' in object && '_' in object && object.$ === 1 && Array.isArray(object._);
+    return isPlainObject(object) && "$" in object && "_" in object && object.$ === 1 && Array.isArray(object._);
   }
   append(target, value) {
     target.add(value);
@@ -174,14 +195,14 @@ class ObjectPath {
   constructor(path, parent) {
     this.path = path;
     this.children = {};
-    this.str = path.join('.');
+    this.str = path.join(".");
     this.parent = parent || this;
   }
   child(key) {
     if (key in this.children) {
       return this.children[key];
     } else {
-      const child = new ObjectPath(this.path.concat(key + ''), this);
+      const child = new ObjectPath(this.path.concat(`${key}`), this);
       this.children[key] = child;
       return child;
     }
@@ -245,84 +266,12 @@ class CodecContext {
   }
 }
 
-class EncodeContext extends CodecContext {
-  constructor() {
-    super(...arguments);
-    this.objectPathMap = new Map();
-  }
-  recording(object, path) {
-    if (object === null || object === undefined) {
-      return;
-    }
-    switch (typeof object) {
-      case 'boolean':
-      case 'number':
-      case 'string':
-        return;
-    }
-    super.recording(object, path);
-    const paths = this.objectPathMap.get(object) || [];
-    paths.push(path);
-    this.objectPathMap.set(object, paths);
-  }
-  isHandled(object) {
-    return this.objectPathMap.has(object);
-  }
-  getReference(object, path) {
-    const paths = this.objectPathMap.get(object);
-    if (!paths) {
-      return;
-    }
-    return paths[0] !== path ? paths[0] : undefined;
-  }
-  transformObject(object) {
-    const mapper = this.getObjectMapper(object);
-    const path = this.getRootPath();
-    return mapper.transform(object, this, path);
-  }
-  getObjectMapper(object) {
-    return this.objectMappers.find(it => it.canTransform(object)) || this.defaultObjectMapper;
-  }
-}
-
-var Types;
-(function (Types) {
-  Types[Types["Reference"] = 0] = "Reference";
-})(Types || (Types = {}));
-
-class ReferenceCodec {
-  constructor() {
-    this.type = Types.Reference;
-  }
-  encode(input) {
-    if (input instanceof Reference) {
-      return encode$1(input.path);
-    }
-    return null;
-  }
-  decode(data) {
-    const result = decode$1(data);
-    return new Reference(result);
-  }
-}
-
-function encode(input) {
-  const extensionCodec = new ExtensionCodec();
-  extensionCodec.register(new ReferenceCodec());
-  const context = new EncodeContext();
-  const transformed = context.transformObject(input);
-  return encode$1(transformed, {
-    context,
-    extensionCodec
-  });
-}
-
 class ReferenceMapper {
   canTransform() {
     return false;
   }
   transform() {
-    throw new Error('Method not implemented.');
+    throw new Error("Method not implemented.");
   }
   canRevive(object) {
     return object instanceof Reference;
@@ -357,6 +306,57 @@ function decode(buffer) {
     extensionCodec
   });
   return context.revive(decoded);
+}
+
+class EncodeContext extends CodecContext {
+  constructor() {
+    super(...arguments);
+    this.objectPathMap = new Map();
+  }
+  recording(object, path) {
+    if (object === null || object === undefined) {
+      return;
+    }
+    switch (typeof object) {
+      case "boolean":
+      case "number":
+      case "string":
+        return;
+    }
+    super.recording(object, path);
+    const paths = this.objectPathMap.get(object) || [];
+    paths.push(path);
+    this.objectPathMap.set(object, paths);
+  }
+  isHandled(object) {
+    return this.objectPathMap.has(object);
+  }
+  getReference(object, path) {
+    const paths = this.objectPathMap.get(object);
+    if (!paths) {
+      return;
+    }
+    return paths[0] !== path ? paths[0] : undefined;
+  }
+  transformObject(object) {
+    const mapper = this.getObjectMapper(object);
+    const path = this.getRootPath();
+    return mapper.transform(object, this, path);
+  }
+  getObjectMapper(object) {
+    return this.objectMappers.find(it => it.canTransform(object)) || this.defaultObjectMapper;
+  }
+}
+
+function encode(input) {
+  const extensionCodec = new ExtensionCodec();
+  extensionCodec.register(new ReferenceCodec());
+  const context = new EncodeContext();
+  const transformed = context.transformObject(input);
+  return encode$1(transformed, {
+    context,
+    extensionCodec
+  });
 }
 
 export { decode, encode };

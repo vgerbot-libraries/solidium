@@ -1,9 +1,9 @@
-import { setupWorker } from 'msw/browser';
-import { authHandlers } from './auth.mock';
+import { setupWorker } from "msw/browser";
+import { authHandlers } from "./auth.mock";
 
 const worker = setupWorker(
-    // @ts-ignore
-    ...authHandlers
+	// @ts-expect-error
+	...authHandlers,
 );
 
 worker.start({});

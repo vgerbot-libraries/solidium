@@ -7,35 +7,35 @@
  * @public
  */
 export interface StorageLoadEvent<T, D = unknown> {
-    /**
-     * The class instance where the storage property was loaded.
-     */
-    instance: T;
-    /**
-     * The property key that was loaded from storage.
-     */
-    member: PropertyKey;
-    /**
-     * The value that was loaded from storage.
-     */
-    value: D;
-    /**
-     * Set of all property keys that have been loaded so far.
-     * Useful for tracking when multiple properties have been loaded.
-     */
-    loadedMembers: Set<PropertyKey>;
-    /**
-     * Timestamp when the value was loaded.
-     */
-    timestamp: number;
+	/**
+	 * The class instance where the storage property was loaded.
+	 */
+	instance: T;
+	/**
+	 * The property key that was loaded from storage.
+	 */
+	member: PropertyKey;
+	/**
+	 * The value that was loaded from storage.
+	 */
+	value: D;
+	/**
+	 * Set of all property keys that have been loaded so far.
+	 * Useful for tracking when multiple properties have been loaded.
+	 */
+	loadedMembers: Set<PropertyKey>;
+	/**
+	 * Timestamp when the value was loaded.
+	 */
+	timestamp: number;
 }
 /**
  * Internal event type used by the storage system.
  * @internal
  */
 export type InternalStorageLoadEvent<T> = Omit<
-    StorageLoadEvent<T>,
-    'loadedMembers'
+	StorageLoadEvent<T>,
+	"loadedMembers"
 >;
 /**
  * Type definition for storage load event listener functions.
@@ -47,18 +47,18 @@ export type StorageLoadEventListener = <T>(event: StorageLoadEvent<T>) => void;
  * @internal
  */
 export type InternalStorageLoadEventListener = <T>(
-    event: InternalStorageLoadEvent<T>
+	event: InternalStorageLoadEvent<T>,
 ) => void;
 
 const STORAGE_LOAD_EVENTS = Symbol();
 
 export function notifyStorageLoad<T>(event: InternalStorageLoadEvent<T>) {
-    const prototype = Object.getPrototypeOf(event.instance);
-    const events: InternalStorageLoadEventListener[] =
-        Reflect.getMetadata(STORAGE_LOAD_EVENTS, prototype) ?? [];
-    events.forEach(handle => {
-        handle.call(event.instance, event);
-    });
+	const prototype = Object.getPrototypeOf(event.instance);
+	const events: InternalStorageLoadEventListener[] =
+		Reflect.getMetadata(STORAGE_LOAD_EVENTS, prototype) ?? [];
+	events.forEach((handle) => {
+		handle.call(event.instance, event);
+	});
 }
 
 /**
@@ -67,12 +67,12 @@ export function notifyStorageLoad<T>(event: InternalStorageLoadEvent<T>) {
  * @public
  */
 export interface StorageLoadNotifyOptions {
-    /**
-     * Array of property keys to monitor. If specified, the decorated method
-     * will only be called when these specific properties are loaded.
-     * If not specified, the method will be called for any storage property load.
-     */
-    members: PropertyKey[];
+	/**
+	 * Array of property keys to monitor. If specified, the decorated method
+	 * will only be called when these specific properties are loaded.
+	 * If not specified, the method will be called for any storage property load.
+	 */
+	members: PropertyKey[];
 }
 
 /**
@@ -130,45 +130,41 @@ export interface StorageLoadNotifyOptions {
  * @public
  */
 export function OnStorageLoad(options?: StorageLoadNotifyOptions) {
-    return <T extends object>(target: T, propertyKey: PropertyKey) => {
-        const events: InternalStorageLoadEventListener[] =
-            Reflect.getMetadata(STORAGE_LOAD_EVENTS, target) ?? [];
-        Reflect.defineMetadata(STORAGE_LOAD_EVENTS, events, target);
+	return <T extends object>(target: T, propertyKey: PropertyKey) => {
+		const events: InternalStorageLoadEventListener[] =
+			Reflect.getMetadata(STORAGE_LOAD_EVENTS, target) ?? [];
+		Reflect.defineMetadata(STORAGE_LOAD_EVENTS, events, target);
 
-        const loadedMembers = new Set<PropertyKey>();
-        events.push(function listener<T>(
-            this: T,
-            event: InternalStorageLoadEvent<T>
-        ) {
-            loadedMembers.add(event.member);
-            if (options?.members && !options.members.includes(event.member)) {
-                return;
-            }
-            const method = Reflect.get(
-                this as object,
-                propertyKey
-            ) as StorageLoadEventListener;
-            method.call(this, {
-                ...event,
-                loadedMembers: new Set(loadedMembers)
-            });
-            if (options?.members) {
-                const isAllHandled = loadedMembers.isSupersetOf(
-                    new Set(options.members)
-                );
-                if (isAllHandled) {
-                    const index = events.indexOf(listener);
-                    if (index === -1) {
-                        return;
-                    }
-                    const newEvents = events.slice(0).splice(index, 1);
-                    Reflect.defineMetadata(
-                        STORAGE_LOAD_EVENTS,
-                        newEvents,
-                        target
-                    );
-                }
-            }
-        });
-    };
+		const loadedMembers = new Set<PropertyKey>();
+		events.push(function listener<T>(
+			this: T,
+			event: InternalStorageLoadEvent<T>,
+		) {
+			loadedMembers.add(event.member);
+			if (options?.members && !options.members.includes(event.member)) {
+				return;
+			}
+			const method = Reflect.get(
+				this as object,
+				propertyKey,
+			) as StorageLoadEventListener;
+			method.call(this, {
+				...event,
+				loadedMembers: new Set(loadedMembers),
+			});
+			if (options?.members) {
+				const isAllHandled = loadedMembers.isSupersetOf(
+					new Set(options.members),
+				);
+				if (isAllHandled) {
+					const index = events.indexOf(listener);
+					if (index === -1) {
+						return;
+					}
+					const newEvents = events.slice(0).splice(index, 1);
+					Reflect.defineMetadata(STORAGE_LOAD_EVENTS, newEvents, target);
+				}
+			}
+		});
+	};
 }

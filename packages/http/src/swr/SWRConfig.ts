@@ -1,39 +1,39 @@
 export interface RevalidateOptions {
-    /**
-     * Auto revalidate on window focus
-     * @default true
-     */
-    focus: boolean;
-    /**
-     * Auto revalidate on network recovery
-     * @default true
-     */
-    reconnect: boolean;
-    /**
-     * Auto revalidate when data becomes stale
-     * @default true
-     */
-    ifStale?: boolean;
-    /**
-     * Custom events that trigger revalidation
-     * @default []
-     */
-    events: string[];
+	/**
+	 * Auto revalidate on window focus
+	 * @default true
+	 */
+	focus: boolean;
+	/**
+	 * Auto revalidate on network recovery
+	 * @default true
+	 */
+	reconnect: boolean;
+	/**
+	 * Auto revalidate when data becomes stale
+	 * @default true
+	 */
+	ifStale?: boolean;
+	/**
+	 * Custom events that trigger revalidation
+	 * @default []
+	 */
+	events: string[];
 }
 
 export interface SWRRetryContext {
-    /**
-     * The error that triggered the retry
-     */
-    error: unknown;
-    /**
-     * The current retry attempt number (starting from 1)
-     */
-    attempt: number;
-    /**
-     * Timestamp of when the error occurred
-     */
-    timestamp: number;
+	/**
+	 * The error that triggered the retry
+	 */
+	error: unknown;
+	/**
+	 * The current retry attempt number (starting from 1)
+	 */
+	attempt: number;
+	/**
+	 * Timestamp of when the error occurred
+	 */
+	timestamp: number;
 }
 
 /**
@@ -60,93 +60,93 @@ export interface SWRRetryContext {
 export type CalculateDelay = (attempt: number, error?: unknown) => number;
 
 export interface SWRRetryConfig {
-    /**
-     * Maximum number of retry attempts
-     * @default 3
-     */
-    maxAttempts: number;
-    /**
-     * Base interval between retries in milliseconds
-     * @default 1000
-     */
-    interval: number;
-    /**
-     * Custom function to calculate delay between retries
-     */
-    calculateDelay?: CalculateDelay;
-    /**
-     * Custom function to determine if a retry should be attempted based on the error
-     * @param ctx - Context containing error details and attempt count
-     * @returns boolean indicating whether to retry
-     */
-    shouldRetryOnError?: (ctx: SWRRetryContext) => boolean;
+	/**
+	 * Maximum number of retry attempts
+	 * @default 3
+	 */
+	maxAttempts: number;
+	/**
+	 * Base interval between retries in milliseconds
+	 * @default 1000
+	 */
+	interval: number;
+	/**
+	 * Custom function to calculate delay between retries
+	 */
+	calculateDelay?: CalculateDelay;
+	/**
+	 * Custom function to determine if a retry should be attempted based on the error
+	 * @param ctx - Context containing error details and attempt count
+	 * @returns boolean indicating whether to retry
+	 */
+	shouldRetryOnError?: (ctx: SWRRetryContext) => boolean;
 }
 
 export interface SWRThrottleConfig {
-    /**
-     * Throttle interval in milliseconds
-     */
-    interval: number;
-    /**
-     * Whether to trigger on the leading edge of the timeout
-     * @default true
-     */
-    leading?: boolean;
-    /**
-     * Whether to trigger on the trailing edge of the timeout
-     * @default true
-     */
-    trailing?: boolean;
+	/**
+	 * Throttle interval in milliseconds
+	 */
+	interval: number;
+	/**
+	 * Whether to trigger on the leading edge of the timeout
+	 * @default true
+	 */
+	leading?: boolean;
+	/**
+	 * Whether to trigger on the trailing edge of the timeout
+	 * @default true
+	 */
+	trailing?: boolean;
 }
 
 export interface SWRRefreshConfig {
-    /**
-     * Polling interval in milliseconds. 0 to disable
-     * @default 0
-     */
-    interval?: number;
-    /**
-     * Continue polling when window is invisible
-     * @default false
-     */
-    whenHidden?: boolean;
-    /**
-     * Continue polling when offline
-     * @default false
-     */
-    whenOffline?: boolean;
+	/**
+	 * Polling interval in milliseconds. 0 to disable
+	 * @default 0
+	 */
+	interval?: number;
+	/**
+	 * Continue polling when window is invisible
+	 * @default false
+	 */
+	whenHidden?: boolean;
+	/**
+	 * Continue polling when offline
+	 * @default false
+	 */
+	whenOffline?: boolean;
 }
 
 export interface SWRConfig {
-    /**
-     * Revalidation configuration
-     */
-    revalidate: RevalidateOptions;
-    /**
-     * Event throttling configuration
-     */
-    throttle?: {
-        /**
-         * Custom event throttle configurations
-         */
-        [event: string]: SWRThrottleConfig;
-    };
-    /**
-     * Error retry configuration
-     */
-    retry?: SWRRetryConfig;
-    /**
-     * Auto refresh configuration
-     */
-    refresh?: SWRRefreshConfig;
-    /**
-     * Data expiration time in milliseconds. 0 for no expiration
-     * @default 0
-     */
-    staleTime?: number;
-    /**
-     * Deduplication interval in milliseconds
-     * @default 2000
-     */
-    dedupingInterval?: number;
+	/**
+	 * Revalidation configuration
+	 */
+	revalidate: RevalidateOptions;
+	/**
+	 * Event throttling configuration
+	 */
+	throttle?: {
+		/**
+		 * Custom event throttle configurations
+		 */
+		[event: string]: SWRThrottleConfig;
+	};
+	/**
+	 * Error retry configuration
+	 */
+	retry?: SWRRetryConfig;
+	/**
+	 * Auto refresh configuration
+	 */
+	refresh?: SWRRefreshConfig;
+	/**
+	 * Data expiration time in milliseconds. 0 for no expiration
+	 * @default 0
+	 */
+	staleTime?: number;
+	/**
+	 * Deduplication interval in milliseconds
+	 * @default 2000
+	 */
+	dedupingInterval?: number;
 }

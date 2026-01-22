@@ -1,35 +1,41 @@
-import { ApplicationContext, Inject, PostInject } from '@vgerbot/ioc';
-import { Signal } from '@vgerbot/solidium';
-import { lastValueFrom, Observer, ReplaySubject, switchMap, take } from 'rxjs';
-import { mergeAbortSignal } from '../common/mergeAbortSignal';
-import { isJSON, isText, isTextEventStream } from '../common/mime-utils';
-import { ExecuteRequestMethodParams } from '../core/ExecuteRequestParams';
-import { ExecutionContext } from '../core/execution-context';
-import { HttpResponse } from '../core/HttpResponse';
-import { RequestMethod } from '../core/RequestMethod';
-import { ParseError } from '../errors/HttpError';
-import { HttpStatusErrorFactory } from '../errors/HttpStatusErrorFactory';
-import { RequestStatus } from './RequestStatus';
-import { ResourceError } from './ResourceError';
-import { ResourceExecutionState } from './ResourceExecutionState';
-import { EndpointInstance } from '../core/EndpointInstance';
+import { type ApplicationContext, Inject, PostInject } from "@vgerbot/ioc";
+import { Signal } from "@vgerbot/solidium";
+import {
+	lastValueFrom,
+	type Observer,
+	ReplaySubject,
+	switchMap,
+	take,
+} from "rxjs";
+import { mergeAbortSignal } from "../common/mergeAbortSignal";
+import { isJSON, isText, isTextEventStream } from "../common/mime-utils";
+import type { EndpointInstance } from "../core/EndpointInstance";
+import type { ExecuteRequestMethodParams } from "../core/ExecuteRequestParams";
+import type { ExecutionContext } from "../core/execution-context";
+import type { HttpResponse } from "../core/HttpResponse";
+import type { RequestMethod } from "../core/RequestMethod";
+import { ParseError } from "../errors/HttpError";
+import { HttpStatusErrorFactory } from "../errors/HttpStatusErrorFactory";
+import { RequestStatus } from "./RequestStatus";
+import { ResourceError } from "./ResourceError";
+import { ResourceExecutionState } from "./ResourceExecutionState";
 
 /**
  * @internal Symbol for executing the resource
  */
-export const EXECUTE = Symbol('execute');
+export const EXECUTE = Symbol("execute");
 /**
  * @internal Symbol for setting data
  */
-export const SET_DATA = Symbol('setData');
+export const SET_DATA = Symbol("setData");
 /**
  * @internal Symbol for setting error
  */
-export const SET_ERROR = Symbol('setError');
+export const SET_ERROR = Symbol("setError");
 /**
  * @internal Symbol for setup
  */
-export const SETUP = Symbol('setup');
+export const SETUP = Symbol("setup");
 
 /**
  * Type alias for a Resource with any data type.
@@ -131,215 +137,208 @@ export type AnyResource = Resource<any, unknown>;
  * ```
  */
 export abstract class Resource<T, B = unknown> {
-    private readonly $state = new ReplaySubject<ResourceExecutionState<T, B>>(
-        1
-    );
-    @Signal()
-    protected state?: ResourceExecutionState<T, B>;
-    @Inject()
-    protected ioc!: ApplicationContext;
+	private readonly $state = new ReplaySubject<ResourceExecutionState<T, B>>(1);
+	@Signal()
+	protected state?: ResourceExecutionState<T, B>;
+	@Inject()
+	protected ioc!: ApplicationContext;
 
-    get data(): T | undefined {
-        return this.state?.data;
-    }
-    get error(): ResourceError<B> | undefined | null {
-        return this.state?.reason;
-    }
-    get messages(): T[] {
-        return this.state?.messages ?? [];
-    }
+	get data(): T | undefined {
+		return this.state?.data;
+	}
+	get error(): ResourceError<B> | undefined | null {
+		return this.state?.reason;
+	}
+	get messages(): T[] {
+		return this.state?.messages ?? [];
+	}
 
-    get idle() {
-        return this.state ? this.state.idle : true;
-    }
-    get opened() {
-        return this.state ? this.state.opened : false;
-    }
-    get loading() {
-        return this.state ? this.state.loading : false;
-    }
-    get success() {
-        return this.state ? this.state.success : false;
-    }
-    get aborted() {
-        return this.state ? this.state.aborted : false;
-    }
-    get failure() {
-        return this.state ? this.state.failure : false;
-    }
+	get idle() {
+		return this.state ? this.state.idle : true;
+	}
+	get opened() {
+		return this.state ? this.state.opened : false;
+	}
+	get loading() {
+		return this.state ? this.state.loading : false;
+	}
+	get success() {
+		return this.state ? this.state.success : false;
+	}
+	get aborted() {
+		return this.state ? this.state.aborted : false;
+	}
+	get failure() {
+		return this.state ? this.state.failure : false;
+	}
 
-    protected readonly abortController = new AbortController();
-    protected context?: ExecutionContext;
+	protected readonly abortController = new AbortController();
+	protected context?: ExecutionContext;
 
-    @PostInject()
-    protected init() {
-        this.$state.subscribe({
-            next: value => {
-                this.state = value;
-            }
-        });
-    }
+	@PostInject()
+	protected init() {
+		this.$state.subscribe({
+			next: (value) => {
+				this.state = value;
+			},
+		});
+	}
 
-    [SETUP](context: ExecutionContext) {
-        if (this.context) {
-            throw new Error(
-                'Unknown Error: Cannot setup resource more than once'
-            );
-        }
-        this.context = context;
-    }
+	[SETUP](context: ExecutionContext) {
+		if (this.context) {
+			throw new Error("Unknown Error: Cannot setup resource more than once");
+		}
+		this.context = context;
+	}
 
-    wait() {
-        return lastValueFrom(
-            this.$state.pipe(
-                switchMap(state => state),
-                take(1)
-            )
-        );
-    }
-    subscribe(
-        observerOrNext?:
-            | Partial<Observer<ResourceExecutionState<T, B>>>
-            | ((value: ResourceExecutionState<T, B>) => void)
-    ) {
-        return this.$state.subscribe(observerOrNext);
-    }
-    async reload(force: boolean = false) {
-        if (this.context) {
-            return this[EXECUTE](force);
-        }
-    }
+	wait() {
+		return lastValueFrom(
+			this.$state.pipe(
+				switchMap((state) => state),
+				take(1),
+			),
+		);
+	}
+	subscribe(
+		observerOrNext?:
+			| Partial<Observer<ResourceExecutionState<T, B>>>
+			| ((value: ResourceExecutionState<T, B>) => void),
+	) {
+		return this.$state.subscribe(observerOrNext);
+	}
+	async reload(force: boolean = false) {
+		if (this.context) {
+			return this[EXECUTE](force);
+		}
+	}
 
-    protected [EXECUTE](
-        force: boolean = false,
-        state = this.ioc.getInstance(
-            ResourceExecutionState
-        ) as ResourceExecutionState<T, B>
-    ) {
-        const context = this.context;
-        if (!context) {
-            throw new Error('Execution context is not setup!');
-        }
-        const lastExecutionAbortController = this.state?.abortController;
-        lastExecutionAbortController?.abort();
+	protected [EXECUTE](
+		force: boolean = false,
+		state = this.ioc.getInstance(
+			ResourceExecutionState,
+		) as ResourceExecutionState<T, B>,
+	) {
+		const context = this.context;
+		if (!context) {
+			throw new Error("Execution context is not setup!");
+		}
+		const lastExecutionAbortController = this.state?.abortController;
+		lastExecutionAbortController?.abort();
 
-        this.$state.next(state);
+		this.$state.next(state);
 
-        const { instance, method, params } = context;
-        // Add force parameter to the request params
-        const requestParams = {
-            ...params,
-            force
-        };
-        state.status = RequestStatus.LOADING;
-        let signal = params.signal;
-        if (signal) {
-            signal = mergeAbortSignal(
-                params.signal,
-                this.abortController.signal
-            );
-        } else {
-            signal = lastExecutionAbortController
-                ? mergeAbortSignal(
-                      lastExecutionAbortController.signal,
-                      this.abortController.signal
-                  )
-                : this.abortController.signal;
-        }
-        const allInterceptors = method.getAllInterceptors(instance);
-        const sendRequest = allInterceptors.reduceRight(
-            (next, interceptor) =>
-                (
-                    instance: EndpointInstance,
-                    method: RequestMethod,
-                    params: ExecuteRequestMethodParams
-                ) => {
-                    return interceptor.invoke(instance, method, params, next);
-                },
-            async (
-                instance: EndpointInstance,
-                method: RequestMethod,
-                params: ExecuteRequestMethodParams
-            ): Promise<HttpResponse> => {
-                state.status = RequestStatus.OPENED;
-                const response = await method.invoke(instance, {
-                    ...params,
-                    signal
-                });
-                state.status = RequestStatus.LOADING;
-                return response;
-            }
-        );
-        sendRequest(instance, method, requestParams)
-            .then(response => {
-                return this.handleResponse(response, state);
-            })
-            .catch(error => {
-                state.error(ResourceError.wrap(error));
-            });
-    }
-    protected async *resolveResponseBody(response: HttpResponse) {
-        const headers = await response.headers();
-        const contentType = headers.get('content-type')?.join(', ');
-        if (isJSON(contentType)) {
-            try {
-                yield await response.json();
-            } catch (error) {
-                // Handle JSON parsing error
-                if (error instanceof SyntaxError) {
-                    const parseError = new ParseError(
-                        'Failed to parse JSON response',
-                        error
-                    );
-                    throw parseError;
-                }
-                throw error;
-            }
-        } else if (isText(contentType)) {
-            yield response.text();
-        } else if (isTextEventStream(contentType)) {
-            yield* response.textStream();
-        } else {
-            const byteStream = await response.body();
-            yield byteStream.readAsBlob();
-        }
-    }
-    protected async handleResponse(
-        response: HttpResponse,
-        state: ResourceExecutionState<T, B>
-    ): Promise<void> {
-        const httpStatus = await response.status();
-        state.headerReceived(await response.headers(), httpStatus);
-        if (httpStatus < 200 || httpStatus >= 400) {
-            await this.handleHttpErrorResponse(response);
-        } else {
-            for await (const data of this.resolveResponseBody(response)) {
-                state.next(data as T);
-            }
-            state.status = RequestStatus.SUCCESS;
-            state.complete();
-        }
-    }
-    protected async handleHttpErrorResponse(
-        response: HttpResponse
-    ): Promise<void> {
-        const httpStatus = await response.status();
-        const headers = await response.headers();
-        const contentType = headers.get('content-type')?.join(', ');
-        const datas = [];
-        for await (const data of this.resolveResponseBody(response)) {
-            datas.push(data);
-        }
-        const responseBody = isTextEventStream(contentType) ? datas : datas[0];
+		const { instance, method, params } = context;
+		// Add force parameter to the request params
+		const requestParams = {
+			...params,
+			force,
+		};
+		state.status = RequestStatus.LOADING;
+		let signal = params.signal;
+		if (signal) {
+			signal = mergeAbortSignal(params.signal, this.abortController.signal);
+		} else {
+			signal = lastExecutionAbortController
+				? mergeAbortSignal(
+						lastExecutionAbortController.signal,
+						this.abortController.signal,
+					)
+				: this.abortController.signal;
+		}
+		const allInterceptors = method.getAllInterceptors(instance);
+		const sendRequest = allInterceptors.reduceRight(
+			(next, interceptor) =>
+				(
+					instance: EndpointInstance,
+					method: RequestMethod,
+					params: ExecuteRequestMethodParams,
+				) => {
+					return interceptor.invoke(instance, method, params, next);
+				},
+			async (
+				instance: EndpointInstance,
+				method: RequestMethod,
+				params: ExecuteRequestMethodParams,
+			): Promise<HttpResponse> => {
+				state.status = RequestStatus.OPENED;
+				const response = await method.invoke(instance, {
+					...params,
+					signal,
+				});
+				state.status = RequestStatus.LOADING;
+				return response;
+			},
+		);
+		sendRequest(instance, method, requestParams)
+			.then((response) => {
+				return this.handleResponse(response, state);
+			})
+			.catch((error) => {
+				state.error(ResourceError.wrap(error));
+			});
+	}
+	protected async *resolveResponseBody(response: HttpResponse) {
+		const headers = await response.headers();
+		const contentType = headers.get("content-type")?.join(", ");
+		if (isJSON(contentType)) {
+			try {
+				yield await response.json();
+			} catch (error) {
+				// Handle JSON parsing error
+				if (error instanceof SyntaxError) {
+					const parseError = new ParseError(
+						"Failed to parse JSON response",
+						error,
+					);
+					throw parseError;
+				}
+				throw error;
+			}
+		} else if (isText(contentType)) {
+			yield response.text();
+		} else if (isTextEventStream(contentType)) {
+			yield* response.textStream();
+		} else {
+			const byteStream = await response.body();
+			yield byteStream.readAsBlob();
+		}
+	}
+	protected async handleResponse(
+		response: HttpResponse,
+		state: ResourceExecutionState<T, B>,
+	): Promise<void> {
+		const httpStatus = await response.status();
+		state.headerReceived(await response.headers(), httpStatus);
+		if (httpStatus < 200 || httpStatus >= 400) {
+			await this.handleHttpErrorResponse(response);
+		} else {
+			for await (const data of this.resolveResponseBody(response)) {
+				state.next(data as T);
+			}
+			state.status = RequestStatus.SUCCESS;
+			state.complete();
+		}
+	}
+	protected async handleHttpErrorResponse(
+		response: HttpResponse,
+	): Promise<void> {
+		const httpStatus = await response.status();
+		const headers = await response.headers();
+		const contentType = headers.get("content-type")?.join(", ");
+		const datas = [];
+		for await (const data of this.resolveResponseBody(response)) {
+			datas.push(data);
+		}
+		const responseBody = isTextEventStream(contentType) ? datas : datas[0];
 
-        // Use the factory to create the appropriate HTTP status error
-        const httpError = HttpStatusErrorFactory.createError(
-            httpStatus,
-            response.init.method.toString(),
-            headers,
-            responseBody
-        );
+		// Use the factory to create the appropriate HTTP status error
+		const httpError = HttpStatusErrorFactory.createError(
+			httpStatus,
+			response.init.method.toString(),
+			headers,
+			responseBody,
+		);
 
-        throw httpError;
-    }
+		throw httpError;
+	}
 }

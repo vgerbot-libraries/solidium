@@ -1,5 +1,5 @@
-import { Events } from '../common/Events';
-import { SWRConfig, SWRRetryContext } from './SWRConfig';
+import { Events } from "../common/Events";
+import type { SWRConfig, SWRRetryContext } from "./SWRConfig";
 
 /**
  * Represents the current state of an SWR cache instance.
@@ -7,16 +7,16 @@ import { SWRConfig, SWRRetryContext } from './SWRConfig';
  * @template T - The type of cached data
  */
 export interface SWRState<T> {
-    /** The cached data, undefined if not yet fetched or if an error occurred */
-    data?: T;
-    /** The error that occurred during fetching, if any */
-    error?: Error;
-    /** Whether the initial fetch is in progress */
-    isLoading: boolean;
-    /** Whether a revalidation (background fetch) is in progress */
-    isValidating: boolean;
-    /** The reason for the current revalidation (e.g., 'focus', 'reconnect') */
-    validatingReason?: string;
+	/** The cached data, undefined if not yet fetched or if an error occurred */
+	data?: T;
+	/** The error that occurred during fetching, if any */
+	error?: Error;
+	/** Whether the initial fetch is in progress */
+	isLoading: boolean;
+	/** Whether a revalidation (background fetch) is in progress */
+	isValidating: boolean;
+	/** The reason for the current revalidation (e.g., 'focus', 'reconnect') */
+	validatingReason?: string;
 }
 
 /**
@@ -25,10 +25,10 @@ export interface SWRState<T> {
  * @template T - The type of cached data
  */
 export interface SWRResponse<T> extends SWRState<T> {
-    /** Manually update the cached data and trigger revalidation */
-    mutate: (data?: T) => void;
-    /** Manually trigger revalidation with an optional reason */
-    revalidate: (reason?: string) => Promise<void>;
+	/** Manually update the cached data and trigger revalidation */
+	mutate: (data?: T) => void;
+	/** Manually trigger revalidation with an optional reason */
+	revalidate: (reason?: string) => Promise<void>;
 }
 
 /**
@@ -37,44 +37,41 @@ export interface SWRResponse<T> extends SWRState<T> {
  * Extends {@link SWRConfig} with optional initial data.
  */
 export interface SWROptions extends Partial<SWRConfig> {
-    /** Initial data to populate the cache before the first fetch */
-    initialData?: unknown;
+	/** Initial data to populate the cache before the first fetch */
+	initialData?: unknown;
 }
 
 const defaultConfig: SWRConfig = {
-    revalidate: {
-        focus: true,
-        reconnect: true,
-        ifStale: true,
-        events: []
-    },
-    dedupingInterval: 2000,
-    staleTime: 0,
-    retry: {
-        maxAttempts: 3,
-        interval: 1000,
-        calculateDelay: (attempt: number) => {
-            const baseInterval = 1000;
-            const maxInterval = 30000;
-            const jitter = Math.random() * 100;
-            return (
-                Math.min(baseInterval * Math.pow(2, attempt - 1), maxInterval) +
-                jitter
-            );
-        },
-        shouldRetryOnError: (ctx: SWRRetryContext) => {
-            return ctx.attempt <= 3;
-        }
-    },
-    refresh: {
-        interval: 0,
-        whenHidden: false,
-        whenOffline: false
-    }
+	revalidate: {
+		focus: true,
+		reconnect: true,
+		ifStale: true,
+		events: [],
+	},
+	dedupingInterval: 2000,
+	staleTime: 0,
+	retry: {
+		maxAttempts: 3,
+		interval: 1000,
+		calculateDelay: (attempt: number) => {
+			const baseInterval = 1000;
+			const maxInterval = 30000;
+			const jitter = Math.random() * 100;
+			return Math.min(baseInterval * 2 ** (attempt - 1), maxInterval) + jitter;
+		},
+		shouldRetryOnError: (ctx: SWRRetryContext) => {
+			return ctx.attempt <= 3;
+		},
+	},
+	refresh: {
+		interval: 0,
+		whenHidden: false,
+		whenOffline: false,
+	},
 };
-const STATE_CHANGE_EVENT = 'stateChange';
-const ERROR_EVENT = 'error';
-const SUCCESS_EVENT = 'success';
+const STATE_CHANGE_EVENT = "stateChange";
+const ERROR_EVENT = "error";
+const SUCCESS_EVENT = "success";
 
 /**
  * Manages the lifecycle and state of a single SWR (Stale-While-Revalidate) cache entry.
@@ -130,176 +127,172 @@ const SUCCESS_EVENT = 'success';
  * ```
  */
 export class SWRInstance<T> {
-    private readonly config: SWROptions;
-    private state: SWRState<T>;
-    private lastFetchTime: number = 0;
-    private currentRetryAttempt: number = 0;
-    private refreshInterval?: number;
-    private readonly cleanupFns: Array<() => void> = [];
-    private readonly abortController = new AbortController();
-    private get signal() {
-        return this.abortController.signal;
-    }
-    private events = new Events();
-    constructor(
-        public readonly key: string,
-        private readonly fetcher: (key: string) => Promise<T>,
-        readonly options: SWROptions = {}
-    ) {
-        this.config = { ...defaultConfig, ...options };
-        this.state = {
-            data: options.initialData,
-            isLoading: true,
-            isValidating: false
-        } as SWRState<T>;
+	private readonly config: SWROptions;
+	private state: SWRState<T>;
+	private lastFetchTime: number = 0;
+	private currentRetryAttempt: number = 0;
+	private refreshInterval?: number;
+	private readonly cleanupFns: Array<() => void> = [];
+	private readonly abortController = new AbortController();
+	private get signal() {
+		return this.abortController.signal;
+	}
+	private events = new Events();
+	constructor(
+		public readonly key: string,
+		private readonly fetcher: (key: string) => Promise<T>,
+		readonly options: SWROptions = {},
+	) {
+		this.config = { ...defaultConfig, ...options };
+		this.state = {
+			data: options.initialData,
+			isLoading: true,
+			isValidating: false,
+		} as SWRState<T>;
 
-        this.initRevalidationStrategy();
-        this.setupRefreshInterval();
-    }
-    onStateChange(listener: (state: SWRState<T>) => void) {
-        return this.events.on(STATE_CHANGE_EVENT, listener);
-    }
-    private setState(newState: Partial<SWRState<T>>) {
-        this.state = { ...this.state, ...newState };
-        this.events.emit(STATE_CHANGE_EVENT, this.state);
-    }
+		this.initRevalidationStrategy();
+		this.setupRefreshInterval();
+	}
+	onStateChange(listener: (state: SWRState<T>) => void) {
+		return this.events.on(STATE_CHANGE_EVENT, listener);
+	}
+	private setState(newState: Partial<SWRState<T>>) {
+		this.state = { ...this.state, ...newState };
+		this.events.emit(STATE_CHANGE_EVENT, this.state);
+	}
 
-    private async revalidate(reason?: string) {
-        const now = Date.now();
+	private async revalidate(reason?: string) {
+		const now = Date.now();
 
-        // Deduping
-        const dedupingInterval = this.config.dedupingInterval ?? 2000;
-        if (now - this.lastFetchTime < dedupingInterval) {
-            return;
-        }
+		// Deduping
+		const dedupingInterval = this.config.dedupingInterval ?? 2000;
+		if (now - this.lastFetchTime < dedupingInterval) {
+			return;
+		}
 
-        this.setState({ isValidating: true, validatingReason: reason });
-        this.lastFetchTime = now;
+		this.setState({ isValidating: true, validatingReason: reason });
+		this.lastFetchTime = now;
 
-        try {
-            const newData = await this.fetcher(this.key);
-            this.setState({
-                data: newData,
-                error: undefined,
-                isLoading: false,
-                isValidating: false
-            });
-            this.currentRetryAttempt = 0;
-            this.events.emit(SUCCESS_EVENT, newData);
-        } catch (err) {
-            const error = err as Error;
-            this.setState({
-                error,
-                isLoading: false,
-                isValidating: false
-            });
-            this.events.emit(ERROR_EVENT, error);
+		try {
+			const newData = await this.fetcher(this.key);
+			this.setState({
+				data: newData,
+				error: undefined,
+				isLoading: false,
+				isValidating: false,
+			});
+			this.currentRetryAttempt = 0;
+			this.events.emit(SUCCESS_EVENT, newData);
+		} catch (err) {
+			const error = err as Error;
+			this.setState({
+				error,
+				isLoading: false,
+				isValidating: false,
+			});
+			this.events.emit(ERROR_EVENT, error);
 
-            // Retry logic
-            if (
-                this.config.retry &&
-                this.currentRetryAttempt < this.config.retry.maxAttempts
-            ) {
-                const retryContext: SWRRetryContext = {
-                    error,
-                    attempt: this.currentRetryAttempt + 1,
-                    timestamp: Date.now()
-                };
+			// Retry logic
+			if (
+				this.config.retry &&
+				this.currentRetryAttempt < this.config.retry.maxAttempts
+			) {
+				const retryContext: SWRRetryContext = {
+					error,
+					attempt: this.currentRetryAttempt + 1,
+					timestamp: Date.now(),
+				};
 
-                if (
-                    this.config.retry.shouldRetryOnError?.(retryContext) !==
-                    false
-                ) {
-                    this.currentRetryAttempt++;
-                    const delay =
-                        this.config.retry.calculateDelay?.(
-                            this.currentRetryAttempt,
-                            error
-                        ) ??
-                        this.config.retry.interval *
-                            Math.pow(2, this.currentRetryAttempt - 1);
+				if (this.config.retry.shouldRetryOnError?.(retryContext) !== false) {
+					this.currentRetryAttempt++;
+					const delay =
+						this.config.retry.calculateDelay?.(
+							this.currentRetryAttempt,
+							error,
+						) ??
+						this.config.retry.interval * 2 ** (this.currentRetryAttempt - 1);
 
-                    setTimeout(() => this.revalidate(), delay);
-                }
-            }
-        }
-    }
+					setTimeout(() => this.revalidate(), delay);
+				}
+			}
+		}
+	}
 
-    private initRevalidationStrategy() {
-        const { focus, reconnect, events } = this.config.revalidate ?? {};
-        if (typeof window === 'undefined') {
-            return;
-        }
-        if (focus !== false) {
-            window.addEventListener(
-                'focus',
-                () => {
-                    this.revalidate('focus');
-                },
-                {
-                    signal: this.signal
-                }
-            );
-        }
-        if (reconnect) {
-            window.addEventListener(
-                'online',
-                () => {
-                    this.revalidate('reconnect');
-                },
-                { signal: this.signal }
-            );
-        }
-        if (events) {
-            events.forEach(event => {
-                window.addEventListener(
-                    event,
-                    () => {
-                        this.revalidate(event);
-                    },
-                    { signal: this.signal }
-                );
-            });
-        }
-    }
+	private initRevalidationStrategy() {
+		const { focus, reconnect, events } = this.config.revalidate ?? {};
+		if (typeof window === "undefined") {
+			return;
+		}
+		if (focus !== false) {
+			window.addEventListener(
+				"focus",
+				() => {
+					this.revalidate("focus");
+				},
+				{
+					signal: this.signal,
+				},
+			);
+		}
+		if (reconnect) {
+			window.addEventListener(
+				"online",
+				() => {
+					this.revalidate("reconnect");
+				},
+				{ signal: this.signal },
+			);
+		}
+		if (events) {
+			events.forEach((event) => {
+				window.addEventListener(
+					event,
+					() => {
+						this.revalidate(event);
+					},
+					{ signal: this.signal },
+				);
+			});
+		}
+	}
 
-    private setupRefreshInterval() {
-        if (this.config.refresh?.interval && this.config.refresh.interval > 0) {
-            this.refreshInterval = setInterval(() => {
-                if (
-                    (document.hidden && !this.config.refresh?.whenHidden) ||
-                    (!navigator.onLine && !this.config.refresh?.whenOffline)
-                ) {
-                    return;
-                }
-                this.revalidate();
-            }, this.config.refresh.interval) as unknown as number;
+	private setupRefreshInterval() {
+		if (this.config.refresh?.interval && this.config.refresh.interval > 0) {
+			this.refreshInterval = setInterval(() => {
+				if (
+					(document.hidden && !this.config.refresh?.whenHidden) ||
+					(!navigator.onLine && !this.config.refresh?.whenOffline)
+				) {
+					return;
+				}
+				this.revalidate();
+			}, this.config.refresh.interval) as unknown as number;
 
-            this.cleanupFns.push(() => {
-                if (this.refreshInterval) {
-                    clearInterval(this.refreshInterval);
-                }
-            });
-        }
-    }
+			this.cleanupFns.push(() => {
+				if (this.refreshInterval) {
+					clearInterval(this.refreshInterval);
+				}
+			});
+		}
+	}
 
-    public mutate(data?: T) {
-        if (data !== undefined) {
-            this.setState({ data });
-        }
-        this.revalidate();
-    }
+	public mutate(data?: T) {
+		if (data !== undefined) {
+			this.setState({ data });
+		}
+		this.revalidate();
+	}
 
-    public getState(): SWRResponse<T> {
-        return {
-            ...this.state,
-            mutate: (data?: T) => this.mutate(data),
-            revalidate: () => this.revalidate()
-        };
-    }
+	public getState(): SWRResponse<T> {
+		return {
+			...this.state,
+			mutate: (data?: T) => this.mutate(data),
+			revalidate: () => this.revalidate(),
+		};
+	}
 
-    public destroy() {
-        this.cleanupFns.forEach(cleanup => cleanup());
-    }
+	public destroy() {
+		this.cleanupFns.forEach((cleanup) => cleanup());
+	}
 }
 Object.assign(window, { SWRInstance });

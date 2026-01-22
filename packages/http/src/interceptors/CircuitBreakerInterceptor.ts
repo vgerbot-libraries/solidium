@@ -1,27 +1,27 @@
-import {
-    Interceptor,
-    InterceptorConstructor,
-    InterceptorNextFunction
-} from '../core/Interceptor';
-import { RequestMethod } from '../core/RequestMethod';
-import { ExecuteRequestMethodParams } from '../core/ExecuteRequestParams';
-import { HttpResponse } from '../core/HttpResponse';
-import { HttpError } from '../errors/HttpError';
-import { EndpointInstance } from '../core/EndpointInstance';
+import type { EndpointInstance } from "../core/EndpointInstance";
+import type { ExecuteRequestMethodParams } from "../core/ExecuteRequestParams";
+import type { HttpResponse } from "../core/HttpResponse";
+import type {
+	Interceptor,
+	InterceptorConstructor,
+	InterceptorNextFunction,
+} from "../core/Interceptor";
+import type { RequestMethod } from "../core/RequestMethod";
+import { HttpError } from "../errors/HttpError";
 
 /**
  * Configuration options for the {@link CircuitBreakerInterceptor}.
  */
 export interface CircuitBreakerConfig {
-    /** Number of consecutive failures before opening the circuit */
-    threshold: number;
-    /** Time in milliseconds before attempting to close the circuit (transition to HALF_OPEN) */
-    resetTimeout: number;
+	/** Number of consecutive failures before opening the circuit */
+	threshold: number;
+	/** Time in milliseconds before attempting to close the circuit (transition to HALF_OPEN) */
+	resetTimeout: number;
 }
 
 const DEFAULT_CONFIG: CircuitBreakerConfig = {
-    threshold: 5,
-    resetTimeout: 60000 // 1 minute
+	threshold: 5,
+	resetTimeout: 60000, // 1 minute
 };
 
 /**
@@ -30,7 +30,7 @@ const DEFAULT_CONFIG: CircuitBreakerConfig = {
  * - OPEN: Circuit is open, requests fail immediately
  * - HALF_OPEN: Testing if service recovered, allows one request through
  */
-type CircuitState = 'CLOSED' | 'OPEN' | 'HALF_OPEN';
+type CircuitState = "CLOSED" | "OPEN" | "HALF_OPEN";
 
 /**
  * Interceptor implementing the Circuit Breaker pattern to prevent cascading failures.
@@ -103,68 +103,68 @@ type CircuitState = 'CLOSED' | 'OPEN' | 'HALF_OPEN';
  * ```
  */
 export class CircuitBreakerInterceptor implements Interceptor {
-    protected failures = 0;
-    protected lastFailureTime = 0;
-    protected state: CircuitState = 'CLOSED';
-    protected readonly config: CircuitBreakerConfig;
+	protected failures = 0;
+	protected lastFailureTime = 0;
+	protected state: CircuitState = "CLOSED";
+	protected readonly config: CircuitBreakerConfig;
 
-    static of(config: Partial<CircuitBreakerConfig> = DEFAULT_CONFIG) {
-        class SubCircuitBreakerInterceptor extends CircuitBreakerInterceptor {
-            constructor() {
-                super(config);
-            }
-        }
-        return SubCircuitBreakerInterceptor as InterceptorConstructor;
-    }
+	static of(config: Partial<CircuitBreakerConfig> = DEFAULT_CONFIG) {
+		class SubCircuitBreakerInterceptor extends CircuitBreakerInterceptor {
+			constructor() {
+				super(config);
+			}
+		}
+		return SubCircuitBreakerInterceptor as InterceptorConstructor;
+	}
 
-    constructor(config: Partial<CircuitBreakerConfig> = {}) {
-        this.config = { ...DEFAULT_CONFIG, ...config };
-    }
+	constructor(config: Partial<CircuitBreakerConfig> = {}) {
+		this.config = { ...DEFAULT_CONFIG, ...config };
+	}
 
-    private shouldReset(): boolean {
-        return (
-            this.state === 'OPEN' &&
-            Date.now() - this.lastFailureTime >= this.config.resetTimeout
-        );
-    }
+	private shouldReset(): boolean {
+		return (
+			this.state === "OPEN" &&
+			Date.now() - this.lastFailureTime >= this.config.resetTimeout
+		);
+	}
 
-    async invoke(
-        instance: EndpointInstance,
-        method: RequestMethod,
-        params: ExecuteRequestMethodParams,
-        next: InterceptorNextFunction
-    ): Promise<HttpResponse> {
-        if (this.state === 'OPEN') {
-            if (this.shouldReset()) {
-                this.state = 'HALF_OPEN';
-            } else {
-                throw new CircuitBreakerError();
-            }
-        }
+	async invoke(
+		instance: EndpointInstance,
+		method: RequestMethod,
+		params: ExecuteRequestMethodParams,
+		next: InterceptorNextFunction,
+	): Promise<HttpResponse> {
+		if (this.state === "OPEN") {
+			if (this.shouldReset()) {
+				this.state = "HALF_OPEN";
+			} else {
+				throw new CircuitBreakerError();
+			}
+		}
 
-        try {
-            const response = await next(instance, method, params);
+		try {
+			const response = await next(instance, method, params);
 
-            if (this.state === 'HALF_OPEN') {
-                this.state = 'CLOSED';
-                this.failures = 0;
-            }
+			if (this.state === "HALF_OPEN") {
+				this.state = "CLOSED";
+				this.failures = 0;
+			}
 
-            return response;
-        } catch (error) {
-            this.failures++;
-            this.lastFailureTime = Date.now();
+			return response;
+		} catch (error) {
+			this.failures++;
+			this.lastFailureTime = Date.now();
 
-            if (this.failures >= this.config.threshold) {
-                this.state = 'OPEN';
-            }
+			if (this.failures >= this.config.threshold) {
+				this.state = "OPEN";
+			}
 
-            throw error;
-        }
-    }
+			throw error;
+		}
+	}
 }
 export class CircuitBreakerError extends HttpError {
-    constructor(message = 'Circuit breaker is open') {
-        super(message);
-    }
+	constructor(message = "Circuit breaker is open") {
+		super(message);
+	}
 }

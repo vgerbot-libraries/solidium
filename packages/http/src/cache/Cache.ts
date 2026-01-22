@@ -1,8 +1,8 @@
-import { decorateEndpointMethod } from '../helper/decorateEndpointMethod';
-import { RequestMethodMetadata } from '../metadata/RequestMethodMetadata';
-import { CacheConfig } from './CacheConfig';
-import { CacheInterceptor } from './CacheInterceptor';
-import { DEFAULT_CACHE_CONFIG } from './constants';
+import { decorateEndpointMethod } from "../helper/decorateEndpointMethod";
+import type { RequestMethodMetadata } from "../metadata/RequestMethodMetadata";
+import type { CacheConfig } from "./CacheConfig";
+import { CacheInterceptor } from "./CacheInterceptor";
+import { DEFAULT_CACHE_CONFIG } from "./constants";
 
 /**
  * Decorator that applies the CacheInterceptor to an endpoint method.
@@ -24,15 +24,15 @@ import { DEFAULT_CACHE_CONFIG } from './constants';
  * ```
  */
 export function Cache(config: CacheConfig = DEFAULT_CACHE_CONFIG) {
-    return decorateEndpointMethod(
-        (
-            clazz: NewableFunction,
-            methodName: string | symbol,
-            methodMetadata: RequestMethodMetadata
-        ) => {
-            methodMetadata.appendInterceptor(
-                CacheInterceptor.createWithConfig(config)
-            );
-        }
-    );
+	return decorateEndpointMethod(
+		(
+			_clazz: NewableFunction,
+			_methodName: string | symbol,
+			methodMetadata: RequestMethodMetadata,
+		) => {
+			methodMetadata.appendInterceptor(
+				CacheInterceptor.createWithConfig(config),
+			);
+		},
+	);
 }

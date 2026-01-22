@@ -1,9 +1,9 @@
-import { createRequestDecorator, RequestOptions } from './Request';
+import { createRequestDecorator, type RequestOptions } from "./Request";
 
 /**
  * Options for configuring a PUT request, excluding the HTTP method.
  */
-export type PutRequestOptions = Omit<RequestOptions, 'method'>;
+export type PutRequestOptions = Omit<RequestOptions, "method">;
 
 /**
  * Decorator that marks a method as an HTTP PUT request handler.
@@ -35,5 +35,5 @@ export type PutRequestOptions = Omit<RequestOptions, 'method'>;
  * @returns A method decorator
  */
 export function Put(options: string | PutRequestOptions) {
-    return createRequestDecorator(options, 'PUT');
+	return createRequestDecorator(options, "PUT");
 }

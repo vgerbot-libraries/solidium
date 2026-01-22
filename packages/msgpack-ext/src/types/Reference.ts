@@ -1,3 +1,3 @@
 export class Reference {
-    constructor(readonly path: string[]) {}
+	constructor(readonly path: string[]) {}
 }

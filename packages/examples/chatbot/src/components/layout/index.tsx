@@ -1,5 +1,5 @@
-import { RouteSectionProps } from '@solidjs/router';
+import type { RouteSectionProps } from "@solidjs/router";
 
 export function Layout(props: RouteSectionProps) {
-    return <>{props.children}</>;
+	return <>{props.children}</>;
 }

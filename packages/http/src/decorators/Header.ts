@@ -1,4 +1,4 @@
-import { appendExecHandler } from '../common/appendExecHandler';
+import { appendExecHandler } from "../common/appendExecHandler";
 
 /**
  * Parameter decorator that binds a method parameter to an HTTP request header.
@@ -58,25 +58,21 @@ import { appendExecHandler } from '../common/appendExecHandler';
  * @returns A parameter decorator
  */
 export function Header(name: string, defaultValue?: string | string[]) {
-    return function (
-        target: object,
-        methodName: string,
-        parameterIndex: number
-    ) {
-        appendExecHandler(
-            target.constructor,
-            methodName,
-            (instance, metadata, params, args) => {
-                const value =
-                    (args[parameterIndex] as string | string[] | undefined) ??
-                    defaultValue;
-                if (value) {
-                    params.headers.append(
-                        name,
-                        ...(Array.isArray(value) ? value : [value])
-                    );
-                }
-            }
-        );
-    };
+	return (target: object, methodName: string, parameterIndex: number) => {
+		appendExecHandler(
+			target.constructor,
+			methodName,
+			(_instance, _metadata, params, args) => {
+				const value =
+					(args[parameterIndex] as string | string[] | undefined) ??
+					defaultValue;
+				if (value) {
+					params.headers.append(
+						name,
+						...(Array.isArray(value) ? value : [value]),
+					);
+				}
+			},
+		);
+	};
 }

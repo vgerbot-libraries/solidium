@@ -1,191 +1,179 @@
 import {
-    ApplicationContext,
-    ClassMetadata,
-    MemberKey,
-    Newable
-} from '@vgerbot/ioc';
+	type ApplicationContext,
+	ClassMetadata,
+	type MemberKey,
+	type Newable,
+} from "@vgerbot/ioc";
+import { hasOwn } from "../common/hasOwn";
 import {
-    MemberDecoratorProcessor,
-    IS_MEMBER_DECORATOR_PROCESSOR,
-    IS_CLASS_DECORATOR_PROCESSOR,
-    ClassDecoratorProcessor
-} from './DecoratorProcessor';
-import { hasOwn } from '../common/hasOwn';
+	type ClassDecoratorProcessor,
+	IS_CLASS_DECORATOR_PROCESSOR,
+	IS_MEMBER_DECORATOR_PROCESSOR,
+	type MemberDecoratorProcessor,
+} from "./DecoratorProcessor";
 
 const SOLIDIUM_MEMBER_DECORATOR_PROCESSOR_KEY = Symbol(
-    'solidium-member-decorator-processors'
+	"solidium-member-decorator-processors",
 );
 const SOLIDIUM_CLASS_DECORATOR_PROCESSOR_KEY = Symbol(
-    'solidium-class-decorator-processors'
+	"solidium-class-decorator-processors",
 );
 
 type ConstructorWithDecoratorProcessor<T> = Newable<T> & {
-    [SOLIDIUM_CLASS_DECORATOR_PROCESSOR_KEY]?: Set<ClassDecoratorProcessor<T>>;
-    [SOLIDIUM_MEMBER_DECORATOR_PROCESSOR_KEY]?: AllProcessorsMap;
+	[SOLIDIUM_CLASS_DECORATOR_PROCESSOR_KEY]?: Set<ClassDecoratorProcessor<T>>;
+	[SOLIDIUM_MEMBER_DECORATOR_PROCESSOR_KEY]?: AllProcessorsMap;
 };
 
 type AllProcessorsMap = Map<MemberKey, Set<MemberDecoratorProcessor<unknown>>>;
 
 function initClassDecoratorProcessorsSet<T>(
-    constructor: Newable<T>,
-    container: ApplicationContext
+	constructor: Newable<T>,
+	container: ApplicationContext,
 ) {
-    if (hasOwn(constructor, SOLIDIUM_CLASS_DECORATOR_PROCESSOR_KEY)) {
-        return;
-    }
-    const metadata = ClassMetadata.getInstance(constructor);
-    const metadataReader = metadata.reader();
-    const classMarkInfo = metadataReader.getCtorMarkInfo();
-    const allClassDecoratorProcessor = new Set<ClassDecoratorProcessor<T>>();
-    if (classMarkInfo) {
-        const classMarkInfoMembers = [
-            ...Object.getOwnPropertyNames(classMarkInfo),
-            ...Object.getOwnPropertySymbols(classMarkInfo)
-        ];
-        classMarkInfoMembers.forEach(markInfoKey => {
-            const processor = classMarkInfo[
-                markInfoKey
-            ] as ClassDecoratorProcessor<T>;
-            if (
-                typeof processor !== 'object' ||
-                !processor[IS_CLASS_DECORATOR_PROCESSOR]
-            ) {
-                return;
-            }
-            allClassDecoratorProcessor.add(processor);
-        });
-    }
-    if (allClassDecoratorProcessor.size === 0) {
-        return;
-    }
-    Object.defineProperty(constructor, SOLIDIUM_CLASS_DECORATOR_PROCESSOR_KEY, {
-        enumerable: false,
-        configurable: false,
-        writable: false,
-        value: allClassDecoratorProcessor
-    });
-    allClassDecoratorProcessor.forEach(processor => {
-        processor.beforeInstantiation?.(constructor, metadata, container);
-    });
+	if (hasOwn(constructor, SOLIDIUM_CLASS_DECORATOR_PROCESSOR_KEY)) {
+		return;
+	}
+	const metadata = ClassMetadata.getInstance(constructor);
+	const metadataReader = metadata.reader();
+	const classMarkInfo = metadataReader.getCtorMarkInfo();
+	const allClassDecoratorProcessor = new Set<ClassDecoratorProcessor<T>>();
+	if (classMarkInfo) {
+		const classMarkInfoMembers = [
+			...Object.getOwnPropertyNames(classMarkInfo),
+			...Object.getOwnPropertySymbols(classMarkInfo),
+		];
+		classMarkInfoMembers.forEach((markInfoKey) => {
+			const processor = classMarkInfo[
+				markInfoKey
+			] as ClassDecoratorProcessor<T>;
+			if (
+				typeof processor !== "object" ||
+				!processor[IS_CLASS_DECORATOR_PROCESSOR]
+			) {
+				return;
+			}
+			allClassDecoratorProcessor.add(processor);
+		});
+	}
+	if (allClassDecoratorProcessor.size === 0) {
+		return;
+	}
+	Object.defineProperty(constructor, SOLIDIUM_CLASS_DECORATOR_PROCESSOR_KEY, {
+		enumerable: false,
+		configurable: false,
+		writable: false,
+		value: allClassDecoratorProcessor,
+	});
+	allClassDecoratorProcessor.forEach((processor) => {
+		processor.beforeInstantiation?.(constructor, metadata, container);
+	});
 }
 
 function initMemberDecoratorProcessorsSet<T>(
-    constructor: Newable<T>,
-    container: ApplicationContext
+	constructor: Newable<T>,
+	container: ApplicationContext,
 ) {
-    if (hasOwn(constructor, SOLIDIUM_MEMBER_DECORATOR_PROCESSOR_KEY)) {
-        return;
-    }
-    const metadata = ClassMetadata.getInstance(constructor);
-    const metadataReader = metadata.reader();
-    const instanceMembers = metadataReader.getAllMarkedMembers();
-    const allMemberDecoratorProcessors = new Map<
-        MemberKey,
-        Array<MemberDecoratorProcessor<unknown>>
-    >();
-    instanceMembers.forEach(member => {
-        const markInfo = metadataReader.getMembersMarkInfo(member);
-        if (!markInfo) {
-            return;
-        }
-        const markInfoMembers = [
-            ...Object.getOwnPropertyNames(markInfo),
-            ...Object.getOwnPropertySymbols(markInfo)
-        ];
-        markInfoMembers.forEach(key => {
-            const markData = markInfo[key] as
-                | MemberDecoratorProcessor<unknown>
-                | undefined;
-            if (
-                markData == null ||
-                typeof markData !== 'object' ||
-                !markData[IS_MEMBER_DECORATOR_PROCESSOR]
-            ) {
-                return;
-            }
-            const processors = allMemberDecoratorProcessors.get(member) || [];
-            allMemberDecoratorProcessors.set(member, processors);
-            processors.push(markData);
-        });
-    });
-    if (allMemberDecoratorProcessors.size === 0) {
-        return;
-    }
-    allMemberDecoratorProcessors.forEach(value => {
-        value.sort((a, b) => {
-            const priorityA = a.priority ?? 0;
-            const priorityB = b.priority ?? 0;
-            return priorityA > priorityB ? 1 : -1;
-        });
-    });
-    Object.defineProperty(
-        constructor,
-        SOLIDIUM_MEMBER_DECORATOR_PROCESSOR_KEY,
-        {
-            enumerable: false,
-            configurable: false,
-            writable: false,
-            value: allMemberDecoratorProcessors
-        }
-    );
-    allMemberDecoratorProcessors.forEach((processors, member) => {
-        processors.forEach(processor => {
-            if (processor.beforeInstantiation) {
-                processor.beforeInstantiation(
-                    constructor,
-                    member,
-                    metadata,
-                    container
-                );
-            }
-        });
-    });
+	if (hasOwn(constructor, SOLIDIUM_MEMBER_DECORATOR_PROCESSOR_KEY)) {
+		return;
+	}
+	const metadata = ClassMetadata.getInstance(constructor);
+	const metadataReader = metadata.reader();
+	const instanceMembers = metadataReader.getAllMarkedMembers();
+	const allMemberDecoratorProcessors = new Map<
+		MemberKey,
+		Array<MemberDecoratorProcessor<unknown>>
+	>();
+	instanceMembers.forEach((member) => {
+		const markInfo = metadataReader.getMembersMarkInfo(member);
+		if (!markInfo) {
+			return;
+		}
+		const markInfoMembers = [
+			...Object.getOwnPropertyNames(markInfo),
+			...Object.getOwnPropertySymbols(markInfo),
+		];
+		markInfoMembers.forEach((key) => {
+			const markData = markInfo[key] as
+				| MemberDecoratorProcessor<unknown>
+				| undefined;
+			if (
+				markData == null ||
+				typeof markData !== "object" ||
+				!markData[IS_MEMBER_DECORATOR_PROCESSOR]
+			) {
+				return;
+			}
+			const processors = allMemberDecoratorProcessors.get(member) || [];
+			allMemberDecoratorProcessors.set(member, processors);
+			processors.push(markData);
+		});
+	});
+	if (allMemberDecoratorProcessors.size === 0) {
+		return;
+	}
+	allMemberDecoratorProcessors.forEach((value) => {
+		value.sort((a, b) => {
+			const priorityA = a.priority ?? 0;
+			const priorityB = b.priority ?? 0;
+			return priorityA > priorityB ? 1 : -1;
+		});
+	});
+	Object.defineProperty(constructor, SOLIDIUM_MEMBER_DECORATOR_PROCESSOR_KEY, {
+		enumerable: false,
+		configurable: false,
+		writable: false,
+		value: allMemberDecoratorProcessors,
+	});
+	allMemberDecoratorProcessors.forEach((processors, member) => {
+		processors.forEach((processor) => {
+			if (processor.beforeInstantiation) {
+				processor.beforeInstantiation(constructor, member, metadata, container);
+			}
+		});
+	});
 }
 
 export function beforeInstantiation<T>(
-    constructor: Newable<T>,
-    container: ApplicationContext
+	constructor: Newable<T>,
+	container: ApplicationContext,
 ) {
-    initClassDecoratorProcessorsSet(constructor, container);
-    initMemberDecoratorProcessorsSet(constructor, container);
+	initClassDecoratorProcessorsSet(constructor, container);
+	initMemberDecoratorProcessorsSet(constructor, container);
 }
 
 export function afterInstantiation<T extends object>(
-    instance: T,
-    container: ApplicationContext
+	instance: T,
+	container: ApplicationContext,
 ): T {
-    const constructor =
-        instance.constructor as ConstructorWithDecoratorProcessor<T>;
-    const metadata = ClassMetadata.getInstance(constructor);
+	const constructor =
+		instance.constructor as ConstructorWithDecoratorProcessor<T>;
+	const metadata = ClassMetadata.getInstance(constructor);
 
-    const allClassProcessors =
-        constructor[SOLIDIUM_CLASS_DECORATOR_PROCESSOR_KEY];
+	const allClassProcessors =
+		constructor[SOLIDIUM_CLASS_DECORATOR_PROCESSOR_KEY];
 
-    if (allClassProcessors) {
-        allClassProcessors.forEach(processor => {
-            const newInstance =
-                processor.afterInstantiation &&
-                processor.afterInstantiation(instance, metadata, container);
-            if (newInstance instanceof constructor) {
-                instance = newInstance;
-            }
-        });
-    }
-    const allMemberProcessors =
-        constructor[SOLIDIUM_MEMBER_DECORATOR_PROCESSOR_KEY];
-    if (allMemberProcessors) {
-        allMemberProcessors.forEach((processors, member) => {
-            processors.forEach(processor => {
-                if (processor.afterInstantiation) {
-                    processor.afterInstantiation(
-                        instance,
-                        member,
-                        metadata,
-                        container
-                    );
-                }
-            });
-        });
-    }
-    return instance;
+	if (allClassProcessors) {
+		allClassProcessors.forEach((processor) => {
+			const newInstance = processor.afterInstantiation?.(
+				instance,
+				metadata,
+				container,
+			);
+			if (newInstance instanceof constructor) {
+				instance = newInstance;
+			}
+		});
+	}
+	const allMemberProcessors =
+		constructor[SOLIDIUM_MEMBER_DECORATOR_PROCESSOR_KEY];
+	if (allMemberProcessors) {
+		allMemberProcessors.forEach((processors, member) => {
+			processors.forEach((processor) => {
+				if (processor.afterInstantiation) {
+					processor.afterInstantiation(instance, member, metadata, container);
+				}
+			});
+		});
+	}
+	return instance;
 }

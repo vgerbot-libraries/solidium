@@ -1,6 +1,26 @@
 import { MemberKey, ClassMetadataReader } from '@vgerbot/ioc';
 
 /**
+ * Enumeration of built-in storage drivers available in the persistence library.
+ *
+ * @public
+ */
+declare enum DefaultDrivers {
+    /**
+     * Uses browser's localStorage API for persistent storage across sessions.
+     */
+    LOCAL_STORAGE = "localStorage",
+    /**
+     * Uses browser's sessionStorage API for storage that persists only for the session.
+     */
+    SESSION_STORAGE = "sessionStorage",
+    /**
+     * Uses browser's IndexedDB API for more advanced persistent storage with larger capacity.
+     */
+    INDEXED_DB = "indexedDB"
+}
+
+/**
  * Defines the type of action performed on storage.
  *
  * @public
@@ -188,26 +208,6 @@ interface DataSerializer {
 }
 
 /**
- * Enumeration of built-in storage drivers available in the persistence library.
- *
- * @public
- */
-declare enum DefaultDrivers {
-    /**
-     * Uses browser's localStorage API for persistent storage across sessions.
-     */
-    LOCAL_STORAGE = "localStorage",
-    /**
-     * Uses browser's sessionStorage API for storage that persists only for the session.
-     */
-    SESSION_STORAGE = "sessionStorage",
-    /**
-     * Uses browser's IndexedDB API for more advanced persistent storage with larger capacity.
-     */
-    INDEXED_DB = "indexedDB"
-}
-
-/**
  * Configuration options for creating a storage bucket.
  *
  * @public
@@ -384,6 +384,21 @@ declare class Bucket {
 }
 
 /**
+ * Symbol identifier for the default bucket configuration in the IoC container.
+ * Used internally to register and retrieve the default bucket configuration.
+ *
+ * @public
+ */
+declare const DEFAULT_BUCKET_CONFIGURATION: unique symbol;
+/**
+ * Symbol identifier for the default bucket instance in the IoC container.
+ * Used internally to register and retrieve the default bucket.
+ *
+ * @public
+ */
+declare const DEFAULT_BUCKET: unique symbol;
+
+/**
  * Main entry point for the persistence system.
  * Provides factory methods for configuring storage buckets.
  *
@@ -437,7 +452,7 @@ declare class Persistence {
      * })
      * ```
      */
-    static default(configuration?: Omit<BucketConfiguration, 'name'>): typeof Persistence;
+    static default(configuration?: Omit<BucketConfiguration, "name">): typeof Persistence;
     /**
      * Creates a factory wrapper for a custom named storage bucket.
      * Named buckets can be referenced in `@Storage()` decorators by their name.
@@ -577,7 +592,7 @@ interface StorageOptions {
      * userPreferences: UserPreferences = defaultPreferences;
      * ```
      */
-    migrationStrategy?: 'overwrite' | 'keep' | (<T>(newValue?: T, cachedValue?: T) => T | undefined);
+    migrationStrategy?: "overwrite" | "keep" | (<T>(newValue?: T, cachedValue?: T) => T | undefined);
     /**
      * Debounce delay in milliseconds for save operations.
      * When the property changes frequently, this delay prevents
@@ -656,122 +671,6 @@ declare const DefaultStorage: (options?: Omit<StorageOptions, "key">) => ClassDe
  * This is used internally by the Storage decorator
  */
 declare function getDefaultStorageOptions<T>(metadata: ClassMetadataReader<T>): StorageOptions | undefined;
-
-/**
- * Event object passed to `@OnStorageLoad` decorated methods.
- *
- * @typeParam T - The type of the class instance
- * @typeParam D - The type of the loaded data
- *
- * @public
- */
-interface StorageLoadEvent<T, D = unknown> {
-    /**
-     * The class instance where the storage property was loaded.
-     */
-    instance: T;
-    /**
-     * The property key that was loaded from storage.
-     */
-    member: PropertyKey;
-    /**
-     * The value that was loaded from storage.
-     */
-    value: D;
-    /**
-     * Set of all property keys that have been loaded so far.
-     * Useful for tracking when multiple properties have been loaded.
-     */
-    loadedMembers: Set<PropertyKey>;
-    /**
-     * Timestamp when the value was loaded.
-     */
-    timestamp: number;
-}
-/**
- * Internal event type used by the storage system.
- * @internal
- */
-type InternalStorageLoadEvent<T> = Omit<StorageLoadEvent<T>, 'loadedMembers'>;
-/**
- * Type definition for storage load event listener functions.
- *
- * @public
- */
-type StorageLoadEventListener = <T>(event: StorageLoadEvent<T>) => void;
-/**
- * @internal
- */
-type InternalStorageLoadEventListener = <T>(event: InternalStorageLoadEvent<T>) => void;
-declare function notifyStorageLoad<T>(event: InternalStorageLoadEvent<T>): void;
-/**
- * Configuration options for the OnStorageLoad decorator.
- *
- * @public
- */
-interface StorageLoadNotifyOptions {
-    /**
-     * Array of property keys to monitor. If specified, the decorated method
-     * will only be called when these specific properties are loaded.
-     * If not specified, the method will be called for any storage property load.
-     */
-    members: PropertyKey[];
-}
-/**
- * Method decorator that marks a method to be called when storage properties are loaded.
- * The decorated method will receive a {@link StorageLoadEvent} with information about
- * the loaded property.
- *
- * This is useful for performing actions after storage values are restored, such as
- * validation, transformation, or triggering side effects.
- *
- * @param options - Optional configuration to filter which properties trigger the callback
- * @returns A method decorator
- *
- * @example
- * Called for any storage property load:
- * ```typescript
- * class UserSettings {
- *   @Signal()
- *   @Storage()
- *   theme: string = 'light';
- *
- *   @Signal()
- *   @Storage()
- *   fontSize: number = 14;
- *
- *   @OnStorageLoad()
- *   onAnyPropertyLoaded(event: StorageLoadEvent<UserSettings>) {
- *     console.log(`Loaded ${String(event.member)}: ${event.value}`);
- *   }
- * }
- * ```
- *
- * @example
- * Called only for specific properties:
- * ```typescript
- * class UserSettings {
- *   @Signal()
- *   @Storage()
- *   theme: string = 'light';
- *
- *   @Signal()
- *   @Storage()
- *   fontSize: number = 14;
- *
- *   @OnStorageLoad({ members: ['theme', 'fontSize'] })
- *   onBothLoaded(event: StorageLoadEvent<UserSettings>) {
- *     // Called after both theme and fontSize are loaded
- *     if (event.loadedMembers.size === 2) {
- *       console.log('All settings loaded!');
- *     }
- *   }
- * }
- * ```
- *
- * @public
- */
-declare function OnStorageLoad(options?: StorageLoadNotifyOptions): <T extends object>(target: T, propertyKey: PropertyKey) => void;
 
 /**
  * Event object passed to `@OnStorageChange` decorated methods.
@@ -937,18 +836,119 @@ interface StorageChangeNotifyOptions {
 declare function OnStorageChange(options?: StorageChangeNotifyOptions): <T extends object>(target: T, propertyKey: PropertyKey) => void;
 
 /**
- * Symbol identifier for the default bucket configuration in the IoC container.
- * Used internally to register and retrieve the default bucket configuration.
+ * Event object passed to `@OnStorageLoad` decorated methods.
+ *
+ * @typeParam T - The type of the class instance
+ * @typeParam D - The type of the loaded data
  *
  * @public
  */
-declare const DEFAULT_BUCKET_CONFIGURATION: unique symbol;
+interface StorageLoadEvent<T, D = unknown> {
+    /**
+     * The class instance where the storage property was loaded.
+     */
+    instance: T;
+    /**
+     * The property key that was loaded from storage.
+     */
+    member: PropertyKey;
+    /**
+     * The value that was loaded from storage.
+     */
+    value: D;
+    /**
+     * Set of all property keys that have been loaded so far.
+     * Useful for tracking when multiple properties have been loaded.
+     */
+    loadedMembers: Set<PropertyKey>;
+    /**
+     * Timestamp when the value was loaded.
+     */
+    timestamp: number;
+}
 /**
- * Symbol identifier for the default bucket instance in the IoC container.
- * Used internally to register and retrieve the default bucket.
+ * Internal event type used by the storage system.
+ * @internal
+ */
+type InternalStorageLoadEvent<T> = Omit<StorageLoadEvent<T>, "loadedMembers">;
+/**
+ * Type definition for storage load event listener functions.
  *
  * @public
  */
-declare const DEFAULT_BUCKET: unique symbol;
+type StorageLoadEventListener = <T>(event: StorageLoadEvent<T>) => void;
+/**
+ * @internal
+ */
+type InternalStorageLoadEventListener = <T>(event: InternalStorageLoadEvent<T>) => void;
+declare function notifyStorageLoad<T>(event: InternalStorageLoadEvent<T>): void;
+/**
+ * Configuration options for the OnStorageLoad decorator.
+ *
+ * @public
+ */
+interface StorageLoadNotifyOptions {
+    /**
+     * Array of property keys to monitor. If specified, the decorated method
+     * will only be called when these specific properties are loaded.
+     * If not specified, the method will be called for any storage property load.
+     */
+    members: PropertyKey[];
+}
+/**
+ * Method decorator that marks a method to be called when storage properties are loaded.
+ * The decorated method will receive a {@link StorageLoadEvent} with information about
+ * the loaded property.
+ *
+ * This is useful for performing actions after storage values are restored, such as
+ * validation, transformation, or triggering side effects.
+ *
+ * @param options - Optional configuration to filter which properties trigger the callback
+ * @returns A method decorator
+ *
+ * @example
+ * Called for any storage property load:
+ * ```typescript
+ * class UserSettings {
+ *   @Signal()
+ *   @Storage()
+ *   theme: string = 'light';
+ *
+ *   @Signal()
+ *   @Storage()
+ *   fontSize: number = 14;
+ *
+ *   @OnStorageLoad()
+ *   onAnyPropertyLoaded(event: StorageLoadEvent<UserSettings>) {
+ *     console.log(`Loaded ${String(event.member)}: ${event.value}`);
+ *   }
+ * }
+ * ```
+ *
+ * @example
+ * Called only for specific properties:
+ * ```typescript
+ * class UserSettings {
+ *   @Signal()
+ *   @Storage()
+ *   theme: string = 'light';
+ *
+ *   @Signal()
+ *   @Storage()
+ *   fontSize: number = 14;
+ *
+ *   @OnStorageLoad({ members: ['theme', 'fontSize'] })
+ *   onBothLoaded(event: StorageLoadEvent<UserSettings>) {
+ *     // Called after both theme and fontSize are loaded
+ *     if (event.loadedMembers.size === 2) {
+ *       console.log('All settings loaded!');
+ *     }
+ *   }
+ * }
+ * ```
+ *
+ * @public
+ */
+declare function OnStorageLoad(options?: StorageLoadNotifyOptions): <T extends object>(target: T, propertyKey: PropertyKey) => void;
 
 export { Bucket, type BucketConfiguration, type ChangeEvent, DEFAULT_BUCKET, DEFAULT_BUCKET_CONFIGURATION, DEFAULT_STORAGE_OPTIONS, type DataSerializer, DefaultDrivers, DefaultSerializer, DefaultStorage, type DriverChangeEvent, type InternalStorageLoadEvent, type InternalStorageLoadEventListener, OnStorageChange, OnStorageLoad, Persistence, Storage, type StorageChangeEvent, type StorageChangeEventListener, type StorageChangeNotifyOptions, type StorageDriver, type StorageDriverChangeEventListener, type StorageDriverConstructor, type StorageDriverOptions, type StorageLoadEvent, type StorageLoadEventListener, type StorageLoadNotifyOptions, type StorageOptions, getDefaultStorageOptions, notifyStorageChange, notifyStorageLoad };

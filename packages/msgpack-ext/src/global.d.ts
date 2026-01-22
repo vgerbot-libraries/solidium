@@ -1,3 +1,3 @@
 declare type Newable<T> = {
-    new (...args: unknown[]): T;
+	new (...args: unknown[]): T;
 };

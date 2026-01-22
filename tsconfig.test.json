@@ -1,15 +1,13 @@
 {
-    "extends": "./tsconfig.json",
-    "compilerOptions": {
-        "pretty": false,
-        "baseUrl": "./",
-        "paths": {
-            "@src/*": ["../src/*"]
-        },
-        "target": "es2015",
-        "types": [
-            "jest"
-        ]
-    },
-    "exclude": ["node_modules"]
+	"extends": "./tsconfig.json",
+	"compilerOptions": {
+		"pretty": false,
+		"baseUrl": "./",
+		"paths": {
+			"@src/*": ["../src/*"]
+		},
+		"target": "es2015",
+		"types": ["jest"]
+	},
+	"exclude": ["node_modules"]
 }

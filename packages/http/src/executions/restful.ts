@@ -1,5 +1,5 @@
-import { execute } from './execute';
-import { RestfulResource } from '../resource/RestfulResource';
+import { RestfulResource } from "../resource/RestfulResource";
+import { execute } from "./execute";
 
 /**
  * Executes a RESTful HTTP request and returns a reactive resource.
@@ -71,5 +71,5 @@ import { RestfulResource } from '../resource/RestfulResource';
  * ```
  */
 export function restful<T, A extends unknown[] = unknown[]>(...args: A) {
-    return execute<T, RestfulResource<T>>(args, RestfulResource);
+	return execute<T, RestfulResource<T>>(args, RestfulResource);
 }

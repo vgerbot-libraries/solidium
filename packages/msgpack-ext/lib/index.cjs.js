@@ -2,6 +2,35 @@
 
 var msgpack = require('@msgpack/msgpack');
 
+var Types;
+(function (Types) {
+  Types[Types["Reference"] = 0] = "Reference";
+})(Types || (Types = {}));
+
+var Reference = /** @class */function () {
+  function Reference(path) {
+    this.path = path;
+  }
+  return Reference;
+}();
+
+var ReferenceCodec = /** @class */function () {
+  function ReferenceCodec() {
+    this.type = Types.Reference;
+  }
+  ReferenceCodec.prototype.encode = function (input) {
+    if (input instanceof Reference) {
+      return msgpack.encode(input.path);
+    }
+    return null;
+  };
+  ReferenceCodec.prototype.decode = function (data) {
+    var result = msgpack.decode(data);
+    return new Reference(result);
+  };
+  return ReferenceCodec;
+}();
+
 /******************************************************************************
 Copyright (c) Microsoft Corporation.
 
@@ -76,13 +105,6 @@ typeof SuppressedError === "function" ? SuppressedError : function (error, suppr
     var e = new Error(message);
     return e.name = "SuppressedError", e.error = error, e.suppressed = suppressed, e;
 };
-
-var Reference = /** @class */function () {
-  function Reference(path) {
-    this.path = path;
-  }
-  return Reference;
-}();
 
 var IterableMapper = /** @class */function () {
   function IterableMapper() {}
@@ -163,7 +185,7 @@ var ArrayMapper = /** @class */function (_super) {
 }(IterableMapper);
 
 function isObject(o) {
-  return Object.prototype.toString.call(o) === '[object Object]';
+  return Object.prototype.toString.call(o) === "[object Object]";
 }
 function isPlainObject(o) {
   if (isObject(o) === false) return false;
@@ -173,7 +195,7 @@ function isPlainObject(o) {
   // If has modified prototype
   var prot = ctor.prototype;
   if (isObject(prot) === false) return false;
-  if (Object.prototype.hasOwnProperty.call(prot, 'isPrototypeOf') === false) {
+  if (Object.hasOwn(prot, "isPrototypeOf") === false) {
     return false;
   }
   // Most likely a plain Object
@@ -207,7 +229,7 @@ var MapMapper = /** @class */function (_super) {
     });
   };
   MapMapper.prototype.canRevive = function (object) {
-    return isPlainObject(object) && '$' in object && '_' in object && object.$ === 2 && Array.isArray(object._);
+    return isPlainObject(object) && "$" in object && "_" in object && object.$ === 2 && Array.isArray(object._);
   };
   return MapMapper;
 }(IterableMapper);
@@ -268,7 +290,7 @@ var SetMapper = /** @class */function (_super) {
     });
   };
   SetMapper.prototype.canRevive = function (object) {
-    return isPlainObject(object) && '$' in object && '_' in object && object.$ === 1 && Array.isArray(object._);
+    return isPlainObject(object) && "$" in object && "_" in object && object.$ === 1 && Array.isArray(object._);
   };
   SetMapper.prototype.append = function (target, value) {
     target.add(value);
@@ -286,14 +308,14 @@ var ObjectPath = /** @class */function () {
   function ObjectPath(path, parent) {
     this.path = path;
     this.children = {};
-    this.str = path.join('.');
+    this.str = path.join(".");
     this.parent = parent || this;
   }
   ObjectPath.prototype.child = function (key) {
     if (key in this.children) {
       return this.children[key];
     } else {
-      var child = new ObjectPath(this.path.concat(key + ''), this);
+      var child = new ObjectPath(this.path.concat("".concat(key)), this);
       this.children[key] = child;
       return child;
     }
@@ -363,91 +385,13 @@ var CodecContext = /** @class */function () {
   return CodecContext;
 }();
 
-var EncodeContext = /** @class */function (_super) {
-  __extends(EncodeContext, _super);
-  function EncodeContext() {
-    var _this = _super.apply(this, __spreadArray([], __read(arguments), false)) || this;
-    _this.objectPathMap = new Map();
-    return _this;
-  }
-  EncodeContext.prototype.recording = function (object, path) {
-    if (object === null || object === undefined) {
-      return;
-    }
-    switch (typeof object) {
-      case 'boolean':
-      case 'number':
-      case 'string':
-        return;
-    }
-    _super.prototype.recording.call(this, object, path);
-    var paths = this.objectPathMap.get(object) || [];
-    paths.push(path);
-    this.objectPathMap.set(object, paths);
-  };
-  EncodeContext.prototype.isHandled = function (object) {
-    return this.objectPathMap.has(object);
-  };
-  EncodeContext.prototype.getReference = function (object, path) {
-    var paths = this.objectPathMap.get(object);
-    if (!paths) {
-      return;
-    }
-    return paths[0] !== path ? paths[0] : undefined;
-  };
-  EncodeContext.prototype.transformObject = function (object) {
-    var mapper = this.getObjectMapper(object);
-    var path = this.getRootPath();
-    return mapper.transform(object, this, path);
-  };
-  EncodeContext.prototype.getObjectMapper = function (object) {
-    return this.objectMappers.find(function (it) {
-      return it.canTransform(object);
-    }) || this.defaultObjectMapper;
-  };
-  return EncodeContext;
-}(CodecContext);
-
-var Types;
-(function (Types) {
-  Types[Types["Reference"] = 0] = "Reference";
-})(Types || (Types = {}));
-
-var ReferenceCodec = /** @class */function () {
-  function ReferenceCodec() {
-    this.type = Types.Reference;
-  }
-  ReferenceCodec.prototype.encode = function (input) {
-    if (input instanceof Reference) {
-      return msgpack.encode(input.path);
-    }
-    return null;
-  };
-  ReferenceCodec.prototype.decode = function (data) {
-    var result = msgpack.decode(data);
-    return new Reference(result);
-  };
-  return ReferenceCodec;
-}();
-
-function encode(input) {
-  var extensionCodec = new msgpack.ExtensionCodec();
-  extensionCodec.register(new ReferenceCodec());
-  var context = new EncodeContext();
-  var transformed = context.transformObject(input);
-  return msgpack.encode(transformed, {
-    context: context,
-    extensionCodec: extensionCodec
-  });
-}
-
 var ReferenceMapper = /** @class */function () {
   function ReferenceMapper() {}
   ReferenceMapper.prototype.canTransform = function () {
     return false;
   };
   ReferenceMapper.prototype.transform = function () {
-    throw new Error('Method not implemented.');
+    throw new Error("Method not implemented.");
   };
   ReferenceMapper.prototype.canRevive = function (object) {
     return object instanceof Reference;
@@ -488,6 +432,62 @@ function decode(buffer) {
     extensionCodec: extensionCodec
   });
   return context.revive(decoded);
+}
+
+var EncodeContext = /** @class */function (_super) {
+  __extends(EncodeContext, _super);
+  function EncodeContext() {
+    var _this = _super.apply(this, __spreadArray([], __read(arguments), false)) || this;
+    _this.objectPathMap = new Map();
+    return _this;
+  }
+  EncodeContext.prototype.recording = function (object, path) {
+    if (object === null || object === undefined) {
+      return;
+    }
+    switch (typeof object) {
+      case "boolean":
+      case "number":
+      case "string":
+        return;
+    }
+    _super.prototype.recording.call(this, object, path);
+    var paths = this.objectPathMap.get(object) || [];
+    paths.push(path);
+    this.objectPathMap.set(object, paths);
+  };
+  EncodeContext.prototype.isHandled = function (object) {
+    return this.objectPathMap.has(object);
+  };
+  EncodeContext.prototype.getReference = function (object, path) {
+    var paths = this.objectPathMap.get(object);
+    if (!paths) {
+      return;
+    }
+    return paths[0] !== path ? paths[0] : undefined;
+  };
+  EncodeContext.prototype.transformObject = function (object) {
+    var mapper = this.getObjectMapper(object);
+    var path = this.getRootPath();
+    return mapper.transform(object, this, path);
+  };
+  EncodeContext.prototype.getObjectMapper = function (object) {
+    return this.objectMappers.find(function (it) {
+      return it.canTransform(object);
+    }) || this.defaultObjectMapper;
+  };
+  return EncodeContext;
+}(CodecContext);
+
+function encode(input) {
+  var extensionCodec = new msgpack.ExtensionCodec();
+  extensionCodec.register(new ReferenceCodec());
+  var context = new EncodeContext();
+  var transformed = context.transformObject(input);
+  return msgpack.encode(transformed, {
+    context: context,
+    extensionCodec: extensionCodec
+  });
 }
 
 exports.decode = decode;

@@ -1,9 +1,9 @@
-import { createRequestDecorator, RequestOptions } from './Request';
+import { createRequestDecorator, type RequestOptions } from "./Request";
 
 /**
  * Options for configuring a GET request, excluding the HTTP method.
  */
-export type GetRequestOptions = Omit<RequestOptions, 'method'>;
+export type GetRequestOptions = Omit<RequestOptions, "method">;
 
 /**
  * Decorator that marks a method as an HTTP GET request handler.
@@ -49,5 +49,5 @@ export type GetRequestOptions = Omit<RequestOptions, 'method'>;
  * @returns A method decorator
  */
 export function Get(options: string | GetRequestOptions) {
-    return createRequestDecorator(options, 'GET');
+	return createRequestDecorator(options, "GET");
 }

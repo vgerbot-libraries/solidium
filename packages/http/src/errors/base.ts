@@ -70,17 +70,17 @@
  * ```
  */
 export abstract class HttpError extends Error {
-    /**
-     * Creates a new HTTP error.
-     *
-     * @param message - Human-readable error message
-     * @param cause - Optional underlying error that caused this error
-     */
-    constructor(
-        message: string,
-        public readonly cause?: Error
-    ) {
-        super(message);
-        this.name = this.constructor.name;
-    }
+	/**
+	 * Creates a new HTTP error.
+	 *
+	 * @param message - Human-readable error message
+	 * @param cause - Optional underlying error that caused this error
+	 */
+	constructor(
+		message: string,
+		public readonly cause?: Error,
+	) {
+		super(message);
+		this.name = this.constructor.name;
+	}
 }

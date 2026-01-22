@@ -1,12 +1,12 @@
-import { decorateEndpointMethod } from '../helper/decorateEndpointMethod';
-import { EXTRA_METADATA_SWR_CONFIG, EXTRA_METADATA_SWR_KEYGEN } from './consts';
-import { SWRConfig } from './SWRConfig';
+import { decorateEndpointMethod } from "../helper/decorateEndpointMethod";
+import { EXTRA_METADATA_SWR_CONFIG, EXTRA_METADATA_SWR_KEYGEN } from "./consts";
+import type { SWRConfig } from "./SWRConfig";
 
 type DeepPartial<T> = T extends object
-    ? {
-          [P in keyof T]?: DeepPartial<T[P]>;
-      }
-    : T;
+	? {
+			[P in keyof T]?: DeepPartial<T[P]>;
+		}
+	: T;
 
 /**
  * Configuration options for the {@link SWR} decorator.
@@ -14,17 +14,17 @@ type DeepPartial<T> = T extends object
  * Extends {@link SWRConfig} with an optional custom cache key generator.
  */
 export interface SWRDecoratorConfig extends DeepPartial<SWRConfig> {
-    /**
-     * Custom cache key for the SWR instance.
-     *
-     * Can be either:
-     * - A static string key
-     * - A function that generates a key based on method arguments
-     *
-     * If not provided, the resolved URL will be used as the cache key.
-     */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    key?: string | ((...args: any[]) => string);
+	/**
+	 * Custom cache key for the SWR instance.
+	 *
+	 * Can be either:
+	 * - A static string key
+	 * - A function that generates a key based on method arguments
+	 *
+	 * If not provided, the resolved URL will be used as the cache key.
+	 */
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	key?: string | ((...args: any[]) => string);
 }
 
 /**
@@ -125,8 +125,8 @@ export interface SWRDecoratorConfig extends DeepPartial<SWRConfig> {
  * @see {@link SWRMutation} for invalidating SWR cache after mutations
  */
 export function SWR(config: SWRDecoratorConfig = {}) {
-    return decorateEndpointMethod((clazz, methodName, methodMetadata) => {
-        methodMetadata.setExtra(EXTRA_METADATA_SWR_KEYGEN, config.key);
-        methodMetadata.setExtra(EXTRA_METADATA_SWR_CONFIG, config);
-    });
+	return decorateEndpointMethod((_clazz, _methodName, methodMetadata) => {
+		methodMetadata.setExtra(EXTRA_METADATA_SWR_KEYGEN, config.key);
+		methodMetadata.setExtra(EXTRA_METADATA_SWR_CONFIG, config);
+	});
 }

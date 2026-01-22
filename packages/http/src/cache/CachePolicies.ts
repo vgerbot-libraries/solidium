@@ -1,4 +1,4 @@
-import { CachePolicy } from './CachePolicy';
+import type { CachePolicy } from "./CachePolicy";
 
 /**
  * Creates a time-based caching policy with a fixed TTL (Time-To-Live).
@@ -24,15 +24,15 @@ import { CachePolicy } from './CachePolicy';
  * ```
  */
 function createTimeBasedPolicy(
-    ttl: number,
-    name: string = `TimeBasedPolicy(${ttl}ms)`
+	ttl: number,
+	name: string = `TimeBasedPolicy(${ttl}ms)`,
 ): CachePolicy {
-    return {
-        name,
-        shouldCache: () => true,
-        getTTL: () => ttl,
-        isValid: entry => entry.expiresAt > Date.now()
-    };
+	return {
+		name,
+		shouldCache: () => true,
+		getTTL: () => ttl,
+		isValid: (entry) => entry.expiresAt > Date.now(),
+	};
 }
 
 /**
@@ -75,31 +75,31 @@ function createTimeBasedPolicy(
  * ```
  */
 export const CachePolicies = {
-    /**
-     * No caching policy - all requests bypass the cache.
-     *
-     * Use this when you need to ensure data is always fresh,
-     * or to disable caching for specific endpoints.
-     */
-    NoCache: {
-        name: 'NoCache',
-        shouldCache: () => false,
-        getTTL: () => 0,
-        isValid: () => false
-    },
+	/**
+	 * No caching policy - all requests bypass the cache.
+	 *
+	 * Use this when you need to ensure data is always fresh,
+	 * or to disable caching for specific endpoints.
+	 */
+	NoCache: {
+		name: "NoCache",
+		shouldCache: () => false,
+		getTTL: () => 0,
+		isValid: () => false,
+	},
 
-    /**
-     * Default caching policy - caches responses for 5 minutes.
-     *
-     * A reasonable default for most API endpoints that don't require
-     * real-time data but benefit from reduced server load.
-     */
-    Default: createTimeBasedPolicy(5 * 60 * 1000, 'Default'),
+	/**
+	 * Default caching policy - caches responses for 5 minutes.
+	 *
+	 * A reasonable default for most API endpoints that don't require
+	 * real-time data but benefit from reduced server load.
+	 */
+	Default: createTimeBasedPolicy(5 * 60 * 1000, "Default"),
 
-    /**
-     * Factory function to create custom time-based caching policies.
-     *
-     * @see {@link createTimeBasedPolicy} for documentation and examples
-     */
-    createTimeBasedPolicy
+	/**
+	 * Factory function to create custom time-based caching policies.
+	 *
+	 * @see {@link createTimeBasedPolicy} for documentation and examples
+	 */
+	createTimeBasedPolicy,
 } as const;
