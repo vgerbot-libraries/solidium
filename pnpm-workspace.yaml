@@ -2,3 +2,7 @@ packages:
     - "packages/*"
     - "packages/examples/*"
     - "chatbot/*"
+catalog:
+    "@msgpack/msgpack": "3.1.3"
+    "idb": "^8.0.2"
+    "reflect-metadata": "^0.2.2"

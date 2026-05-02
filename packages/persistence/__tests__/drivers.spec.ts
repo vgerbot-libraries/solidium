@@ -1,4 +1,4 @@
-import { LocalStorageDriver } from "@src/drivers/LocalStorageDriver";
+import { LocalStorageDriver } from "../src/drivers/LocalStorageDriver";
 
 describe("storage drivers", () => {
 	describe("local storage driver", () => {

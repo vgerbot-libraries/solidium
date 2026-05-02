@@ -26,7 +26,7 @@ export function LoginDialog() {
 							type="text"
 							placeholder="Username"
 							value={username()}
-							onChange={(e) => {
+							onChange={(e: any) => {
 								setUserName(e.target.value);
 							}}
 						></Form.Control>
@@ -37,7 +37,7 @@ export function LoginDialog() {
 							type="password"
 							placeholder="password"
 							value={password()}
-							onChange={(e) => {
+							onChange={(e: any) => {
 								setPassword(e.target.value);
 							}}
 						></Form.Control>

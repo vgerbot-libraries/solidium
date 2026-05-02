@@ -26,7 +26,8 @@
 			"@vgerbot/solidium": ["./packages/solidium/src"],
 			"@vgerbot/persistence": ["./packages/persistence/src"],
 			"@vgerbot/msgpack-ext": ["./packages/msgpack-ext/src"]
-		}
+		},
+		"types": ["reflect-metadata"]
 	},
 	"exclude": ["packages/*/__tests__", "node_modules", "**/lib"],
 	"references": [

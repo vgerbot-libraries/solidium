@@ -1,5 +1,4 @@
 import { ApplicationContext, Generate, Inject } from "@vgerbot/ioc";
-import { lazyMember } from "@vgerbot/lazy";
 import type { RequestAdapterConstructor } from "../adapter/RequestAdapter";
 import type { Class } from "../common/Class";
 import type { EndpointMetadata } from "../metadata/EndpointMetadata";
@@ -81,11 +80,35 @@ export function buildEndpointClass(
 			},
 	)(endpointClass.prototype, CONSTRUCT_INTERCEPTORS);
 
-	lazyMember(() => new AbortController())(
-		endpointClass.prototype,
-		ABORT_CONTROLLER,
-	);
-	lazyMember(() => {
+	const lazilyMembers = new WeakMap<
+		EndpointInstance,
+		Map<PropertyKey, unknown>
+	>();
+	function getProperty(
+		obj: EndpointInstance,
+		key: PropertyKey,
+		factory: (instance: EndpointInstance) => unknown,
+	) {
+		const map = lazilyMembers.get(obj) ?? new Map();
+		lazilyMembers.set(obj, map);
+		if (!map.has(key)) {
+			map.set(key, factory(obj));
+		}
+		return map.get(key);
+	}
+	function defineLazyProperty(
+		key: PropertyKey,
+		factory: (instance: EndpointInstance) => unknown,
+	) {
+		Object.defineProperty(endpointClass.prototype, ABORT_CONTROLLER, {
+			get() {
+				return getProperty(this, key, factory);
+			},
+		});
+	}
+
+	defineLazyProperty(ABORT_CONTROLLER, () => new AbortController());
+	defineLazyProperty(METHODS, () => {
 		const methods = new Map();
 		metadata.getMethods().forEach((methodMetadata, methodName) => {
 			methods.set(
@@ -94,12 +117,12 @@ export function buildEndpointClass(
 			);
 		});
 		return methods;
-	})(endpointClass.prototype, METHODS);
-
-	Inject(ApplicationContext)(endpointClass.prototype, APPLICATION_CONTEXT);
-	lazyMember((endpointInstance: EndpointInstance) => {
-		return endpointInstance[APPLICATION_CONTEXT].getInstance(
+	});
+	defineLazyProperty(HTTP_CONFIGURATION, (instance) => {
+		return instance[APPLICATION_CONTEXT].getInstance(
 			DEFAULT_HTTP_CONFIGURATION,
 		);
-	})(endpointClass.prototype, HTTP_CONFIGURATION);
+	});
+
+	Inject(ApplicationContext)(endpointClass.prototype, APPLICATION_CONTEXT);
 }

@@ -1,3 +1,4 @@
+import type { Identifier } from "@vgerbot/ioc";
 import {
 	ClassMetadata,
 	type GetInstanceOptions,
@@ -6,7 +7,6 @@ import {
 	type Newable,
 	type SaveInstanceOptions,
 } from "@vgerbot/ioc";
-import type { Identifier } from "@vgerbot/ioc/dist/types/Identifier";
 import { getOwner, type Owner, onCleanup, runWithOwner } from "solid-js";
 import { InstanceWrapper } from "./InstanceWrapper";
 

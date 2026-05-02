@@ -24,7 +24,6 @@ function createMockStorage() {
 }
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-expect-error
 globalThis.localStorage = globalThis.sessionStorage = createMockStorage();
 
 Object.defineProperties(globalThis, {

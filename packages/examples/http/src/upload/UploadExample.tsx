@@ -22,7 +22,7 @@ export function UploadExample() {
 				<Form.Label>Upload File: </Form.Label>
 				<Form.Control
 					type="file"
-					onChange={(e) => {
+					onChange={(e: any) => {
 						const input = e.target as HTMLInputElement;
 						const file = input.files?.[0];
 						setFile(file);

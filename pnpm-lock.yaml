@@ -4,6 +4,18 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+catalogs:
+  default:
+    '@msgpack/msgpack':
+      specifier: 3.1.3
+      version: 3.1.3
+    idb:
+      specifier: ^8.0.2
+      version: 8.0.2
+    reflect-metadata:
+      specifier: ^0.2.2
+      version: 0.2.2
+
 importers:
 
   .:
@@ -35,7 +47,7 @@ importers:
         version: 2.3.11
       '@commitlint/cli':
         specifier: ^19.7.1
-        version: 19.7.1(@types/node@24.7.2)(typescript@5.7.3)
+        version: 19.7.1(@types/node@20.12.7)(typescript@5.7.3)
       '@commitlint/config-conventional':
         specifier: ^19.7.1
         version: 19.7.1
@@ -44,7 +56,7 @@ importers:
         version: 19.7.0(lerna@8.1.9(@swc/core@1.11.29)(encoding@0.1.13))
       '@commitlint/prompt-cli':
         specifier: ^19.7.1
-        version: 19.7.1(@types/node@24.7.2)(typescript@5.7.3)
+        version: 19.7.1(@types/node@20.12.7)(typescript@5.7.3)
       '@rollup-extras/plugin-serve':
         specifier: ^1.3.5
         version: 1.3.5(rollup@4.41.1)
@@ -98,13 +110,13 @@ importers:
         version: 3.1.7
       jest:
         specifier: ^29.7.0
-        version: 29.7.0(@types/node@24.7.2)(ts-node@10.9.2(@swc/core@1.11.29)(@types/node@24.7.2)(typescript@5.7.3))
+        version: 29.7.0(@types/node@20.12.7)(ts-node@10.9.2(@swc/core@1.11.29)(@types/node@20.12.7)(typescript@5.7.3))
       jest-environment-jsdom:
         specifier: ^29.7.0
         version: 29.7.0
       jest-html-reporter:
         specifier: ^3.10.2
-        version: 3.10.2(jest@29.7.0(@types/node@24.7.2)(ts-node@10.9.2(@swc/core@1.11.29)(@types/node@24.7.2)(typescript@5.7.3)))(typescript@5.7.3)
+        version: 3.10.2(jest@29.7.0(@types/node@20.12.7)(ts-node@10.9.2(@swc/core@1.11.29)(@types/node@20.12.7)(typescript@5.7.3)))(typescript@5.7.3)
       jsdom:
         specifier: ^26.0.0
         version: 26.0.0
@@ -143,7 +155,7 @@ importers:
         version: 3.35.0
       ts-node:
         specifier: ^10.9.2
-        version: 10.9.2(@swc/core@1.11.29)(@types/node@24.7.2)(typescript@5.7.3)
+        version: 10.9.2(@swc/core@1.11.29)(@types/node@20.12.7)(typescript@5.7.3)
       tslib:
         specifier: ^2.8.1
         version: 2.8.1
@@ -159,6 +171,9 @@ importers:
 
   packages/examples/chatbot:
     dependencies:
+      '@msgpack/msgpack':
+        specifier: 'catalog:'
+        version: 3.1.3
       '@picocss/pico':
         specifier: ^2.1.1
         version: 2.1.1
@@ -171,6 +186,12 @@ importers:
       '@vgerbot/ioc':
         specifier: workspace:*
         version: link:../../ioc
+      '@vgerbot/lazily':
+        specifier: ^0.1.3
+        version: 0.1.3
+      '@vgerbot/msgpack-ext':
+        specifier: workspace:*
+        version: link:../../msgpack-ext
       '@vgerbot/persistence':
         specifier: workspace:*
         version: link:../../persistence
@@ -181,7 +202,7 @@ importers:
         specifier: ^2.8.4
         version: 2.8.4(@types/node@24.7.2)(typescript@5.7.3)
       reflect-metadata:
-        specifier: ^0.2.2
+        specifier: 'catalog:'
         version: 0.2.2
       solid-js:
         specifier: ^1.9.5
@@ -212,7 +233,7 @@ importers:
         specifier: workspace:1.0.0
         version: link:../../solidium
       reflect-metadata:
-        specifier: ^0.2.2
+        specifier: 'catalog:'
         version: 0.2.2
       solid-js:
         specifier: ^1.9.4
@@ -233,8 +254,11 @@ importers:
         specifier: workspace:1.0.0
         version: link:../../solidium
       reflect-metadata:
-        specifier: ^0.2.2
+        specifier: 'catalog:'
         version: 0.2.2
+      solid-bootstrap:
+        specifier: ^1.0.21
+        version: 1.0.21(solid-js@1.9.7)
       solid-js:
         specifier: ^1.9.4
         version: 1.9.7
@@ -247,11 +271,14 @@ importers:
       '@vgerbot/http':
         specifier: workspace:*
         version: link:../../http
+      '@vgerbot/lazily':
+        specifier: ^0.1.3
+        version: 0.1.3
       '@vgerbot/solidium':
         specifier: workspace:1.0.0
         version: link:../../solidium
       reflect-metadata:
-        specifier: ^0.2.2
+        specifier: 'catalog:'
         version: 0.2.2
       solid-js:
         specifier: ^1.9.4
@@ -266,7 +293,7 @@ importers:
         specifier: workspace:1.0.0
         version: link:../../solidium
       reflect-metadata:
-        specifier: ^0.2.2
+        specifier: 'catalog:'
         version: 0.2.2
       solid-js:
         specifier: ^1.9.4
@@ -277,21 +304,30 @@ importers:
 
   packages/http:
     dependencies:
+      '@msgpack/msgpack':
+        specifier: 'catalog:'
+        version: 3.1.3
       '@solid-primitives/scheduled':
         specifier: ^1.5.0
         version: 1.5.0(solid-js@1.9.7)
       '@vgerbot/ioc':
         specifier: workspace:*
         version: link:../ioc
-      '@vgerbot/lazy':
-        specifier: ^1.0.7
-        version: 1.0.7
+      '@vgerbot/lazily':
+        specifier: ^0.1.3
+        version: 0.1.3
       '@vgerbot/persistence':
         specifier: workspace:*
         version: link:../persistence
       '@vgerbot/solidium':
         specifier: workspace:*
         version: link:../solidium
+      idb:
+        specifier: 'catalog:'
+        version: 8.0.2
+      reflect-metadata:
+        specifier: 'catalog:'
+        version: 0.2.2
       rxjs:
         specifier: ^7.8.2
         version: 7.8.2
@@ -304,9 +340,9 @@ importers:
 
   packages/ioc:
     dependencies:
-      '@vgerbot/lazy':
-        specifier: ^1.0.7
-        version: 1.0.7
+      '@vgerbot/lazily':
+        specifier: ^0.1.3
+        version: 0.1.3
       reflect-metadata:
         specifier: ^0.1.13
         version: 0.1.14
@@ -381,8 +417,8 @@ importers:
         specifier: ^2.0.0
         version: 2.2.0(rollup@3.29.5)
       rollup-plugin-dts:
-        specifier: ^6.1.1
-        version: 6.1.1(rollup@3.29.5)(typescript@4.9.5)
+        specifier: ^5.3.1
+        version: 5.3.1(rollup@3.29.5)(typescript@4.9.5)
       rollup-plugin-livereload:
         specifier: ^2.0.5
         version: 2.0.5
@@ -467,10 +503,10 @@ importers:
   packages/msgpack-ext:
     dependencies:
       '@msgpack/msgpack':
-        specifier: ^3.0.0-beta3
-        version: 3.0.0-beta3
+        specifier: 'catalog:'
+        version: 3.1.3
       reflect-metadata:
-        specifier: ^0.2.2
+        specifier: 'catalog:'
         version: 0.2.2
       tslib:
         specifier: ^2.8.1
@@ -485,15 +521,18 @@ importers:
 
   packages/persistence:
     dependencies:
+      '@msgpack/msgpack':
+        specifier: 'catalog:'
+        version: 3.1.3
       '@solid-primitives/scheduled':
         specifier: ^1.5.0
         version: 1.5.0(solid-js@1.9.7)
       '@vgerbot/ioc':
         specifier: workspace:*
         version: link:../ioc
-      '@vgerbot/lazy':
-        specifier: ^1.0.7
-        version: 1.0.7
+      '@vgerbot/lazily':
+        specifier: ^0.1.3
+        version: 0.1.3
       '@vgerbot/msgpack-ext':
         specifier: workspace:*
         version: link:../msgpack-ext
@@ -501,10 +540,10 @@ importers:
         specifier: workspace:*
         version: link:../solidium
       idb:
-        specifier: ^8.0.2
+        specifier: 'catalog:'
         version: 8.0.2
       reflect-metadata:
-        specifier: ^0.2.2
+        specifier: 'catalog:'
         version: 0.2.2
       solid-js:
         specifier: ^1.9.4
@@ -522,8 +561,11 @@ importers:
       '@vgerbot/ioc':
         specifier: workspace:*
         version: link:../ioc
+      '@vgerbot/lazily':
+        specifier: ^0.1.3
+        version: 0.1.3
       reflect-metadata:
-        specifier: ^0.2.2
+        specifier: 'catalog:'
         version: 0.2.2
       solid-js:
         specifier: ^1.9.4
@@ -844,6 +886,10 @@ packages:
     engines: {node: '>=6.9.0'}
     peerDependencies:
       '@babel/core': ^7.0.0-0
+
+  '@babel/runtime@7.29.2':
+    resolution: {integrity: sha512-JiDShH45zKHWyGe4ZNVRrCjBz8Nh9TMmZG1kh4QTK8hCBTWBi8Da+i7s1fJw7/lYpM4ccepSNfqzZ/QvABBi5g==}
+    engines: {node: '>=6.9.0'}
 
   '@babel/template@7.24.0':
     resolution: {integrity: sha512-Bkf2q8lMB0AFpX0NFEqSbx1OkTHf0f+0j82mkw+ZpzBnkk7e9Ql0891vlfgi+kHwOk8tQjiQHpqh4LaSa0fKEA==}
@@ -1446,6 +1492,7 @@ packages:
   '@lerna/create@8.1.9':
     resolution: {integrity: sha512-DPnl5lPX4v49eVxEbJnAizrpMdMTBz1qykZrAbBul9rfgk531v8oAt+Pm6O/rpAleRombNM7FJb5rYGzBJatOQ==}
     engines: {node: '>=18.0.0'}
+    deprecated: This package is an implementation detail of Lerna and is no longer published separately.
 
   '@lerna/package@6.4.1':
     resolution: {integrity: sha512-TrOah58RnwS9R8d3+WgFFTu5lqgZs7M+e1dvcRga7oSJeKscqpEK57G0xspvF3ycjfXQwRMmEtwPmpkeEVLMzA==}
@@ -1462,10 +1509,9 @@ packages:
     engines: {node: ^14.15.0 || >=16.0.0}
     deprecated: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
 
-  '@msgpack/msgpack@3.0.0-beta3':
-    resolution: {integrity: sha512-LZYWBmrkKO0quyjnJCeSaqHOcsuZUvE+hlIYRqFc0qI27dLnsOdnv8Fsj2cyitzQTJZmCPm53vZ/P8QTH7E84A==}
+  '@msgpack/msgpack@3.1.3':
+    resolution: {integrity: sha512-47XIizs9XZXvuJgoaJUIE2lFoID8ugvc0jzSHP+Ptfk8nTbnR8g788wv48N03Kx0UkAv559HWRQ3yzOgzlRNUA==}
     engines: {node: '>= 18'}
-    deprecated: too old
 
   '@mswjs/interceptors@0.37.6':
     resolution: {integrity: sha512-wK+5pLK5XFmgtH3aQ2YVvA3HohS3xqV/OxuVOdNx9Wpnz7VE/fnC+e1A7ln6LFYeck7gOJ/dsZV6OLplOtAJ2w==}
@@ -1688,6 +1734,9 @@ packages:
   '@pkgjs/parseargs@0.11.0':
     resolution: {integrity: sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg==}
     engines: {node: '>=14'}
+
+  '@popperjs/core@2.11.8':
+    resolution: {integrity: sha512-P1st0aksCrn9sGZhp8GMYwBnQsbvAWsZAX44oXNNvLHGqAOcoVxmjZiohstwQ7SqKnbR47akdNi+uleWD8+g6A==}
 
   '@rollup-extras/plugin-serve@1.3.5':
     resolution: {integrity: sha512-/Pfr7P4sMwPwYIMJn5Jiv7rtCxjexSFJS5vg/hC6pFieqq7RnjOXmZarGsla4WLRswxDvWJt28Vi4EjRjeEXQw==}
@@ -2253,9 +2302,8 @@ packages:
   '@types/yargs@17.0.32':
     resolution: {integrity: sha512-xQ67Yc/laOG5uMfX/093MRlGGCIBzZMarVa+gfNKJxWAIgykYpVGkBdbqEzGDDfCrVUj6Hiff4mTZ5BA6TmAog==}
 
-  '@vgerbot/lazy@1.0.7':
-    resolution: {integrity: sha512-Vz/ZTvd/5woP2bXRgK0CkYxy4L3SiNZDeFOC/G4aKEO6wGN3ZdexKwRE8woBik7f/oSVC9WCFpVvm7WV4wt1sQ==}
-    deprecated: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
+  '@vgerbot/lazily@0.1.3':
+    resolution: {integrity: sha512-VAv7NUsGpBM9OGRXYlg5Eefhz8qsPfD1N48nIya282pJtSLhTsVUZKfhFgG9pSxszp5+HG9bS+TjBiaCqE74ow==}
 
   '@yarnpkg/lockfile@1.1.0':
     resolution: {integrity: sha512-GpSwvyXOcOOlV70vbnzjj4fW5xW/FdUF6nQEt1ENy7m4ZCczi1+/buVUPAqmGfqznsORNFzUMjctTIp8a9tuCQ==}
@@ -3277,6 +3325,9 @@ packages:
   dom-accessibility-api@0.6.3:
     resolution: {integrity: sha512-7ZgogeTnjuHbo+ct10G9Ffp0mif17idi0IyWNVA/wcwcm7NPOD/WEHVP3n7n3MhXqxoIYm8d6MuZohYWIZ4T3w==}
 
+  dom-helpers@5.2.1:
+    resolution: {integrity: sha512-nRCa7CK3VTrM2NmGkIy4cbK7IZlgBE/PYMn55rrXefr5xXDP0LdtfPnblFDoVdcAfslJ7or6iqAUnx0CCGIWQA==}
+
   domexception@4.0.0:
     resolution: {integrity: sha512-A2is4PLG+eeSfoTMA95/s4pvAoSo2mKtiM5jlHkAVewmiO8ISFTFKZjH7UAM1Atli/OT/7JHOrJRJiMKUZKYBw==}
     engines: {node: '>=12'}
@@ -3726,16 +3777,19 @@ packages:
   git-raw-commits@2.0.11:
     resolution: {integrity: sha512-VnctFhw+xfj8Va1xtfEqCUD2XDrbAPSJx+hSrE5K7fGdjZruW7XV+QOrN7LF/RJyvspRiD2I0asWsxFp0ya26A==}
     engines: {node: '>=10'}
+    deprecated: This package is no longer maintained. For the JavaScript API, please use @conventional-changelog/git-client instead.
     hasBin: true
 
   git-raw-commits@3.0.0:
     resolution: {integrity: sha512-b5OHmZ3vAgGrDn/X0kS+9qCfNKWe4K/jFnhwzVWWg0/k5eLa3060tZShrRg8Dja5kPc+YjS0Gc6y7cRr44Lpjw==}
     engines: {node: '>=14'}
+    deprecated: This package is no longer maintained. For the JavaScript API, please use @conventional-changelog/git-client instead.
     hasBin: true
 
   git-raw-commits@4.0.0:
     resolution: {integrity: sha512-ICsMM1Wk8xSGMowkOmPrzo2Fgmfo4bMHLNX6ytHjajRJUqvHOw/TFapQ+QG75c3X/tTDDhOSRPGC52dDbNM8FQ==}
     engines: {node: '>=16'}
+    deprecated: This package is no longer maintained. For the JavaScript API, please use @conventional-changelog/git-client instead.
     hasBin: true
 
   git-remote-origin-url@2.0.0:
@@ -3745,6 +3799,7 @@ packages:
   git-semver-tags@5.0.1:
     resolution: {integrity: sha512-hIvOeZwRbQ+7YEUmCkHqo8FOLQZCEn18yevLHADlFPZY02KJGsu5FZt9YW/lybfK2uhWFI7Qg/07LekJiTv7iA==}
     engines: {node: '>=14'}
+    deprecated: This package is no longer maintained. For the JavaScript API, please use @conventional-changelog/git-client instead.
     hasBin: true
 
   git-up@7.0.0:
@@ -3767,25 +3822,28 @@ packages:
   glob@10.3.12:
     resolution: {integrity: sha512-TCNv8vJ+xz4QiqTpfOJA7HvYv+tNIRHKfUWw/q+v2jdgN4ebz+KY9tGx5J4rHP0o84mNP+ApH66HRX8us3Khqg==}
     engines: {node: '>=16 || 14 >=14.17'}
+    deprecated: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
     hasBin: true
 
   glob@11.0.1:
     resolution: {integrity: sha512-zrQDm8XPnYEKawJScsnM0QzobJxlT/kHOOlRTio8IH/GrmxRE5fjllkzdaHclIuNjUQTJYH2xHNIGfdpJkDJUw==}
     engines: {node: 20 || >=22}
+    deprecated: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
     hasBin: true
 
   glob@7.2.3:
     resolution: {integrity: sha512-nFR0zLpU2YCaRxwoCJvL6UvCH2JFyFVIvwTLsIf21AuHlMskA1hhTdk+LlYJtOlYt9v6dvszD2BGRqBL+iQK9Q==}
-    deprecated: Glob versions prior to v9 are no longer supported
+    deprecated: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
 
   glob@8.1.0:
     resolution: {integrity: sha512-r8hpEjiQEYlF2QU0df3dS+nxxSIreXQS1qRhMJM0Q5NDdR386C7jb7Hwwod8Fgiuex+k0GFjgft18yvxm5XoCQ==}
     engines: {node: '>=12'}
-    deprecated: Glob versions prior to v9 are no longer supported
+    deprecated: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
 
   glob@9.3.5:
     resolution: {integrity: sha512-e1LleDykUz2Iu+MTYdkSsuWX8lvAjAcs0Xef0lNIu0S2wOAzuTxCJtcd9S3cijlwYF18EsU3rzb8jPVobxDh9Q==}
     engines: {node: '>=16 || 14 >=14.17'}
+    deprecated: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
 
   global-directory@4.0.1:
     resolution: {integrity: sha512-wHTUcDUoZ1H5/0iVqEudYW4/kAlN5cZ3j/bXn0Dpbizl9iaUVeWSHqiOjsgk6OW2bkLclbBjzewBz6weQ1zA2Q==}
@@ -5714,6 +5772,13 @@ packages:
     peerDependencies:
       rollup: '*'
 
+  rollup-plugin-dts@5.3.1:
+    resolution: {integrity: sha512-gusMi+Z4gY/JaEQeXnB0RUdU82h1kF0WYzCWgVmV4p3hWXqelaKuCvcJawfeg+EKn2T1Ie+YWF2OiN1/L8bTVg==}
+    engines: {node: '>=v14.21.3'}
+    peerDependencies:
+      rollup: ^3.0
+      typescript: ^4.1 || ^5.0
+
   rollup-plugin-dts@6.1.1:
     resolution: {integrity: sha512-aSHRcJ6KG2IHIioYlvAOcEq6U99sVtqDDKVhnwt70rW6tsz3tv5OSjEiWcgzfsHdLyGXZ/3b/7b/+Za3Y6r1XA==}
     engines: {node: '>=16'}
@@ -5947,8 +6012,23 @@ packages:
     resolution: {integrity: sha512-l5x7VUUWbjVFbafGLxPWkYsHIhEvmF85tbIeFZWc8ZPtoMyybuEhL7Jye/ooC4/d48FgOjSJXgsF/AJPYCW8Zw==}
     engines: {node: '>= 10.0.0', npm: '>= 3.0.0'}
 
+  solid-bootstrap-core@2.0.0:
+    resolution: {integrity: sha512-tw1me1iEvI+UzYRL2Gs53MP51WVwx785CU+6KQVGhaLESw3OoayeFLhe1CvUYb7kuskjtNGyAorZMdMwBJQIBA==}
+    peerDependencies:
+      solid-js: '>=1.6.0'
+
+  solid-bootstrap@1.0.21:
+    resolution: {integrity: sha512-B1+1qsdqrdQhl4xgmgrFRafxOM3xrnafxrC1scbOTYYJI2ido1XfoxtYyJ72W1eSHxYjm8eRGXdGTGdBJsGPpg==}
+    peerDependencies:
+      solid-js: '>=1.6.0'
+
   solid-js@1.9.7:
     resolution: {integrity: sha512-/saTKi8iWEM233n5OSi1YHCCuh66ZIQ7aK2hsToPe4tqGm7qAejU1SwNuTPivbWAYq7SjuHVVYxxuZQNRbICiw==}
+
+  solid-react-transition@1.0.11:
+    resolution: {integrity: sha512-YMT7z6sOupCicDtX19156vbVOm3vCIgjVhPTybR9gLKiIPrDB2NDVqnQk4kpNCDZTOwSjLTOyUQw0xJnXgDg2A==}
+    peerDependencies:
+      solid-js: '>=1.6.0'
 
   solid-refresh@0.6.3:
     resolution: {integrity: sha512-F3aPsX6hVw9ttm5LYlth8Q15x6MlI/J3Dn+o3EQyRTtTxidepSTwAYdozt01/YA+7ObcciagGEyXIopGZzQtbA==}
@@ -6154,7 +6234,7 @@ packages:
   tar@6.2.1:
     resolution: {integrity: sha512-DZ4yORTwrbTj/7MZYq2w+/ZFdI6OZ/f9SFHR+71gIVUZhOQPHzVCLpvRnPgyaMpfWxxk/4ONva3GQSyNIKRv6A==}
     engines: {node: '>=10'}
-    deprecated: Old versions of tar are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exhorbitant rates) by contacting i@izs.me
+    deprecated: Old versions of tar are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
 
   teeny-request@7.1.1:
     resolution: {integrity: sha512-iwY6rkW5DDGq8hE2YgNQlKbptYpY5Nn2xecjQiNjOXWbKzPGUfmeUBCSQbbr306d7Z7U2N0TPl+/SwYRfua1Dg==}
@@ -6525,10 +6605,12 @@ packages:
 
   uuid@10.0.0:
     resolution: {integrity: sha512-8XkAphELsDnEGrDxUOHB3RGvXz6TeuYSGEZBOjtTtPm2lwhGBjLgOzLHB63IUWfBpNucQjND6d3AOudO+H3RWQ==}
+    deprecated: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
     hasBin: true
 
   uuid@8.3.2:
     resolution: {integrity: sha512-+NYs2QeMWy+GWFOEm9xnn6HCDp0l7QBD7ml8zLUmJ+93Q5NF0NocErnwkTkXVFNiX3/fpC6afS8Dhb/gz7R7eg==}
+    deprecated: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
     hasBin: true
 
   v8-compile-cache-lib@3.0.1:
@@ -7241,6 +7323,8 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+  '@babel/runtime@7.29.2': {}
+
   '@babel/template@7.24.0':
     dependencies:
       '@babel/code-frame': 7.26.2
@@ -7342,11 +7426,11 @@ snapshots:
       - '@swc/core'
       - '@swc/wasm'
 
-  '@commitlint/cli@19.7.1(@types/node@24.7.2)(typescript@5.7.3)':
+  '@commitlint/cli@19.7.1(@types/node@20.12.7)(typescript@5.7.3)':
     dependencies:
       '@commitlint/format': 19.5.0
       '@commitlint/lint': 19.7.1
-      '@commitlint/load': 19.6.1(@types/node@24.7.2)(typescript@5.7.3)
+      '@commitlint/load': 19.6.1(@types/node@20.12.7)(typescript@5.7.3)
       '@commitlint/read': 19.5.0
       '@commitlint/types': 19.5.0
       tinyexec: 0.3.2
@@ -7459,7 +7543,7 @@ snapshots:
       - '@swc/core'
       - '@swc/wasm'
 
-  '@commitlint/load@19.6.1(@types/node@24.7.2)(typescript@5.7.3)':
+  '@commitlint/load@19.6.1(@types/node@20.12.7)(typescript@5.7.3)':
     dependencies:
       '@commitlint/config-validator': 19.5.0
       '@commitlint/execute-rule': 19.5.0
@@ -7467,7 +7551,7 @@ snapshots:
       '@commitlint/types': 19.5.0
       chalk: 5.4.1
       cosmiconfig: 9.0.0(typescript@5.7.3)
-      cosmiconfig-typescript-loader: 6.1.0(@types/node@24.7.2)(cosmiconfig@9.0.0(typescript@5.7.3))(typescript@5.7.3)
+      cosmiconfig-typescript-loader: 6.1.0(@types/node@20.12.7)(cosmiconfig@9.0.0(typescript@5.7.3))(typescript@5.7.3)
       lodash.isplainobject: 4.0.6
       lodash.merge: 4.6.2
       lodash.uniq: 4.5.0
@@ -7500,9 +7584,9 @@ snapshots:
       - '@swc/core'
       - '@swc/wasm'
 
-  '@commitlint/prompt-cli@19.7.1(@types/node@24.7.2)(typescript@5.7.3)':
+  '@commitlint/prompt-cli@19.7.1(@types/node@20.12.7)(typescript@5.7.3)':
     dependencies:
-      '@commitlint/prompt': 19.7.1(@types/node@24.7.2)(typescript@5.7.3)
+      '@commitlint/prompt': 19.7.1(@types/node@20.12.7)(typescript@5.7.3)
       inquirer: 9.3.7
       tinyexec: 0.3.2
     transitivePeerDependencies:
@@ -7520,10 +7604,10 @@ snapshots:
       - '@swc/core'
       - '@swc/wasm'
 
-  '@commitlint/prompt@19.7.1(@types/node@24.7.2)(typescript@5.7.3)':
+  '@commitlint/prompt@19.7.1(@types/node@20.12.7)(typescript@5.7.3)':
     dependencies:
       '@commitlint/ensure': 19.5.0
-      '@commitlint/load': 19.6.1(@types/node@24.7.2)(typescript@5.7.3)
+      '@commitlint/load': 19.6.1(@types/node@20.12.7)(typescript@5.7.3)
       '@commitlint/types': 19.5.0
       chalk: 5.4.1
       inquirer: 9.3.7
@@ -7816,7 +7900,7 @@ snapshots:
       - supports-color
       - ts-node
 
-  '@jest/core@29.7.0(ts-node@10.9.2(@swc/core@1.11.29)(@types/node@24.7.2)(typescript@5.7.3))':
+  '@jest/core@29.7.0(ts-node@10.9.2(@swc/core@1.11.29)(@types/node@20.12.7)(typescript@5.7.3))':
     dependencies:
       '@jest/console': 29.7.0
       '@jest/reporters': 29.7.0
@@ -7830,7 +7914,7 @@ snapshots:
       exit: 0.1.2
       graceful-fs: 4.2.11
       jest-changed-files: 29.7.0
-      jest-config: 29.7.0(@types/node@20.12.7)(ts-node@10.9.2(@swc/core@1.11.29)(@types/node@24.7.2)(typescript@5.7.3))
+      jest-config: 29.7.0(@types/node@20.12.7)(ts-node@10.9.2(@swc/core@1.11.29)(@types/node@20.12.7)(typescript@5.7.3))
       jest-haste-map: 29.7.0
       jest-message-util: 29.7.0
       jest-regex-util: 29.6.3
@@ -8111,7 +8195,7 @@ snapshots:
     dependencies:
       npmlog: 6.0.2
 
-  '@msgpack/msgpack@3.0.0-beta3': {}
+  '@msgpack/msgpack@3.1.3': {}
 
   '@mswjs/interceptors@0.37.6':
     dependencies:
@@ -8412,6 +8496,8 @@ snapshots:
 
   '@pkgjs/parseargs@0.11.0':
     optional: true
+
+  '@popperjs/core@2.11.8': {}
 
   '@rollup-extras/plugin-serve@1.3.5(rollup@4.41.1)':
     dependencies:
@@ -8955,7 +9041,7 @@ snapshots:
     dependencies:
       '@types/yargs-parser': 21.0.3
 
-  '@vgerbot/lazy@1.0.7': {}
+  '@vgerbot/lazily@0.1.3': {}
 
   '@yarnpkg/lockfile@1.1.0': {}
 
@@ -9973,9 +10059,9 @@ snapshots:
       ts-node: 10.9.2(@swc/core@1.11.29)(@types/node@18.19.75)(typescript@4.9.5)
       typescript: 5.7.3
 
-  cosmiconfig-typescript-loader@6.1.0(@types/node@24.7.2)(cosmiconfig@9.0.0(typescript@5.7.3))(typescript@5.7.3):
+  cosmiconfig-typescript-loader@6.1.0(@types/node@20.12.7)(cosmiconfig@9.0.0(typescript@5.7.3))(typescript@5.7.3):
     dependencies:
-      '@types/node': 24.7.2
+      '@types/node': 20.12.7
       cosmiconfig: 9.0.0(typescript@5.7.3)
       jiti: 2.4.2
       typescript: 5.7.3
@@ -10021,13 +10107,13 @@ snapshots:
       - supports-color
       - ts-node
 
-  create-jest@29.7.0(@types/node@24.7.2)(ts-node@10.9.2(@swc/core@1.11.29)(@types/node@24.7.2)(typescript@5.7.3)):
+  create-jest@29.7.0(@types/node@20.12.7)(ts-node@10.9.2(@swc/core@1.11.29)(@types/node@20.12.7)(typescript@5.7.3)):
     dependencies:
       '@jest/types': 29.6.3
       chalk: 4.1.2
       exit: 0.1.2
       graceful-fs: 4.2.11
-      jest-config: 29.7.0(@types/node@24.7.2)(ts-node@10.9.2(@swc/core@1.11.29)(@types/node@24.7.2)(typescript@5.7.3))
+      jest-config: 29.7.0(@types/node@20.12.7)(ts-node@10.9.2(@swc/core@1.11.29)(@types/node@20.12.7)(typescript@5.7.3))
       jest-util: 29.7.0
       prompts: 2.4.2
     transitivePeerDependencies:
@@ -10178,6 +10264,11 @@ snapshots:
       path-type: 4.0.0
 
   dom-accessibility-api@0.6.3: {}
+
+  dom-helpers@5.2.1:
+    dependencies:
+      '@babel/runtime': 7.29.2
+      csstype: 3.1.3
 
   domexception@4.0.0:
     dependencies:
@@ -11338,16 +11429,16 @@ snapshots:
       - supports-color
       - ts-node
 
-  jest-cli@29.7.0(@types/node@24.7.2)(ts-node@10.9.2(@swc/core@1.11.29)(@types/node@24.7.2)(typescript@5.7.3)):
+  jest-cli@29.7.0(@types/node@20.12.7)(ts-node@10.9.2(@swc/core@1.11.29)(@types/node@20.12.7)(typescript@5.7.3)):
     dependencies:
-      '@jest/core': 29.7.0(ts-node@10.9.2(@swc/core@1.11.29)(@types/node@24.7.2)(typescript@5.7.3))
+      '@jest/core': 29.7.0(ts-node@10.9.2(@swc/core@1.11.29)(@types/node@20.12.7)(typescript@5.7.3))
       '@jest/test-result': 29.7.0
       '@jest/types': 29.6.3
       chalk: 4.1.2
-      create-jest: 29.7.0(@types/node@24.7.2)(ts-node@10.9.2(@swc/core@1.11.29)(@types/node@24.7.2)(typescript@5.7.3))
+      create-jest: 29.7.0(@types/node@20.12.7)(ts-node@10.9.2(@swc/core@1.11.29)(@types/node@20.12.7)(typescript@5.7.3))
       exit: 0.1.2
       import-local: 3.1.0
-      jest-config: 29.7.0(@types/node@24.7.2)(ts-node@10.9.2(@swc/core@1.11.29)(@types/node@24.7.2)(typescript@5.7.3))
+      jest-config: 29.7.0(@types/node@20.12.7)(ts-node@10.9.2(@swc/core@1.11.29)(@types/node@20.12.7)(typescript@5.7.3))
       jest-util: 29.7.0
       jest-validate: 29.7.0
       yargs: 17.7.2
@@ -11419,7 +11510,7 @@ snapshots:
       - babel-plugin-macros
       - supports-color
 
-  jest-config@29.7.0(@types/node@20.12.7)(ts-node@10.9.2(@swc/core@1.11.29)(@types/node@24.7.2)(typescript@5.7.3)):
+  jest-config@29.7.0(@types/node@20.12.7)(ts-node@10.9.2(@swc/core@1.11.29)(@types/node@20.12.7)(typescript@5.7.3)):
     dependencies:
       '@babel/core': 7.26.7
       '@jest/test-sequencer': 29.7.0
@@ -11445,38 +11536,7 @@ snapshots:
       strip-json-comments: 3.1.1
     optionalDependencies:
       '@types/node': 20.12.7
-      ts-node: 10.9.2(@swc/core@1.11.29)(@types/node@24.7.2)(typescript@5.7.3)
-    transitivePeerDependencies:
-      - babel-plugin-macros
-      - supports-color
-
-  jest-config@29.7.0(@types/node@24.7.2)(ts-node@10.9.2(@swc/core@1.11.29)(@types/node@24.7.2)(typescript@5.7.3)):
-    dependencies:
-      '@babel/core': 7.26.7
-      '@jest/test-sequencer': 29.7.0
-      '@jest/types': 29.6.3
-      babel-jest: 29.7.0(@babel/core@7.26.7)
-      chalk: 4.1.2
-      ci-info: 3.9.0
-      deepmerge: 4.3.1
-      glob: 7.2.3
-      graceful-fs: 4.2.11
-      jest-circus: 29.7.0
-      jest-environment-node: 29.7.0
-      jest-get-type: 29.6.3
-      jest-regex-util: 29.6.3
-      jest-resolve: 29.7.0
-      jest-runner: 29.7.0
-      jest-util: 29.7.0
-      jest-validate: 29.7.0
-      micromatch: 4.0.8
-      parse-json: 5.2.0
-      pretty-format: 29.7.0
-      slash: 3.0.0
-      strip-json-comments: 3.1.1
-    optionalDependencies:
-      '@types/node': 24.7.2
-      ts-node: 10.9.2(@swc/core@1.11.29)(@types/node@24.7.2)(typescript@5.7.3)
+      ts-node: 10.9.2(@swc/core@1.11.29)(@types/node@20.12.7)(typescript@5.7.3)
     transitivePeerDependencies:
       - babel-plugin-macros
       - supports-color
@@ -11553,12 +11613,12 @@ snapshots:
       typescript: 4.9.5
       xmlbuilder: 15.0.0
 
-  jest-html-reporter@3.10.2(jest@29.7.0(@types/node@24.7.2)(ts-node@10.9.2(@swc/core@1.11.29)(@types/node@24.7.2)(typescript@5.7.3)))(typescript@5.7.3):
+  jest-html-reporter@3.10.2(jest@29.7.0(@types/node@20.12.7)(ts-node@10.9.2(@swc/core@1.11.29)(@types/node@20.12.7)(typescript@5.7.3)))(typescript@5.7.3):
     dependencies:
       '@jest/test-result': 29.7.0
       '@jest/types': 29.6.3
       dateformat: 3.0.2
-      jest: 29.7.0(@types/node@24.7.2)(ts-node@10.9.2(@swc/core@1.11.29)(@types/node@24.7.2)(typescript@5.7.3))
+      jest: 29.7.0(@types/node@20.12.7)(ts-node@10.9.2(@swc/core@1.11.29)(@types/node@20.12.7)(typescript@5.7.3))
       mkdirp: 1.0.4
       strip-ansi: 6.0.1
       typescript: 5.7.3
@@ -11751,12 +11811,12 @@ snapshots:
       - supports-color
       - ts-node
 
-  jest@29.7.0(@types/node@24.7.2)(ts-node@10.9.2(@swc/core@1.11.29)(@types/node@24.7.2)(typescript@5.7.3)):
+  jest@29.7.0(@types/node@20.12.7)(ts-node@10.9.2(@swc/core@1.11.29)(@types/node@20.12.7)(typescript@5.7.3)):
     dependencies:
-      '@jest/core': 29.7.0(ts-node@10.9.2(@swc/core@1.11.29)(@types/node@24.7.2)(typescript@5.7.3))
+      '@jest/core': 29.7.0(ts-node@10.9.2(@swc/core@1.11.29)(@types/node@20.12.7)(typescript@5.7.3))
       '@jest/types': 29.6.3
       import-local: 3.1.0
-      jest-cli: 29.7.0(@types/node@24.7.2)(ts-node@10.9.2(@swc/core@1.11.29)(@types/node@24.7.2)(typescript@5.7.3))
+      jest-cli: 29.7.0(@types/node@20.12.7)(ts-node@10.9.2(@swc/core@1.11.29)(@types/node@20.12.7)(typescript@5.7.3))
     transitivePeerDependencies:
       - '@types/node'
       - babel-plugin-macros
@@ -13290,7 +13350,7 @@ snapshots:
       del: 6.1.1
       rollup: 4.41.1
 
-  rollup-plugin-dts@6.1.1(rollup@3.29.5)(typescript@4.9.5):
+  rollup-plugin-dts@5.3.1(rollup@3.29.5)(typescript@4.9.5):
     dependencies:
       magic-string: 0.30.17
       rollup: 3.29.5
@@ -13606,11 +13666,29 @@ snapshots:
       ip-address: 9.0.5
       smart-buffer: 4.2.0
 
+  solid-bootstrap-core@2.0.0(solid-js@1.9.7):
+    dependencies:
+      '@popperjs/core': 2.11.8
+      dom-helpers: 5.2.1
+      solid-js: 1.9.7
+      solid-react-transition: 1.0.11(solid-js@1.9.7)
+
+  solid-bootstrap@1.0.21(solid-js@1.9.7):
+    dependencies:
+      dom-helpers: 5.2.1
+      solid-bootstrap-core: 2.0.0(solid-js@1.9.7)
+      solid-js: 1.9.7
+      solid-react-transition: 1.0.11(solid-js@1.9.7)
+
   solid-js@1.9.7:
     dependencies:
       csstype: 3.1.3
       seroval: 1.3.2
       seroval-plugins: 1.3.2(seroval@1.3.2)
+
+  solid-react-transition@1.0.11(solid-js@1.9.7):
+    dependencies:
+      solid-js: 1.9.7
 
   solid-refresh@0.6.3(solid-js@1.9.7):
     dependencies:
@@ -14007,26 +14085,6 @@ snapshots:
       '@tsconfig/node14': 1.0.3
       '@tsconfig/node16': 1.0.4
       '@types/node': 20.5.1
-      acorn: 8.11.3
-      acorn-walk: 8.3.2
-      arg: 4.1.3
-      create-require: 1.1.1
-      diff: 4.0.2
-      make-error: 1.3.6
-      typescript: 5.7.3
-      v8-compile-cache-lib: 3.0.1
-      yn: 3.1.1
-    optionalDependencies:
-      '@swc/core': 1.11.29
-
-  ts-node@10.9.2(@swc/core@1.11.29)(@types/node@24.7.2)(typescript@5.7.3):
-    dependencies:
-      '@cspotcode/source-map-support': 0.8.1
-      '@tsconfig/node10': 1.0.11
-      '@tsconfig/node12': 1.0.11
-      '@tsconfig/node14': 1.0.3
-      '@tsconfig/node16': 1.0.4
-      '@types/node': 24.7.2
       acorn: 8.11.3
       acorn-walk: 8.3.2
       arg: 4.1.3

@@ -5,13 +5,22 @@ const basedir = `<rootDir>/packages/${packageName}`;
 
 export default {
 	transform: {
-		"\\.tsx?$": [
+		"\\.[tj]sx?$": [
 			"rollup-jest",
 			{
 				configFile: path.resolve(__dirname, "../rollup.config.test.js"),
 			},
 		],
 	},
+	moduleNameMapper: {
+		"^@vgerbot/lazily$":
+			"<rootDir>/packages/solidium/node_modules/@vgerbot/lazily/dist/index.esm.js",
+	},
+	transformIgnorePatterns: [
+		"/node_modules/(?!.*@vgerbot[/+]lazily)",
+		"/packages/[^/]+/dist/",
+		"/packages/[^/]+/lib/",
+	],
 	testEnvironment: "jsdom",
 	testMatch: [
 		`${basedir}/__tests__/**/*.spec.ts`,

@@ -5,7 +5,7 @@
 	"browser": "dist/index.js",
 	"dependencies": {
 		"@vgerbot/solidium": "workspace:1.0.0",
-		"reflect-metadata": "^0.2.2",
+		"reflect-metadata": "catalog:",
 		"solid-js": "^1.9.4",
 		"tslib": "^2.8.1"
 	},
