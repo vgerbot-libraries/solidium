@@ -9,7 +9,7 @@ import {
 	ResourceError,
 } from "@vgerbot/http";
 import { Inject } from "@vgerbot/ioc";
-import type { NotifyService } from "./NotifyService";
+import { NotifyService } from "./NotifyService";
 
 export class HandleErrorInterceptor implements Interceptor {
 	@Inject()

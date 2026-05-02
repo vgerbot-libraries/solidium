@@ -6,9 +6,9 @@ import type {
 	InterceptorNextFunction,
 	RequestMethod,
 } from "@vgerbot/http";
-import { type ApplicationContext, Inject } from "@vgerbot/ioc";
+import { ApplicationContext, Inject } from "@vgerbot/ioc";
 import { AuthActionService } from "./AuthActionService";
-import type { AuthStateService } from "./AuthStateService";
+import { AuthStateService } from "./AuthStateService";
 
 export class AuthInterceptor implements Interceptor {
 	@Inject()

@@ -4,7 +4,7 @@ import {
 	Storage,
 	type StorageLoadEvent,
 } from "@vgerbot/persistence";
-import { Signal, type Tracker } from "@vgerbot/solidium";
+import { Signal, Tracker } from "@vgerbot/solidium";
 
 export class AuthStateService {
 	@Signal()

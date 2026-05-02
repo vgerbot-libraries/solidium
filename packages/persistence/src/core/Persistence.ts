@@ -66,7 +66,11 @@ export class Persistence {
 	): typeof Persistence {
 		return createFactoryWrapper(
 			DEFAULT_BUCKET_CONFIGURATION,
-			configuration,
+			{
+				name: "solidium-persistence",
+				version: 1.0,
+				...configuration,
+			},
 			Persistence,
 		);
 	}
@@ -94,10 +98,7 @@ export class Persistence {
 		return createFactoryWrapper(name, new Bucket(configuration), Persistence);
 	}
 	@Inject(DEFAULT_BUCKET_CONFIGURATION)
-	private configuration: BucketConfiguration = {
-		name: "solidium-persistence",
-		version: 1.0,
-	};
+	private configuration!: BucketConfiguration;
 
 	/**
 	 * Factory method that creates and returns the default bucket instance.

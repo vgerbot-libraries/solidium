@@ -1,4 +1,4 @@
-import { type ApplicationContext, Inject, PostInject } from "@vgerbot/ioc";
+import { ApplicationContext, Inject, PostInject } from "@vgerbot/ioc";
 import { Signal } from "@vgerbot/solidium";
 import {
 	lastValueFrom,

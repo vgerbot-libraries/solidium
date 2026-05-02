@@ -7,7 +7,7 @@ import {
 } from "../swr/consts";
 import type { SWRDecoratorConfig } from "../swr/SWR";
 import type { SWRConfig } from "../swr/SWRConfig";
-import type { SWRService } from "../swr/SWRService";
+import { SWRService } from "../swr/SWRService";
 import { EXECUTE, Resource } from "./Resource";
 import { ResourceExecutionState } from "./ResourceExecutionState";
 

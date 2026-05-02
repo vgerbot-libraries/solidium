@@ -1,6 +1,6 @@
 import { Inject } from "@vgerbot/ioc";
-import type { AuthAPI } from "../apis/AuthAPI";
-import type { AuthStateService } from "./AuthStateService";
+import { AuthAPI } from "../apis/AuthAPI";
+import { AuthStateService } from "./AuthStateService";
 
 export class AuthActionService {
 	@Inject()

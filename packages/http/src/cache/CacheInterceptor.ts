@@ -1,4 +1,4 @@
-import { type ApplicationContext, Inject } from "@vgerbot/ioc";
+import { ApplicationContext, Inject } from "@vgerbot/ioc";
 import { type Bucket, DEFAULT_BUCKET } from "@vgerbot/persistence";
 import type { EndpointInstance } from "../core/EndpointInstance";
 import type { ExecuteRequestMethodParams } from "../core/ExecuteRequestParams";

@@ -100,7 +100,7 @@ export function buildEndpointClass(
 		key: PropertyKey,
 		factory: (instance: EndpointInstance) => unknown,
 	) {
-		Object.defineProperty(endpointClass.prototype, ABORT_CONTROLLER, {
+		Object.defineProperty(endpointClass.prototype, key, {
 			get() {
 				return getProperty(this, key, factory);
 			},

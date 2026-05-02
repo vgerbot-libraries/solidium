@@ -1,8 +1,8 @@
 import { ResourceError } from "@vgerbot/http";
 import { Inject } from "@vgerbot/ioc";
-import type { NotifyService } from "../base/NotifyService";
-import type { AuthAPI } from "./AuthAPI";
-import type { AuthStateService } from "./AuthStateService";
+import { NotifyService } from "../base/NotifyService";
+import { AuthAPI } from "./AuthAPI";
+import { AuthStateService } from "./AuthStateService";
 
 export class AuthActionService {
 	@Inject()

@@ -186,7 +186,7 @@ const mainConfig: RollupOptions[] = outputConfig.map((output, index) => {
 					],
 				}),
 		].filter(Boolean),
-		external: isServingExamples ? [] : /node_modules|@vgerbot\\\//,
+		external: isServingExamples ? [] : /node_modules|@vgerbot[\\/]/,
 	} as RollupOptions;
 });
 

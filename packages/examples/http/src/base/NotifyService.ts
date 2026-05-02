@@ -1,7 +1,7 @@
 import { Inject } from "@vgerbot/ioc";
 import { Signal } from "@vgerbot/solidium";
 import { batch } from "solid-js";
-import type { ModalService } from "./ModalService";
+import { ModalService } from "./ModalService";
 
 export class NotifyService {
 	@Signal()

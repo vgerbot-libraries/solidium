@@ -1,9 +1,5 @@
 import { Factory, Inject } from "@vgerbot/ioc";
-import {
-	type Bucket,
-	DEFAULT_BUCKET,
-	type Persistence,
-} from "@vgerbot/persistence";
+import { Bucket, DEFAULT_BUCKET, Persistence } from "@vgerbot/persistence";
 import type { Interceptor, InterceptorTypeIdentifier } from "./Interceptor";
 
 export const DEFAULT_HTTP_CONFIGURATION = Symbol(

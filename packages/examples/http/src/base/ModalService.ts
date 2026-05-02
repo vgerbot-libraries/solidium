@@ -1,6 +1,6 @@
 import { Defer } from "@vgerbot/http";
 import { Inject } from "@vgerbot/ioc";
-import type { Tracker } from "@vgerbot/solidium";
+import { Tracker } from "@vgerbot/solidium";
 
 export class ModalService {
 	private lastPromise = Promise.resolve();
