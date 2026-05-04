@@ -110,3 +110,5 @@ docs
 tmp
 
 .turbo
+
+**/lib/
