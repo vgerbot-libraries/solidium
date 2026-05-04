@@ -41,6 +41,10 @@ export class AuthStateService {
 		return !this.data?.expiresAt || Date.now() >= this.data.expiresAt;
 	}
 
+	get token() {
+		return this.data?.token;
+	}
+
 	getRefreshToken() {
 		return this.data?.refreshToken;
 	}
@@ -59,7 +63,8 @@ export class AuthStateService {
 	@OnStorageLoad({
 		members: ["data"],
 	})
-	onLoadDataFromStorage(event: StorageLoadEvent<AuthStateService>) {
+	// biome-ignore lint/correctness/noUnusedPrivateClassMembers: Used by decorator
+	private handleStorageLoadEvent(event: StorageLoadEvent<AuthStateService>) {
 		if (this._initialized) {
 			return;
 		}
