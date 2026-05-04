@@ -6,7 +6,17 @@
 		"useIgnoreFile": true
 	},
 	"files": {
-		"ignoreUnknown": false
+		"ignoreUnknown": false,
+		"includes": [
+			"**",
+			"!**/node_modules",
+			"!**/dist",
+			"!**/lib",
+			"!**/report",
+			"!**/.turbo",
+			"!**/docs",
+			"!**/*.d.ts"
+		]
 	},
 	"formatter": {
 		"enabled": true,
