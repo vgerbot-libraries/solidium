@@ -19,13 +19,13 @@ export const COMPUTED_GETTER_MARK_KEY = Symbol("solidium_computed_getter");
  * @example
  * ```ts
  * class MyStore {
- *   @Signal
+ *   @Signal()
  *   firstName = 'John';
  *
- *   @Signal
+ *   @Signal()
  *   lastName = 'Doe';
  *
- *   @Computed
+ *   @Computed()
  *   get fullName() {
  *     console.log('Computing fullName...');
  *     return `${this.firstName} ${this.lastName}`;
@@ -44,9 +44,8 @@ export const COMPUTED_GETTER_MARK_KEY = Symbol("solidium_computed_getter");
  * console.log(store.fullName); // Logs 'Computing fullName...' and then 'Jane Doe'
  * ```
  */
-export const Computed = defineMemberDecoratorProcessor(
-	COMPUTED_GETTER_MARK_KEY,
-	{
+export const Computed = () =>
+	defineMemberDecoratorProcessor(COMPUTED_GETTER_MARK_KEY, {
 		afterInstantiation: <T>(instance: T, member: MemberKey): T => {
 			const prototype = Object.getPrototypeOf(instance);
 			const descriptor = Object.getOwnPropertyDescriptor(prototype, member);
@@ -70,5 +69,4 @@ export const Computed = defineMemberDecoratorProcessor(
 			});
 			return instance;
 		},
-	},
-) as PropertyDecorator;
+	}) as PropertyDecorator;

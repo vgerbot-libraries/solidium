@@ -16,7 +16,7 @@ export class CounterService {
 	xxx: number = 0;
 	count: number = 1;
 
-	@Computed
+	@Computed()
 	public get fib(): number {
 		console.log("recalculate fib", this.count);
 		return fib(this.count);

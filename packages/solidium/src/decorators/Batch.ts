@@ -8,9 +8,8 @@ type HasMethod = {
 	[member: MemberKey]: Function | undefined;
 };
 
-export const Batch = defineMemberDecoratorProcessor<HasMethod>(
-	BATCH_METHOD_MARK_KEY,
-	{
+export const Batch = () =>
+	defineMemberDecoratorProcessor<HasMethod>(BATCH_METHOD_MARK_KEY, {
 		afterInstantiation(instance, member) {
 			const origin = (instance as HasMethod)[member];
 			if (typeof origin !== "function") {
@@ -25,5 +24,4 @@ export const Batch = defineMemberDecoratorProcessor<HasMethod>(
 				value: batchFn,
 			});
 		},
-	},
-) as MethodDecorator;
+	}) as MethodDecorator;
