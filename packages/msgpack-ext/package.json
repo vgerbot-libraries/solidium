@@ -1,7 +1,7 @@
 {
 	"name": "@vgerbot/msgpack-ext",
 	"description": "An extended version of @msgpack/msgpack library, providing enhanced serialization and deserialization capabilities with support for additional data types and circular references",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"main": "lib/index.cjs.js",
 	"browser": "lib/index.umd.js",
 	"module": "lib/index.es.js",
