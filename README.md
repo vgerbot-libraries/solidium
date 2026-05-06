@@ -106,10 +106,10 @@ Simple and effective! The `@Auto` decorator automatically converts the `count` p
 ## More Features
 
 - `@Signal()` - Manually convert properties to signals
-- `@Computed` - Create computed properties with automatic caching and dependency tracking
+- `@Computed()` - Create computed properties with automatic caching and dependency tracking
 - `@Observe()` - Watch state changes and execute side effects
-- `@Store` - Convert classes to SolidJS Store
-- `@Batch` - Batch updates for performance optimization
+- `@Store()` - Convert classes to SolidJS Store
+- `@Batch()` - Batch updates for performance optimization
 
 For detailed documentation, please refer to [Documentation][link-docs].
 

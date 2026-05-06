@@ -52,7 +52,7 @@ export class CounterService {
     @Signal()
     count: number = 0;
 
-    @Computed
+    @Computed()
     get doubled() {
         return this.count * 2;
     }
@@ -151,7 +151,7 @@ class MyService {
     @Signal()
     count: number = 0;
 
-    @Computed
+    @Computed()
     get doubled() {
         return this.count * 2;
     }
@@ -184,10 +184,14 @@ class MyService {
 Creates a SolidJS store from the class instance.
 
 ```tsx
-@Store
+@Store()
 class MyStore {
-    items: Item[] = [];
-    filter: string = '';
+    private items: Item[] = [];
+    private filter: string = '';
+    
+    addItem(item: Item) {
+        this.items.push(item);
+    }
 }
 ```
 
@@ -200,7 +204,7 @@ class MyService {
     @Signal()
     count: number = 0;
 
-    @Batch
+    @Batch()
     updateMultiple() {
         this.count++;
         this.count++;
@@ -338,10 +342,10 @@ class LocalService {
 ### Working with Stores
 
 ```tsx
-@Store
+@Store()
 class TodoStore {
-    todos: Todo[] = [];
-    filter: 'all' | 'active' | 'completed' = 'all';
+    private todos: Todo[] = [];
+    private filter: 'all' | 'active' | 'completed' = 'all';
 
     get filteredTodos() {
         return this.todos.filter(todo => {
@@ -383,7 +387,7 @@ class UserService {
     users: User[] = [];
     selectedUser: User | null = null;
 
-    @Computed
+    @Computed()
     get selectedUserName(): string {
         return this.selectedUser?.name ?? 'No user selected';
     }

@@ -106,10 +106,10 @@ function Counter() {
 ## 更多功能
 
 - `@Signal()` - 手动将属性转换为信号
-- `@Computed` - 创建计算属性，自动缓存和依赖追踪
+- `@Computed()` - 创建计算属性，自动缓存和依赖追踪
 - `@Observe()` - 监听状态变化，执行副作用
-- `@Store` - 将类转换为 SolidJS Store
-- `@Batch` - 批量更新，优化性能
+- `@Store()` - 将类转换为 SolidJS Store
+- `@Batch()` - 批量更新，优化性能
 
 详细文档请参考 [文档][link-docs]。
 
