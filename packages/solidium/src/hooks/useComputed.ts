@@ -1,16 +1,18 @@
-import { createMemo, createSignal, untrack } from "solid-js";
+import { createMemo, getOwner, runWithOwner } from "solid-js";
 
-const NOT_CHANGED_SYMBOL = Symbol("solidium-not-change-symbol");
+export interface ComputedOptions<T> {
+	equals?: false | ((prev: T, next: T) => boolean);
+}
 /**
- * Creates a new memoized computation that is lazily evaluated.
+ * Creates a lazily initialized memoized computation.
  *
- * Unlike `createMemo` from `solid-js`, the computation function `fn` is not
- * executed until the returned getter is accessed for the first time. After the
- * initial access, it behaves like a standard memo, re-computing its value
- * only when its dependencies change.
+ * Unlike `createMemo` from `solid-js`, `fn` is not executed until the returned
+ * getter is accessed for the first time. After initialization, it behaves like
+ * a normal memo and updates only when its dependencies change.
  *
- * @param fn The computation function to be memoized. It should not take any
- *   arguments and should return a value of type T.
+ * @param fn The computation function to memoize.
+ * @param options Optional memo options passed through to the internal
+ *   `createMemo` call, such as `equals`.
  * @returns A getter function that returns the memoized value. Accessing this
  *   getter tracks the computation in the current reactive context.
  *
@@ -31,20 +33,14 @@ const NOT_CHANGED_SYMBOL = Symbol("solidium-not-change-symbol");
  * console.log(doubleCount()); // Logs 'Computing doubleCount...' and then 10
  * ```
  */
-export function useComputed<T>(fn: () => T) {
-	const [get, emitChange] = createSignal<symbol | unknown>(NOT_CHANGED_SYMBOL);
-
-	const getter = createMemo(() => {
-		const v = get();
-		if (v !== NOT_CHANGED_SYMBOL) {
-			return fn();
-		}
-		return NOT_CHANGED_SYMBOL;
-	});
-	return () => {
-		if (untrack(get) === NOT_CHANGED_SYMBOL) {
-			emitChange(null);
-		}
-		return getter();
+export function useComputed<T>(fn: () => T, options?: ComputedOptions<T>) {
+	const owner = getOwner();
+	let read = () => {
+		const memo = runWithOwner(owner, () => {
+			return createMemo(fn, options);
+		})!;
+		read = memo;
+		return memo();
 	};
+	return () => read();
 }
