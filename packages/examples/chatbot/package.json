@@ -20,7 +20,7 @@
 	"dependencies": {
 		"@picocss/pico": "^2.1.1",
 		"@solidjs/router": "^0.15.3",
-		"@vgerbot/http": "workspace:*",
+		"@vgerbot/solidium-http": "workspace:*",
 		"@vgerbot/ioc": "workspace:*",
 		"@vgerbot/lazily": "^0.1.3",
 		"@vgerbot/solidium-persistence": "workspace:*",

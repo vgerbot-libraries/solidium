@@ -1,4 +1,4 @@
-import { Endpoint, Get, jsonsse } from "@vgerbot/http";
+import { Endpoint, Get, jsonsse } from "@vgerbot/solidium-http";
 
 @Endpoint({
 	baseURL: "https://sse-fake.andros.dev/",

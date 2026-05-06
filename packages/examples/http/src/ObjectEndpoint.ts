@@ -7,7 +7,7 @@ import {
 	Query,
 	type R,
 	restful,
-} from "@vgerbot/http";
+} from "@vgerbot/solidium-http";
 
 export interface ObjectDef {
 	id: string;

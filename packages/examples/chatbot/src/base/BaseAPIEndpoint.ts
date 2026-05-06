@@ -1,4 +1,4 @@
-import { Endpoint } from "@vgerbot/http";
+import { Endpoint } from "@vgerbot/solidium-http";
 // import { AuthInterceptor } from '../auth/AuthInterceptor';
 // import { HandleErrorInterceptor } from '../base/HandleErrorInterceptor';
 

@@ -1,3 +1,4 @@
+import { Inject } from "@vgerbot/ioc";
 import {
 	type EndpointInstance,
 	type ExecuteRequestMethodParams,
@@ -7,8 +8,7 @@ import {
 	type InterceptorNextFunction,
 	type RequestMethod,
 	ResourceError,
-} from "@vgerbot/http";
-import { Inject } from "@vgerbot/ioc";
+} from "@vgerbot/solidium-http";
 import { NotifyService } from "./NotifyService";
 
 export class HandleErrorInterceptor implements Interceptor {

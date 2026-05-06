@@ -1,5 +1,5 @@
-import { SWRInstance } from "@vgerbot/http";
 import { useService } from "@vgerbot/solidium";
+import { SWRInstance } from "@vgerbot/solidium-http";
 import { CounterService } from "./CounterService";
 
 export function Counter() {

@@ -1,4 +1,4 @@
-import { Endpoint, Payload, Post, upload } from "@vgerbot/http";
+import { Endpoint, Payload, Post, upload } from "@vgerbot/solidium-http";
 import { BaseAPIEndpoint } from "../apis/BaseAPIEndpoint";
 
 @Endpoint({

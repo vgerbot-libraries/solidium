@@ -18,7 +18,7 @@ The `Cache` decorator provides HTTP response caching functionality. It stores re
 #### Usage
 
 ```typescript
-import { Endpoint, Get, restful, Cache } from '@vgerbot/http';
+import { Endpoint, Get, restful, Cache } from '@vgerbot/solidium-http';
 
 @Endpoint({
     baseURL: 'https://api.example.com'
@@ -67,7 +67,7 @@ The `ErrorContextInterceptor` enhances error objects with request context inform
 You can create custom interceptors by implementing the `Interceptor` interface:
 
 ```typescript
-import { Interceptor, InterceptorNextFunction } from '@vgerbot/http';
+import { Interceptor, InterceptorNextFunction } from '@vgerbot/solidium-http';
 
 export class MyCustomInterceptor implements Interceptor {
     async invoke(

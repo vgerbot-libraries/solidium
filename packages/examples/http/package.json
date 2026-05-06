@@ -4,7 +4,7 @@
 	"private": "true",
 	"browser": "dist/index.js",
 	"dependencies": {
-		"@vgerbot/http": "workspace:*",
+		"@vgerbot/solidium-http": "workspace:*",
 		"@vgerbot/ioc": "workspace:*",
 		"@vgerbot/solidium": "workspace:1.0.0",
 		"reflect-metadata": "catalog:",

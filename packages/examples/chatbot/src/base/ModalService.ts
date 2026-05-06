@@ -1,6 +1,6 @@
-import { Defer } from "@vgerbot/http";
 import { Inject } from "@vgerbot/ioc";
 import { Signal, Tracker } from "@vgerbot/solidium";
+import { Defer } from "@vgerbot/solidium-http";
 
 const DEFER_METADATA_KEY = Symbol("defer");
 export class ModalService {

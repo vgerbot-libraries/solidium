@@ -8,7 +8,7 @@ import {
 	restful,
 	SWR,
 	SWRMutation,
-} from "@vgerbot/http";
+} from "@vgerbot/solidium-http";
 import { BaseAPIEndpoint } from "./BaseAPIEndpoint";
 
 @Endpoint({

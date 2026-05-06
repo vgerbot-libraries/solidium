@@ -1,3 +1,4 @@
+import { ApplicationContext, Inject } from "@vgerbot/ioc";
 import type {
 	EndpointInstance,
 	ExecuteRequestMethodParams,
@@ -5,8 +6,7 @@ import type {
 	Interceptor,
 	InterceptorNextFunction,
 	RequestMethod,
-} from "@vgerbot/http";
-import { ApplicationContext, Inject } from "@vgerbot/ioc";
+} from "@vgerbot/solidium-http";
 import { AuthActionService } from "./AuthActionService";
 import { AuthStateService } from "./AuthStateService";
 

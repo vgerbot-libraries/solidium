@@ -180,7 +180,7 @@ importers:
       '@solidjs/router':
         specifier: ^0.15.3
         version: 0.15.3(solid-js@1.9.7)
-      '@vgerbot/http':
+      '@vgerbot/solidium-http':
         specifier: workspace:*
         version: link:../../http
       '@vgerbot/ioc':
@@ -244,7 +244,7 @@ importers:
 
   packages/examples/http:
     dependencies:
-      '@vgerbot/http':
+      '@vgerbot/solidium-http':
         specifier: workspace:*
         version: link:../../http
       '@vgerbot/ioc':
@@ -268,7 +268,7 @@ importers:
 
   packages/examples/swr:
     dependencies:
-      '@vgerbot/http':
+      '@vgerbot/solidium-http':
         specifier: workspace:*
         version: link:../../http
       '@vgerbot/lazily':

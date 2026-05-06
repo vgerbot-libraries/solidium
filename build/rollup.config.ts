@@ -163,7 +163,7 @@ const mainConfig: RollupOptions[] = outputConfig.map((output, index) => {
 							),
 						},
 						{
-							find: "@vgerbot/http",
+							find: "@vgerbot/solidium-http",
 							replacement: path.resolve(
 								process.cwd(),
 								"../../http/src/index.ts",
@@ -207,7 +207,7 @@ function createOutputConfig(
 				"@vgerbot/ioc": "IOC",
 				"@vgerbot/solidium": "Solidium",
 				"@vgerbot/solidium-persistence": "Persistence",
-				"@vgerbot/http": "SolidiumHttp",
+				"@vgerbot/solidium-http": "SolidiumHttp",
 				"@vgerbot/msgpack-ext": "MPext",
 			},
 			exports: "named",

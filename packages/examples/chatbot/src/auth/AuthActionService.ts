@@ -1,5 +1,5 @@
-import { ResourceError } from "@vgerbot/http";
 import { Inject } from "@vgerbot/ioc";
+import { ResourceError } from "@vgerbot/solidium-http";
 import { NotifyService } from "../base/NotifyService";
 import { AuthAPI } from "./AuthAPI";
 import { AuthStateService } from "./AuthStateService";

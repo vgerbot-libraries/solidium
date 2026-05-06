@@ -1,4 +1,4 @@
-import { Endpoint, Get, Payload, Post, restful } from "@vgerbot/http";
+import { Endpoint, Get, Payload, Post, restful } from "@vgerbot/solidium-http";
 import { AuthInterceptor } from "../auth/AuthInterceptor";
 import { BaseAPIEndpoint } from "./BaseAPIEndpoint";
 

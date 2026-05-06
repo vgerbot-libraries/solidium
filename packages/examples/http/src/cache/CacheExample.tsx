@@ -1,3 +1,5 @@
+import { Inject } from "@vgerbot/ioc";
+import { Auto, Signal, useService } from "@vgerbot/solidium";
 import {
 	Cache,
 	Endpoint,
@@ -5,9 +7,7 @@ import {
 	PathVariable,
 	type R,
 	restful,
-} from "@vgerbot/http";
-import { Inject } from "@vgerbot/ioc";
-import { Auto, Signal, useService } from "@vgerbot/solidium";
+} from "@vgerbot/solidium-http";
 import { createSignal } from "solid-js";
 
 // Define an API endpoint with the CacheInterceptor

@@ -22,7 +22,7 @@
 		"experimentalDecorators": true,
 		"emitDecoratorMetadata": true,
 		"paths": {
-			"@vgerbot/http": ["./packages/http/src"],
+			"@vgerbot/solidium-http": ["./packages/http/src"],
 			"@vgerbot/solidium": ["./packages/solidium/src"],
 			"@vgerbot/solidium-persistence": ["./packages/persistence/src"],
 			"@vgerbot/msgpack-ext": ["./packages/msgpack-ext/src"]
