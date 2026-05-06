@@ -6,7 +6,8 @@
 	"dependencies": {
 		"@vgerbot/solidium-http": "workspace:*",
 		"@vgerbot/ioc": "workspace:*",
-		"@vgerbot/solidium": "workspace:1.0.0",
+		"@vgerbot/solidium": "workspace:*",
+		"@vgerbot/solidium-persistence": "workspace:*",
 		"reflect-metadata": "catalog:",
 		"solid-bootstrap": "^1.0.21",
 		"solid-js": "^1.9.4",

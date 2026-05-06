@@ -5,18 +5,6 @@
 		"composite": true,
 		"rootDir": "src",
 		"declaration": true,
-		"baseUrl": "./",
 		"noImplicitReturns": false
-	},
-	"references": [
-		{
-			"path": "../solidium"
-		},
-		{
-			"path": "../ioc"
-		},
-		{
-			"path": "../persistence"
-		}
-	]
+	}
 }

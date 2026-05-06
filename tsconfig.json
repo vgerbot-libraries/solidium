@@ -1,9 +1,7 @@
 {
 	"compilerOptions": {
 		"module": "esnext",
-		"moduleResolution": "node",
-		"baseUrl": ".",
-		"target": "es5",
+		"moduleResolution": "bundler",
 		"lib": ["esnext", "DOM"],
 		"strict": true,
 		"noImplicitAny": true,
@@ -21,12 +19,6 @@
 		"esModuleInterop": true,
 		"experimentalDecorators": true,
 		"emitDecoratorMetadata": true,
-		"paths": {
-			"@vgerbot/solidium-http": ["./packages/http/src"],
-			"@vgerbot/solidium": ["./packages/solidium/src"],
-			"@vgerbot/solidium-persistence": ["./packages/persistence/src"],
-			"@vgerbot/msgpack-ext": ["./packages/msgpack-ext/src"]
-		},
 		"types": ["reflect-metadata"]
 	},
 	"exclude": ["packages/*/__tests__", "node_modules", "**/lib"],

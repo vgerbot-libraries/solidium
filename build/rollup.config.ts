@@ -22,6 +22,8 @@ const pkg = require(path.resolve(process.cwd(), "package.json"));
 
 const inputFile = path.resolve(process.cwd(), "src/index.ts");
 
+const isExample = pkg.name.indexOf("examples") > -1;
+
 const isServingExamples =
 	process.env.NODE_ENV === "development" && pkg.name.indexOf("examples") > -1;
 
@@ -70,7 +72,6 @@ const mainConfig: RollupOptions[] = outputConfig.map((output, index) => {
 							: output.format === "es"
 								? "es6"
 								: "es5",
-						declarationDir: "lib/typings",
 						downlevelIteration: true,
 					},
 				},
@@ -152,7 +153,7 @@ const mainConfig: RollupOptions[] = outputConfig.map((output, index) => {
 					dirs: "dist",
 				}),
 			isServingExamples && hmr({}),
-			isServingExamples &&
+			isExample &&
 				alias({
 					entries: [
 						{
@@ -186,7 +187,7 @@ const mainConfig: RollupOptions[] = outputConfig.map((output, index) => {
 					],
 				}),
 		].filter(Boolean),
-		external: isServingExamples ? [] : /node_modules|@vgerbot[\\/]/,
+		external: isExample ? [] : /node_modules|@vgerbot[\\/]/,
 	} as RollupOptions;
 });
 
@@ -237,7 +238,5 @@ const dtsconfig = {
 		} satisfies Plugin,
 	],
 } satisfies RollupOptions;
-
-const isExample = pkg.name.indexOf("examples") > -1;
 
 export default mainConfig.concat(isExample ? [] : [dtsconfig]);

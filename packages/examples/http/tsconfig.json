@@ -2,6 +2,7 @@
 	"compilerOptions": {
 		"jsx": "preserve",
 		"jsxImportSource": "solid-js",
+		"declaration": false,
 		"noImplicitThis": false,
 		"experimentalDecorators": true,
 		"emitDecoratorMetadata": true,
@@ -10,10 +11,5 @@
 		"downlevelIteration": true
 	},
 	"extends": "../tsconfig.json",
-	"include": ["./src/"],
-	"references": [
-		{
-			"path": "../../http/"
-		}
-	]
+	"include": ["./src/"]
 }
