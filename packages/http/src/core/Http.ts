@@ -1,5 +1,9 @@
 import { Factory, Inject } from "@vgerbot/ioc";
-import { Bucket, DEFAULT_BUCKET, Persistence } from "@vgerbot/persistence";
+import {
+	Bucket,
+	DEFAULT_BUCKET,
+	Persistence,
+} from "@vgerbot/solidium-persistence";
 import type { Interceptor, InterceptorTypeIdentifier } from "./Interceptor";
 
 export const DEFAULT_HTTP_CONFIGURATION = Symbol(

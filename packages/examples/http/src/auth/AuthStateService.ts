@@ -1,10 +1,10 @@
 import { Inject } from "@vgerbot/ioc";
+import { Signal, Tracker } from "@vgerbot/solidium";
 import {
 	OnStorageLoad,
 	Storage,
 	type StorageLoadEvent,
-} from "@vgerbot/persistence";
-import { Signal, Tracker } from "@vgerbot/solidium";
+} from "@vgerbot/solidium-persistence";
 
 export class AuthStateService {
 	@Signal()

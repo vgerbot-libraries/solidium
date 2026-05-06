@@ -24,7 +24,7 @@
 		"paths": {
 			"@vgerbot/http": ["./packages/http/src"],
 			"@vgerbot/solidium": ["./packages/solidium/src"],
-			"@vgerbot/persistence": ["./packages/persistence/src"],
+			"@vgerbot/solidium-persistence": ["./packages/persistence/src"],
 			"@vgerbot/msgpack-ext": ["./packages/msgpack-ext/src"]
 		},
 		"types": ["reflect-metadata"]

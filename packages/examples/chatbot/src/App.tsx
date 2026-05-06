@@ -1,6 +1,6 @@
 import { Http } from "@vgerbot/http";
-import { Persistence } from "@vgerbot/persistence";
 import { Solidium } from "@vgerbot/solidium";
+import { Persistence } from "@vgerbot/solidium-persistence";
 import type { Component, ParentProps } from "solid-js";
 import { AuthHandler } from "./auth/AuthHandler";
 import { Notify } from "./components/notify";

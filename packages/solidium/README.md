@@ -254,7 +254,7 @@ function App() {
 The `autoRegisterClasses` prop allows you to automatically register and initialize service classes or extensions when the Solidium provider starts up. This is particularly useful for loading extensions and plugins that need to be available throughout your application.
 
 ```tsx
-import { Persistence } from '@vgerbot/persistence';
+import { Persistence } from '@vgerbot/solidium-persistence';
 
 function App() {
     return (

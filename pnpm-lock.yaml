@@ -192,7 +192,7 @@ importers:
       '@vgerbot/msgpack-ext':
         specifier: workspace:*
         version: link:../../msgpack-ext
-      '@vgerbot/persistence':
+      '@vgerbot/solidium-persistence':
         specifier: workspace:*
         version: link:../../persistence
       '@vgerbot/solidium':
@@ -316,7 +316,7 @@ importers:
       '@vgerbot/lazily':
         specifier: ^0.1.3
         version: 0.1.3
-      '@vgerbot/persistence':
+      '@vgerbot/solidium-persistence':
         specifier: workspace:*
         version: link:../persistence
       '@vgerbot/solidium':

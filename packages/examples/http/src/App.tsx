@@ -1,5 +1,5 @@
-import { DefaultDrivers, Persistence } from "@vgerbot/persistence";
 import { Solidium } from "@vgerbot/solidium";
+import { DefaultDrivers, Persistence } from "@vgerbot/solidium-persistence";
 import { PostViewer } from "./cache/CacheExample";
 import { AlertDialog } from "./components/AlertDialog";
 import { LoginDialog } from "./components/LoginDialog";

@@ -1,5 +1,5 @@
 import { ApplicationContext, Inject } from "@vgerbot/ioc";
-import { type Bucket, DEFAULT_BUCKET } from "@vgerbot/persistence";
+import { type Bucket, DEFAULT_BUCKET } from "@vgerbot/solidium-persistence";
 import type { EndpointInstance } from "../core/EndpointInstance";
 import type { ExecuteRequestMethodParams } from "../core/ExecuteRequestParams";
 import {

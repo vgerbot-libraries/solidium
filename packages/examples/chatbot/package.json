@@ -23,7 +23,7 @@
 		"@vgerbot/http": "workspace:*",
 		"@vgerbot/ioc": "workspace:*",
 		"@vgerbot/lazily": "^0.1.3",
-		"@vgerbot/persistence": "workspace:*",
+		"@vgerbot/solidium-persistence": "workspace:*",
 		"@vgerbot/solidium": "workspace:*",
 		"@vgerbot/msgpack-ext": "workspace:*",
 		"@msgpack/msgpack": "catalog:",
