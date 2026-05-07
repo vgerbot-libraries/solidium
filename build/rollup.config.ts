@@ -73,6 +73,8 @@ const mainConfig: RollupOptions[] = outputConfig.map((output, index) => {
 								? "es6"
 								: "es5",
 						downlevelIteration: true,
+						declaration: !isExample,
+						declarationDir: isExample ? undefined : "lib/typings",
 					},
 				},
 				useTsconfigDeclarationDir: true,

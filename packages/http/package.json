@@ -12,7 +12,7 @@
 	"main": "lib/index.cjs.js",
 	"browser": "lib/index.umd.js",
 	"module": "lib/index.es.js",
-	"types": "lib/typings/index",
+	"types": "lib/index.d.ts",
 	"exports": {
 		".": {
 			"import": "./lib/index.es.js",

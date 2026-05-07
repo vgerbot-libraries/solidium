@@ -295,4 +295,3 @@ export class SWRInstance<T> {
 		this.cleanupFns.forEach((cleanup) => cleanup());
 	}
 }
-Object.assign(window, { SWRInstance });
