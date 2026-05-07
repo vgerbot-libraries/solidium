@@ -3,7 +3,8 @@
 [![npm version](https://badge.fury.io/js/%40vgerbot%2Fsolidium.svg)](https://www.npmjs.com/package/@vgerbot/solidium)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A state management library for SolidJS that leverages the power of Inversion of Control (IoC) to provide a robust and flexible solution. With a primary focus on promoting the separation of UI and logic, Solidium empowers SolidJS developers to achieve cleaner, more maintainable code.
+Solidium is a state management library for SolidJS built on top of IoC.  
+It helps you keep business logic in services and keep components focused on rendering.
 
 ## Features
 
@@ -14,7 +15,7 @@ A state management library for SolidJS that leverages the power of Inversion of 
 - 👁️ **Observation**: Watch state changes with `@Observe()` decorator
 - 🏪 **Store Integration**: Seamless SolidJS store integration with `@Store` decorator
 - 🎯 **Batch Updates**: Optimize performance with `@Batch` decorator
-- 🎣 **React-like Hooks**: Familiar hooks API for component integration
+- 🎣 **SolidJS Hooks**: Familiar hooks API for component integration
 
 ## Installation
 
@@ -288,7 +289,6 @@ Common use cases for `autoRegisterClasses`:
 ```tsx
 import { createFactory } from '@vgerbot/ioc';
 const DEFAULT_LOGGING_CONFIGURATION = 'DEFAULT-LOGGING-CONFIGURATION';
-type LoggingLevel = 'debug' | 'info' | 'warn' | 'error';
 enum LoggingLevel {
     debug,
     info,
